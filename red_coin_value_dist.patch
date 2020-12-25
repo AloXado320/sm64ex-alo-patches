@@ -1,0 +1,29 @@
+diff --git a/src/game/object_list_processor.c b/src/game/object_list_processor.c
+index b8a454c..0316b26 100644
+--- a/src/game/object_list_processor.c
++++ b/src/game/object_list_processor.c
+@@ -263,6 +263,15 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
+     }
+ }
+ 
++void print_value_of_nearest_red_coin(void) {
++    s32 redCount = count_objects_with_behavior(bhvRedCoin); 
++    s32 redDist = (s32) cur_obj_dist_to_nearest_object_with_behavior(bhvRedCoin) / 100;
++    
++    if (redCount != 0) {
++        print_text_fmt_int(20, 20, "red %d", redDist);
++    }
++}
++
+ /**
+  * Mario's primary behavior update function.
+  */
+@@ -286,6 +295,8 @@ void bhv_mario_update(void) {
+ 
+         i++;
+     }
++    
++    print_value_of_nearest_red_coin();
+ }
+ 
+ /**
