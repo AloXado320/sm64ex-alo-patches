@@ -11,7 +11,7 @@ index b8a454c..0316b26 100644
 +    s32 redDist = (s32) cur_obj_dist_to_nearest_object_with_behavior(bhvRedCoin) / 100;
 +    
 +    if (redCount != 0) {
-+        print_text_fmt_int(20, 20, "red %d", redDist);
++        print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(20), 20, "red %d", redDist);
 +    }
 +}
 +

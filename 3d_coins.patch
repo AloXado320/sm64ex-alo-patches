@@ -1,14 +1,26 @@
-diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/geo.inc.c
---- sm64_refresh11/actors/coin/geo.inc.c	2020-07-04 10:18:55.000000000 -0500
-+++ sm64_refresh11_edit/actors/coin/geo.inc.c	2020-07-16 14:26:25.897695600 -0500
-@@ -1,113 +1,38 @@
+diff --git a/actors/coin/coin_custom.i4.png b/actors/coin/coin_custom.i4.png
+new file mode 100644
+index 0000000..d55727c
+--- /dev/null
++++ b/actors/coin/coin_custom.i4.png
+@@ -0,0 +1,4 @@
++臼NG
++
++   
+IHDR           szz・  	pHYs     囿  )IDATX	﨑ｯr1ﾆCｧ吋・吋"・準・N"践$吋"践$ｮ蝸ﾎﾇ､嶺r9ｦﾅｰ3irawｿodﾛ;渮_諷Bl&ﾐ9ﾗ・TUeﾖ・SU・b}ｻﾝ,x4~ﾟ④3扼ｻｸ2・ ｿ・;sMCﾔo6ﾃN・ﾎ"3ｹ綻｢?扼xｹ\Z<｢g].SE・騅ｻｵ 4 ﾍ銛Gｲﾐ・ﾑ侵-9=対f3・＆eiﾆ羈ﾍﾉﾂ`0ｰ菻｡L1・ｨﾁ L烟#D⊆@>澪｢・$X舅ｱXﾔﾍ・(ｭﾔ#刑Dﾅo憖・・・弴ﾑ孝u錝ｻG・ﾊｱ 3z\BD蓴Yｯ	u・・"p・ﾄ# %㌫ｨｺﾏﾙ	<H・獪'粋E"┓ﾀ氏c% ﾇdg鼓6佇ｦﾀ$Cｧ-｢_ｭVv\7E酸$I@｣7\・'的・I8・・a鑛in@>%・pN=yJ!!ﾝ錙ﾒ%ﾂ=淘=Uoｻ@8悋ﾆ｢!q,蹈・錦ﾍ=wzAｮｿﾐﾙ寇ｮﾏ・g"wsIe・汗綾~ﾝs#・+｣ｰ・g|ﾇ､ｱJs塔芯・8:庚・.86・ｶIr蕙ﾀ;ﾟs5f・k ｦ    IENDｮB`・\ No newline at end of file
+diff --git a/actors/coin/geo.inc.c b/actors/coin/geo.inc.c
+index bfb2d92..b8067f8 100644
+--- a/actors/coin/geo.inc.c
++++ b/actors/coin/geo.inc.c
+@@ -1,76 +1,32 @@
 -// 0x1600013C
  const GeoLayout yellow_coin_geo[] = {
 -   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 50),
-+   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 85),
++   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
     GEO_OPEN_NODE(),
 -      GEO_SWITCH_CASE(8, geo_switch_anim_state),
--      GEO_OPEN_NODE(),
++      GEO_ASM(0, geo_rotate_coin),
+       GEO_OPEN_NODE(),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007800),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007800),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007828),
@@ -17,8 +29,8 @@ diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007850),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007878),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007878),
--      GEO_CLOSE_NODE(),
-+      GEO_DISPLAY_LIST(LAYER_OPAQUE, coin_material_yellow),
++         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_material_yellow),
+       GEO_CLOSE_NODE(),
     GEO_CLOSE_NODE(),
     GEO_END(),
  };
@@ -45,11 +57,11 @@ diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/
  
 -// 0x16000200
  const GeoLayout blue_coin_geo[] = {
--   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
-+   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 85),
+    GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
     GEO_OPEN_NODE(),
 -      GEO_SWITCH_CASE(8, geo_switch_anim_state),
--      GEO_OPEN_NODE(),
++      GEO_ASM(0, geo_rotate_coin),
+       GEO_OPEN_NODE(),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078A0),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078A0),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078C8),
@@ -58,8 +70,8 @@ diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078F0),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007918),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007918),
--      GEO_CLOSE_NODE(),
-+      GEO_DISPLAY_LIST(LAYER_OPAQUE, coin_material_blue),
++         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_material_blue),
+       GEO_CLOSE_NODE(),
     GEO_CLOSE_NODE(),
     GEO_END(),
  };
@@ -84,13 +96,13 @@ diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/
     GEO_END(),
  };
  
--// 0x160002C4
+@@ -78,16 +34,9 @@ const GeoLayout blue_coin_no_shadow_geo[] = {
  const GeoLayout red_coin_geo[] = {
--   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
-+   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 85),
+    GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
     GEO_OPEN_NODE(),
 -      GEO_SWITCH_CASE(8, geo_switch_anim_state),
--      GEO_OPEN_NODE(),
++      GEO_ASM(0, geo_rotate_coin),
+       GEO_OPEN_NODE(),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007940),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007940),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007968),
@@ -99,13 +111,13 @@ diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007990),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030079B8),
 -         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030079B8),
--      GEO_CLOSE_NODE(),
-+      GEO_DISPLAY_LIST(LAYER_OPAQUE, coin_material_red),
++         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_material_red),
+       GEO_CLOSE_NODE(),
     GEO_CLOSE_NODE(),
     GEO_END(),
- };
+@@ -95,19 +44,6 @@ const GeoLayout red_coin_geo[] = {
  
--// 0x16000328
+ // 0x16000328
  const GeoLayout red_coin_no_shadow_geo[] = {
 -   GEO_NODE_START(),
 -   GEO_OPEN_NODE(),
@@ -124,10 +136,337 @@ diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/
 +   GEO_BRANCH(1, red_coin_geo),
     GEO_END(),
  };
-diff -Naur sm64_refresh11/actors/common1.h sm64_refresh11_edit/actors/common1.h
---- sm64_refresh11/actors/common1.h	2020-07-04 10:18:55.000000000 -0500
-+++ sm64_refresh11_edit/actors/common1.h	2020-07-16 17:39:24.090100700 -0500
-@@ -31,20 +31,10 @@
+diff --git a/actors/coin/model.inc.c b/actors/coin/model.inc.c
+index dcb637d..899782e 100644
+--- a/actors/coin/model.inc.c
++++ b/actors/coin/model.inc.c
+@@ -1,176 +1,167 @@
+-// Coin
+-
+-// 0x030056C0
+-static const Vtx coin_seg3_vertex_030056C0[] = {
+-    {{{   -32,      0,      0}, 0, {     0,   1984}, {0xff, 0xff, 0x00, 0xff}}},
+-    {{{    32,      0,      0}, 0, {  1984,   1984}, {0xff, 0xff, 0x00, 0xff}}},
+-    {{{    32,     64,      0}, 0, {  1984,      0}, {0xff, 0xff, 0x00, 0xff}}},
+-    {{{   -32,     64,      0}, 0, {     0,      0}, {0xff, 0xff, 0x00, 0xff}}},
+-};
+-
+-// 0x03005700
+-static const Vtx coin_seg3_vertex_03005700[] = {
+-    {{{   -50,      0,      0}, 0, {     0,   1984}, {0x78, 0x78, 0xff, 0xff}}},
+-    {{{    50,      0,      0}, 0, {  1984,   1984}, {0x78, 0x78, 0xff, 0xff}}},
+-    {{{    50,    100,      0}, 0, {  1984,      0}, {0x78, 0x78, 0xff, 0xff}}},
+-    {{{   -50,    100,      0}, 0, {     0,      0}, {0x78, 0x78, 0xff, 0xff}}},
+-};
+-
+-// 0x03005740
+-static const Vtx coin_seg3_vertex_03005740[] = {
+-    {{{   -35,      0,      0}, 0, {     0,   1984}, {0xff, 0x00, 0x00, 0xff}}},
+-    {{{    35,      0,      0}, 0, {  1984,   1984}, {0xff, 0x00, 0x00, 0xff}}},
+-    {{{    35,     70,      0}, 0, {  1984,      0}, {0xff, 0x00, 0x00, 0xff}}},
+-    {{{   -35,     70,      0}, 0, {     0,      0}, {0xff, 0x00, 0x00, 0xff}}},
+-};
+-
+-// 0x03005780
+-ALIGNED8 static const Texture coin_seg3_texture_03005780[] = {
+-#include "actors/coin/coin_front.ia16.inc.c"
+-};
+-
+-// 0x03005F80
+-ALIGNED8 static const Texture coin_seg3_texture_03005F80[] = {
+-#include "actors/coin/coin_tilt_right.ia16.inc.c"
+-};
+-
+-// 0x03006780
+-ALIGNED8 static const Texture coin_seg3_texture_03006780[] = {
+-#include "actors/coin/coin_side.ia16.inc.c"
+-};
+-
+-// 0x03006F80
+-ALIGNED8 static const Texture coin_seg3_texture_03006F80[] = {
+-#include "actors/coin/coin_tilt_left.ia16.inc.c"
++ALIGNED8 const Texture coin_i4[] = {
++	#include "actors/coin/coin_custom.i4.inc.c"
++};
++
++Vtx coin_material_mesh_vtx_0[53] = {
++	{{{-17, 6, -5},0, {-784, 939},{0xD1, 0xAC, 0xAD, 0xFF}}},
++	{{{17, 6, -5},0, {-272, 939},{0x2F, 0xAC, 0xAD, 0xFF}}},
++	{{{0, 2, -5},0, {-528, 1008},{0x0, 0xA0, 0xAC, 0xFF}}},
++	{{{30, 19, -5},0, {-85, 752},{0x52, 0xCF, 0xAD, 0xFF}}},
++	{{{-30, 19, -5},0, {-972, 752},{0xAE, 0xCF, 0xAD, 0xFF}}},
++	{{{35, 36, -5},0, {-16, 496},{0x60, 0x0, 0xAD, 0xFF}}},
++	{{{-35, 36, -5},0, {-1040, 496},{0xA0, 0x0, 0xAD, 0xFF}}},
++	{{{30, 53, -5},0, {-85, 240},{0x52, 0x31, 0xAD, 0xFF}}},
++	{{{-30, 53, -5},0, {-972, 240},{0xAE, 0x31, 0xAD, 0xFF}}},
++	{{{17, 66, -5},0, {-272, 52},{0x2F, 0x54, 0xAD, 0xFF}}},
++	{{{-17, 66, -5},0, {-784, 52},{0xD1, 0x54, 0xAD, 0xFF}}},
++	{{{0, 70, -5},0, {-528, -16},{0x0, 0x60, 0xAC, 0xFF}}},
++	{{{-17, 6, -5},0, {-272, -84},{0xD1, 0xAC, 0xAD, 0xFF}}},
++	{{{-30, 19, 5},0, {-85, -272},{0xAE, 0xCF, 0x53, 0xFF}}},
++	{{{-30, 19, -5},0, {-85, -272},{0xAE, 0xCF, 0xAD, 0xFF}}},
++	{{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
++	{{{0, 2, -5},0, {-528, -16},{0x0, 0xA0, 0xAC, 0xFF}}},
++	{{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
++	{{{-17, 6, -5},0, {-272, -84},{0xD1, 0xAC, 0xAD, 0xFF}}},
++	{{{0, 2, 5},0, {-528, -16},{0x0, 0xA0, 0x54, 0xFF}}},
++	{{{17, 6, -5},0, {-784, -84},{0x2F, 0xAC, 0xAD, 0xFF}}},
++	{{{17, 6, 5},0, {-784, -84},{0x2F, 0xAC, 0x53, 0xFF}}},
++	{{{30, 19, -5},0, {-972, -272},{0x52, 0xCF, 0xAD, 0xFF}}},
++	{{{30, 19, 5},0, {-972, -272},{0x52, 0xCF, 0x53, 0xFF}}},
++	{{{35, 36, 5},0, {-1040, -528},{0x60, 0x0, 0x53, 0xFF}}},
++	{{{35, 36, -5},0, {-1040, -528},{0x60, 0x0, 0xAD, 0xFF}}},
++	{{{30, 53, -5},0, {-972, -784},{0x52, 0x31, 0xAD, 0xFF}}},
++	{{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
++	{{{17, 66, -5},0, {-784, -971},{0x2F, 0x54, 0xAD, 0xFF}}},
++	{{{17, 66, 5},0, {-784, -971},{0x2F, 0x54, 0x53, 0xFF}}},
++	{{{0, 70, -5},0, {-528, -1040},{0x0, 0x60, 0xAC, 0xFF}}},
++	{{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
++	{{{-17, 66, -5},0, {-272, -971},{0xD1, 0x54, 0xAD, 0xFF}}},
++	{{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
++	{{{0, 70, -5},0, {-528, -1040},{0x0, 0x60, 0xAC, 0xFF}}},
++	{{{-17, 66, 5},0, {-272, -971},{0xD1, 0x54, 0x53, 0xFF}}},
++	{{{-30, 53, -5},0, {-85, -784},{0xAE, 0x31, 0xAD, 0xFF}}},
++	{{{-30, 53, 5},0, {-85, -784},{0xAE, 0x31, 0x53, 0xFF}}},
++	{{{-35, 36, 5},0, {-16, -528},{0xA0, 0x0, 0x53, 0xFF}}},
++	{{{-35, 36, -5},0, {-16, -528},{0xA0, 0x0, 0xAD, 0xFF}}},
++	{{{-30, 19, -5},0, {-85, -272},{0xAE, 0xCF, 0xAD, 0xFF}}},
++	{{{-30, 19, 5},0, {-85, -272},{0xAE, 0xCF, 0x53, 0xFF}}},
++	{{{35, 36, 5},0, {-1040, -528},{0x60, 0x0, 0x53, 0xFF}}},
++	{{{30, 19, 5},0, {-972, -272},{0x52, 0xCF, 0x53, 0xFF}}},
++	{{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
++	{{{17, 6, 5},0, {-784, -84},{0x2F, 0xAC, 0x53, 0xFF}}},
++	{{{0, 2, 5},0, {-528, -16},{0x0, 0xA0, 0x54, 0xFF}}},
++	{{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
++	{{{-30, 53, 5},0, {-85, -784},{0xAE, 0x31, 0x53, 0xFF}}},
++	{{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
++	{{{17, 66, 5},0, {-784, -971},{0x2F, 0x54, 0x53, 0xFF}}},
++	{{{-17, 66, 5},0, {-272, -971},{0xD1, 0x54, 0x53, 0xFF}}},
++	{{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
++};
++
++Gfx coin_material_mesh_tri_0[] = {
++	gsSPVertex(coin_material_mesh_vtx_0 + 0, 16, 0),
++	gsSP1Triangle(0, 1, 2, 0),
++	gsSP1Triangle(1, 0, 3, 0),
++	gsSP1Triangle(3, 0, 4, 0),
++	gsSP1Triangle(3, 4, 5, 0),
++	gsSP1Triangle(5, 4, 6, 0),
++	gsSP1Triangle(5, 6, 7, 0),
++	gsSP1Triangle(7, 6, 8, 0),
++	gsSP1Triangle(7, 8, 9, 0),
++	gsSP1Triangle(9, 8, 10, 0),
++	gsSP1Triangle(9, 10, 11, 0),
++	gsSP1Triangle(12, 13, 14, 0),
++	gsSP1Triangle(13, 12, 15, 0),
++	gsSPVertex(coin_material_mesh_vtx_0 + 16, 16, 0),
++	gsSP1Triangle(0, 1, 2, 0),
++	gsSP1Triangle(1, 0, 3, 0),
++	gsSP1Triangle(4, 3, 0, 0),
++	gsSP1Triangle(3, 4, 5, 0),
++	gsSP1Triangle(6, 5, 4, 0),
++	gsSP1Triangle(5, 6, 7, 0),
++	gsSP1Triangle(6, 8, 7, 0),
++	gsSP1Triangle(8, 6, 9, 0),
++	gsSP1Triangle(10, 8, 9, 0),
++	gsSP1Triangle(8, 10, 11, 0),
++	gsSP1Triangle(12, 11, 10, 0),
++	gsSP1Triangle(11, 12, 13, 0),
++	gsSP1Triangle(14, 13, 12, 0),
++	gsSP1Triangle(13, 14, 15, 0),
++	gsSPVertex(coin_material_mesh_vtx_0 + 32, 16, 0),
++	gsSP1Triangle(0, 1, 2, 0),
++	gsSP1Triangle(1, 0, 3, 0),
++	gsSP1Triangle(4, 3, 0, 0),
++	gsSP1Triangle(3, 4, 5, 0),
++	gsSP1Triangle(4, 6, 5, 0),
++	gsSP1Triangle(6, 4, 7, 0),
++	gsSP1Triangle(8, 6, 7, 0),
++	gsSP1Triangle(6, 8, 9, 0),
++	gsSP1Triangle(9, 10, 6, 0),
++	gsSP1Triangle(9, 11, 10, 0),
++	gsSP1Triangle(12, 11, 9, 0),
++	gsSP1Triangle(12, 13, 11, 0),
++	gsSP1Triangle(13, 12, 14, 0),
++	gsSP1Triangle(6, 10, 15, 0),
++	gsSP1Triangle(6, 15, 5, 0),
++	gsSPVertex(coin_material_mesh_vtx_0 + 48, 5, 0),
++	gsSP1Triangle(0, 1, 2, 0),
++	gsSP1Triangle(0, 2, 3, 0),
++	gsSP1Triangle(3, 2, 4, 0),
++	gsSPEndDisplayList(),
+ };
+ 
+-// 0x03007780 - 0x030077D0
+-const Gfx coin_seg3_dl_03007780[] = {
++Gfx mat_coin_coin[] = {
+ 	gsDPPipeSync(),
+-    gsSPClearGeometryMode(G_LIGHTING),
+-    gsDPSetCombineMode(G_CC_MODULATEIA, G_CC_MODULATEIA),
+-    gsSPTexture(0x8000, 0x8000, 0, G_TX_RENDERTILE, G_ON),
+-    gsDPSetTile(G_IM_FMT_IA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, G_TX_CLAMP, 5, G_TX_NOLOD, G_TX_CLAMP, 5, G_TX_NOLOD),
++	gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT, TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT),
++	gsSPTexture(65535, 65535, 0, 0, 1),
++	gsDPTileSync(),
++	gsDPSetTextureImage(G_IM_FMT_I, G_IM_SIZ_8b, 16, coin_i4),
++	gsDPSetTile(G_IM_FMT_I, G_IM_SIZ_8b, 2, 0, 7, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0),
+ 	gsDPLoadSync(),
+-    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
+-    gsDPSetTile(G_IM_FMT_IA, G_IM_SIZ_16b, 8, 0, G_TX_RENDERTILE, 0, G_TX_CLAMP, 5, G_TX_NOLOD, G_TX_CLAMP, 5, G_TX_NOLOD),
+-    gsDPSetTileSize(0, 0, 0, (32 - 1) << G_TEXTURE_IMAGE_FRAC, (32 - 1) << G_TEXTURE_IMAGE_FRAC),
++	gsDPLoadTile(7, 0, 0, 62, 124),
++	gsDPPipeSync(),
++	gsDPSetTile(G_IM_FMT_I, G_IM_SIZ_4b, 2, 0, 0, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0),
++	gsDPSetTileSize(0, 0, 0, 124, 124),
+ 	gsSPEndDisplayList(),
+ };
+ 
+-// 0x030077D0 - 0x03007800
+-const Gfx coin_seg3_dl_030077D0[] = {
+-    gsSP2Triangles( 0,  1,  2, 0x0,  0,  2,  3, 0x0),
+-    gsSPTexture(0x0001, 0x0001, 0, G_TX_RENDERTILE, G_OFF),
+-    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
++Gfx coin_material_mesh[] = {
++	gsSPDisplayList(mat_coin_coin),
++	gsSPDisplayList(coin_material_mesh_tri_0),
++	gsDPPipeSync(),
+ 	gsSPSetGeometryMode(G_LIGHTING),
++	gsSPClearGeometryMode(G_TEXTURE_GEN),
++	gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT),
++	gsSPTexture(65535, 65535, 0, 0, 0),
+ 	gsSPEndDisplayList(),
+ };
+ 
+-// 0x03007800 - 0x03007828
+-const Gfx coin_seg3_dl_03007800[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005780),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
+-
+-// 0x03007828 - 0x03007850
+-const Gfx coin_seg3_dl_03007828[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005F80),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
+-
+-// 0x03007850 - 0x03007878
+-const Gfx coin_seg3_dl_03007850[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006780),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
+-
+-// 0x03007878 - 0x030078A0
+-const Gfx coin_seg3_dl_03007878[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006F80),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
+-
+-// 0x030078A0 - 0x030078C8
+-const Gfx coin_seg3_dl_030078A0[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005780),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005700, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
+-
+-// 0x030078C8 - 0x030078F0
+-const Gfx coin_seg3_dl_030078C8[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005F80),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005700, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
+-
+-// 0x030078F0 - 0x03007918
+-const Gfx coin_seg3_dl_030078F0[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006780),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005700, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
++Lights1 coin_lights_yellow = gdSPDefLights1(
++	0x7F, 0x61, 0x07,
++	0xFF, 0xC2, 0x0E, 0x28, 0x28, 0x28);
+ 
+-// 0x03007918 - 0x03007940
+-const Gfx coin_seg3_dl_03007918[] = {
++Gfx coin_material_yellow[] = {
+ 	gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006F80),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005700, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
++    gsSPSetLights1(coin_lights_yellow),
++    gsSPBranchList(coin_material_mesh),
+ };
+ 
+-// 0x03007940 - 0x03007968
+-const Gfx coin_seg3_dl_03007940[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005780),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
++Lights1 coin_lights_blue = gdSPDefLights1(
++	0x0D, 0x35, 0x73,
++	0x1A, 0x6B, 0xE6, 0x28, 0x28, 0x28);
+ 
+-// 0x03007968 - 0x03007990
+-const Gfx coin_seg3_dl_03007968[] = {
++Gfx coin_material_blue[] = {
+ 	gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005F80),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
++    gsSPSetLights1(coin_lights_blue),
++    gsSPBranchList(coin_material_mesh),
+ };
+ 
+-// 0x03007990 - 0x030079B8
+-const Gfx coin_seg3_dl_03007990[] = {
+-    gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006780),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
+-};
++Lights1 coin_lights_red = gdSPDefLights1(
++	0x78, 0x12, 0x07,
++	0xF0, 0x25, 0x0F, 0x28, 0x28, 0x28);
+ 
+-// 0x030079B8 - 0x030079E0
+-const Gfx coin_seg3_dl_030079B8[] = {
++Gfx coin_material_red[] = {
+ 	gsDPPipeSync(),
+-    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006F80),
+-    gsSPDisplayList(coin_seg3_dl_03007780),
+-    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
+-    gsSPBranchList(coin_seg3_dl_030077D0),
++    gsSPSetLights1(coin_lights_red),
++    gsSPBranchList(coin_material_mesh),
+ };
+diff --git a/actors/common1.h b/actors/common1.h
+index 9a1b650..89e7b26 100644
+--- a/actors/common1.h
++++ b/actors/common1.h
+@@ -31,20 +31,10 @@ extern const GeoLayout blue_coin_geo[];
  extern const GeoLayout blue_coin_no_shadow_geo[];
  extern const GeoLayout red_coin_geo[];
  extern const GeoLayout red_coin_no_shadow_geo[];
@@ -146,16 +485,17 @@ diff -Naur sm64_refresh11/actors/common1.h sm64_refresh11_edit/actors/common1.h
 -extern const Gfx coin_seg3_dl_03007990[];
 -extern const Gfx coin_seg3_dl_030079B8[];
 +
-+extern const coin_material_yellow[];
-+extern const coin_material_blue[];
-+extern const coin_material_red[];
++extern const Gfx coin_material_yellow[];
++extern const Gfx coin_material_blue[];
++extern const Gfx coin_material_red[];
  
  // dirt
  extern const GeoLayout dirt_animation_geo[];
-diff -Naur sm64_refresh11/assets.json sm64_refresh11_edit/assets.json
---- sm64_refresh11/assets.json	2020-07-04 10:18:55.000000000 -0500
-+++ sm64_refresh11_edit/assets.json	2020-07-16 13:11:01.094843000 -0500
-@@ -182,10 +182,6 @@
+diff --git a/assets.json b/assets.json
+index dd27f39..d6e6b6c 100644
+--- a/assets.json
++++ b/assets.json
+@@ -178,10 +178,6 @@
  "actors/chuckya/chuckya_hand_antenna.rgba16.png": [32,32,2048,{"jp":[2032944,30584],"us":[2040320,30584],"eu":[1912288,30584],"sh":[1888800,30584]}],
  "actors/clam_shell/clam_shell.rgba16.png": [32,32,2048,{"jp":[1285392,48],"us":[1292560,48],"eu":[1164528,48],"sh":[1141040,48]}],
  "actors/clam_shell/clam_shell_mouth.rgba16.png": [32,32,2048,{"jp":[1285392,2096],"us":[1292560,2096],"eu":[1164528,2096],"sh":[1141040,2096]}],
@@ -166,221 +506,130 @@ diff -Naur sm64_refresh11/assets.json sm64_refresh11_edit/assets.json
  "actors/cyan_fish/cyan_fish.rgba16.png": [32,32,2048,{"jp":[1802256,54376],"us":[1809600,54376],"eu":[1681568,54376],"sh":[1658080,54376]}],
  "actors/dirt/dirt_particle.rgba16.png": [16,16,512,{"jp":[2094912,179704],"us":[2102288,179704],"eu":[1974256,179704],"sh":[1950768,179704]}],
  "actors/door/bbh_door.rgba16.png": [32,64,4096,{"jp":[2094912,66832],"us":[2102288,66832],"eu":[1974256,66832],"sh":[1950768,66832]}],
-diff -Naur sm64_refresh11/data/behavior_data.c sm64_refresh11_edit/data/behavior_data.c
---- sm64_refresh11/data/behavior_data.c	2020-07-04 10:18:55.000000000 -0500
-+++ sm64_refresh11_edit/data/behavior_data.c	2020-07-16 17:39:10.538777500 -0500
-@@ -328,6 +328,7 @@
-     BC_B(0x37), \
-     BC_PTR(dropletParams)
- 
-+#define COIN_MODEL_ROTATION_SPEED 0x0C00
- 
- const BehaviorScript bhvStarDoor[] = {
-     BEGIN(OBJ_LIST_SURFACE),
-@@ -872,17 +873,15 @@
+diff --git a/data/behavior_data.c b/data/behavior_data.c
+index 207c5d5..e931481 100644
+--- a/data/behavior_data.c
++++ b/data/behavior_data.c
+@@ -875,7 +875,7 @@ const BehaviorScript bhvMrIBlueCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      SET_INT(oInteractType, INTERACT_COIN),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_INT(oIntangibleTimer, 0),
      SET_FLOAT(oMrIUnk110, 20),
--    SET_INT(oAnimState, -1),
-     SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
-     CALL_NATIVE(bhv_coin_init),
-     SET_INT(oDamageOrCoinValue, 5),
-     SET_HITBOX(/*Radius*/ 120, /*Height*/ 64),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_coin_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
-@@ -892,20 +891,19 @@
+     SET_INT(oAnimState, -1),
+@@ -895,7 +895,7 @@ const BehaviorScript bhvCoinInsideBoo[] = {
      SET_INT(oInteractType, INTERACT_COIN),
      OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
      SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
 -    BILLBOARD(),
++    //BILLBOARD(),
      CALL_NATIVE(bhv_init_room),
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_coin_inside_boo_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
+@@ -906,7 +906,7 @@ const BehaviorScript bhvCoinInsideBoo[] = {
  const BehaviorScript bhvCoinFormationSpawn[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
++    //BILLBOARD(),
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_coin_formation_spawn_loop),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
      END_LOOP(),
- };
- 
-@@ -927,21 +925,21 @@
+@@ -930,7 +930,7 @@ const BehaviorScript bhvOneCoin[] = {
  const BehaviorScript bhvYellowCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      // Yellow coin - common:
 -    BILLBOARD(),
++    //BILLBOARD(),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
      CALL_NATIVE(bhv_yellow_coin_init),
      BEGIN_LOOP(),
-         CALL_NATIVE(bhv_yellow_coin_loop),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
+@@ -940,7 +940,7 @@ const BehaviorScript bhvYellowCoin[] = {
  
  const BehaviorScript bhvTemporaryYellowCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
 -    BILLBOARD(),
++    //BILLBOARD(),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
      CALL_NATIVE(bhv_yellow_coin_init),
      BEGIN_LOOP(),
-         CALL_NATIVE(bhv_temp_coin_loop),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
-@@ -966,12 +964,11 @@
+@@ -969,7 +969,7 @@ const BehaviorScript bhvTenCoinsSpawn[] = {
  const BehaviorScript bhvSingleCoinGetsSpawned[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
++    //BILLBOARD(),
      CALL_NATIVE(bhv_coin_init),
      SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
      BEGIN_LOOP(),
-         CALL_NATIVE(bhv_coin_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
-@@ -2831,14 +2828,12 @@
+@@ -2834,7 +2834,7 @@ const BehaviorScript bhvHiddenBlueCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      SET_INT(oInteractType, INTERACT_COIN),
      OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_HITBOX(/*Radius*/ 100, /*Height*/ 64),
      SET_INT(oDamageOrCoinValue, 5),
      SET_INT(oIntangibleTimer, 0),
--    SET_INT(oAnimState, -1),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_hidden_blue_coin_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
-@@ -3658,54 +3653,46 @@
+@@ -3665,7 +3665,7 @@ const BehaviorScript bhvActSelector[] = {
  const BehaviorScript bhvMovingYellowCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_HITBOX(/*Radius*/ 100, /*Height*/ 64),
      SET_INT(oInteractType, INTERACT_COIN),
      SET_INT(oIntangibleTimer, 0),
--    SET_INT(oAnimState, -1),
-     CALL_NATIVE(bhv_moving_yellow_coin_init),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_moving_yellow_coin_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
+@@ -3680,7 +3680,7 @@ const BehaviorScript bhvMovingYellowCoin[] = {
  const BehaviorScript bhvMovingBlueCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_INT(oIntangibleTimer, 0),
--    SET_INT(oAnimState, -1),
+     SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_moving_blue_coin_init),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_moving_blue_coin_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
+@@ -3693,7 +3693,7 @@ const BehaviorScript bhvMovingBlueCoin[] = {
  const BehaviorScript bhvBlueCoinSliding[] = {
      BEGIN(OBJ_LIST_GENACTOR),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_INT(oIntangibleTimer, 0),
--    SET_INT(oAnimState, -1),
+     SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_blue_coin_sliding_jumping_init),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_blue_coin_sliding_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
+@@ -3706,7 +3706,7 @@ const BehaviorScript bhvBlueCoinSliding[] = {
  const BehaviorScript bhvBlueCoinJumping[] = {
      BEGIN(OBJ_LIST_GENACTOR),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_INT(oIntangibleTimer, 0),
--    SET_INT(oAnimState, -1),
+     SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_blue_coin_sliding_jumping_init),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_blue_coin_jumping_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
-@@ -4632,14 +4619,12 @@
+@@ -4639,7 +4639,7 @@ const BehaviorScript bhvHiddenRedCoinStar[] = {
  const BehaviorScript bhvRedCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
++    //BILLBOARD(),
      SET_INT(oIntangibleTimer, 0),
--    SET_INT(oAnimState, -1),
+     SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_init_room),
-     CALL_NATIVE(bhv_red_coin_init),
-     BEGIN_LOOP(),
-         CALL_NATIVE(bhv_red_coin_loop),
--        ADD_INT(oAnimState, 1),
-+        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
-     END_LOOP(),
- };
- 
-diff -Naur sm64_refresh11/src/game/behaviors/coin.inc.c sm64_refresh11_edit/src/game/behaviors/coin.inc.c
---- sm64_refresh11/src/game/behaviors/coin.inc.c	2020-07-04 10:18:55.000000000 -0500
-+++ sm64_refresh11_edit/src/game/behaviors/coin.inc.c	2020-07-16 13:10:59.790798300 -0500
-@@ -55,6 +55,8 @@
-     cur_obj_set_behavior(bhvYellowCoin);
-     obj_set_hitbox(o, &sYellowCoinHitbox);
-     cur_obj_become_intangible();
-+    o->oFaceAnglePitch = 0;
-+    o->oFaceAngleRoll = 0;
+diff --git a/src/game/ingame_menu.c b/src/game/ingame_menu.c
+index 3171542..0858339 100644
+--- a/src/game/ingame_menu.c
++++ b/src/game/ingame_menu.c
+@@ -2152,28 +2152,16 @@ void shade_screen(void) {
  }
  
- void bhv_coin_loop(void) {
-@@ -105,6 +107,9 @@
-     if (cur_obj_wait_then_blink(400, 20))
-         obj_mark_for_deletion(o);
-     bhv_coin_sparkles_init();
-+    
-+    o->oFaceAnglePitch = 0;
-+    o->oFaceAngleRoll = 0;
- }
- 
- void bhv_coin_formation_spawn_loop(void) {
-diff -Naur sm64_refresh11/src/game/ingame_menu.c sm64_refresh11_edit/src/game/ingame_menu.c
---- sm64_refresh11/src/game/ingame_menu.c	2020-07-04 10:18:55.000000000 -0500
-+++ sm64_refresh11_edit/src/game/ingame_menu.c	2020-07-16 13:22:45.779947400 -0500
-@@ -2130,38 +2130,8 @@
-     gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
- }
- 
--void print_animated_red_coin(s16 x, s16 y) {
+ void print_animated_red_coin(s16 x, s16 y) {
 -    s32 timer = gGlobalTimer;
--
--    create_dl_translation_matrix(MENU_MTX_PUSH, x, y, 0);
++    f32 rotation = gGlobalTimer * 16;
+     
+     create_dl_translation_matrix(MENU_MTX_PUSH, x, y, 0);
 -    create_dl_scale_matrix(MENU_MTX_NOPUSH, 0.2f, 0.2f, 1.0f);
 -    gDPSetRenderMode(gDisplayListHead++, G_RM_TEX_EDGE, G_RM_TEX_EDGE2);
 -
@@ -398,18 +647,64 @@ diff -Naur sm64_refresh11/src/game/ingame_menu.c sm64_refresh11_edit/src/game/in
 -            gSPDisplayList(gDisplayListHead++, coin_seg3_dl_030079B8);
 -            break;
 -    }
--
--    gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
--    gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
--}
--
- void render_pause_red_coins(void) {
--    s8 x;
--
--    for (x = 0; x < gRedCoinsCollected; x++) {
--        print_animated_red_coin(GFX_DIMENSIONS_FROM_RIGHT_EDGE(30) - x * 20, 16);
--    }
-+    print_text_fmt_int(GFX_DIMENSIONS_FROM_LEFT_EDGE(30), 16, "RED COINS %d", gRedCoinsCollected);
++    create_dl_scale_matrix(MENU_MTX_NOPUSH, 0.2f, 0.2f, 0);
++    create_dl_rotation_matrix(MENU_MTX_NOPUSH, rotation, 0, 1.0f, 0);
+     
++    gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_TEX_EDGE, G_RM_AA_ZB_TEX_EDGE2);
++    gSPDisplayList(gDisplayListHead++, coin_material_red);
+     gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
++
+     gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
  }
  
- #ifdef VERSION_EU
+diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
+index c7ef0bd..edc611c 100644
+--- a/src/game/object_helpers.c
++++ b/src/game/object_helpers.c
+@@ -126,6 +126,21 @@ Gfx *geo_update_layer_transparency(s32 callContext, struct GraphNode *node, UNUS
+     return dlStart;
+ }
+ 
++Gfx *geo_rotate_coin(s32 callContext, struct GraphNode *node, UNUSED void *context) {
++    struct Object *obj;
++
++    if (callContext == GEO_CONTEXT_RENDER) {
++        obj = (struct Object *) gCurGraphNodeObject; // TODO: change global type to Object pointer
++
++        obj->oFaceAngleYaw += 0x0800;
++
++        if (obj->oAnimState > 0) {
++            obj->oAnimState = 0;
++        }
++    }
++    return NULL;
++}
++
+ /**
+  * @bug Every geo function declares the 3 parameters of callContext, node, and
+  * the matrix array. This one (see also geo_switch_area) doesn't. When executed,
+@@ -1618,6 +1633,12 @@ static void obj_spawn_loot_coins(struct Object *obj, s32 numCoins, f32 sp30,
+ 
+         coin = spawn_object(obj, model, coinBehavior);
+         obj_translate_xz_random(coin, posJitter);
++        coin->header.gfx.angle[0] = 0;
++        coin->header.gfx.angle[1] = 0;
++        coin->header.gfx.angle[2] = 0;
++        coin->oFaceAnglePitch = 0;
++        coin->oFaceAngleYaw = 0;
++        coin->oFaceAngleRoll = 0;
+         coin->oPosY = spawnHeight;
+         coin->oCoinUnk110 = sp30;
+     }
+diff --git a/src/game/object_helpers.h b/src/game/object_helpers.h
+index 895604f..538ec4f 100644
+--- a/src/game/object_helpers.h
++++ b/src/game/object_helpers.h
+@@ -76,6 +76,7 @@ Gfx *geo_switch_area(s32 callContext, struct GraphNode *node, UNUSED void *conte
+ Gfx *geo_switch_anim_state(s32 callContext, struct GraphNode *node);
+ Gfx *geo_switch_area(s32 callContext, struct GraphNode *node);
+ #endif
++Gfx *geo_rotate_coin(s32 callContext, struct GraphNode *node, UNUSED void *context);
+ void obj_update_pos_from_parent_transformation(Mat4 a0, struct Object *a1);
+ void obj_apply_scale_to_matrix(struct Object *obj, Mat4 dst, Mat4 src);
+ void create_transformation_from_matrices(Mat4 a0, Mat4 a1, Mat4 a2);
