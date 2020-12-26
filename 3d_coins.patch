@@ -1,0 +1,415 @@
+diff -Naur sm64_refresh11/actors/coin/geo.inc.c sm64_refresh11_edit/actors/coin/geo.inc.c
+--- sm64_refresh11/actors/coin/geo.inc.c	2020-07-04 10:18:55.000000000 -0500
++++ sm64_refresh11_edit/actors/coin/geo.inc.c	2020-07-16 14:26:25.897695600 -0500
+@@ -1,113 +1,38 @@
+-// 0x1600013C
+ const GeoLayout yellow_coin_geo[] = {
+-   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 50),
++   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 85),
+    GEO_OPEN_NODE(),
+-      GEO_SWITCH_CASE(8, geo_switch_anim_state),
+-      GEO_OPEN_NODE(),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007800),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007800),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007828),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007828),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007850),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007850),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007878),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007878),
+-      GEO_CLOSE_NODE(),
++      GEO_DISPLAY_LIST(LAYER_OPAQUE, coin_material_yellow),
+    GEO_CLOSE_NODE(),
+    GEO_END(),
+ };
+ 
+-// 0x160001A0
+ const GeoLayout yellow_coin_no_shadow_geo[] = {
+-   GEO_NODE_START(),
+-   GEO_OPEN_NODE(),
+-      GEO_SWITCH_CASE(8, geo_switch_anim_state),
+-      GEO_OPEN_NODE(),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007800),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007800),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007828),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007828),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007850),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007850),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007878),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007878),
+-      GEO_CLOSE_NODE(),
+-   GEO_CLOSE_NODE(),
++   GEO_BRANCH(1, yellow_coin_geo),
+    GEO_END(),
+ };
+ 
+-// 0x16000200
+ const GeoLayout blue_coin_geo[] = {
+-   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
++   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 85),
+    GEO_OPEN_NODE(),
+-      GEO_SWITCH_CASE(8, geo_switch_anim_state),
+-      GEO_OPEN_NODE(),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078A0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078A0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078C8),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078C8),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078F0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078F0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007918),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007918),
+-      GEO_CLOSE_NODE(),
++      GEO_DISPLAY_LIST(LAYER_OPAQUE, coin_material_blue),
+    GEO_CLOSE_NODE(),
+    GEO_END(),
+ };
+ 
+-// 0x16000264
+ const GeoLayout blue_coin_no_shadow_geo[] = {
+-   GEO_NODE_START(),
+-   GEO_OPEN_NODE(),
+-      GEO_SWITCH_CASE(8, geo_switch_anim_state),
+-      GEO_OPEN_NODE(),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078A0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078A0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078C8),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078C8),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078F0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030078F0),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007918),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007918),
+-      GEO_CLOSE_NODE(),
+-   GEO_CLOSE_NODE(),
++   GEO_BRANCH(1, blue_coin_geo),
+    GEO_END(),
+ };
+ 
+-// 0x160002C4
+ const GeoLayout red_coin_geo[] = {
+-   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 80),
++   GEO_SHADOW(SHADOW_CIRCLE_4_VERTS, 0xB4, 85),
+    GEO_OPEN_NODE(),
+-      GEO_SWITCH_CASE(8, geo_switch_anim_state),
+-      GEO_OPEN_NODE(),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007940),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007940),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007968),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007968),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007990),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007990),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030079B8),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030079B8),
+-      GEO_CLOSE_NODE(),
++      GEO_DISPLAY_LIST(LAYER_OPAQUE, coin_material_red),
+    GEO_CLOSE_NODE(),
+    GEO_END(),
+ };
+ 
+-// 0x16000328
+ const GeoLayout red_coin_no_shadow_geo[] = {
+-   GEO_NODE_START(),
+-   GEO_OPEN_NODE(),
+-      GEO_SWITCH_CASE(8, geo_switch_anim_state),
+-      GEO_OPEN_NODE(),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007940),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007940),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007968),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007968),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007990),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_03007990),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030079B8),
+-         GEO_DISPLAY_LIST(LAYER_ALPHA, coin_seg3_dl_030079B8),
+-      GEO_CLOSE_NODE(),
+-   GEO_CLOSE_NODE(),
++   GEO_BRANCH(1, red_coin_geo),
+    GEO_END(),
+ };
+diff -Naur sm64_refresh11/actors/common1.h sm64_refresh11_edit/actors/common1.h
+--- sm64_refresh11/actors/common1.h	2020-07-04 10:18:55.000000000 -0500
++++ sm64_refresh11_edit/actors/common1.h	2020-07-16 17:39:24.090100700 -0500
+@@ -31,20 +31,10 @@
+ extern const GeoLayout blue_coin_no_shadow_geo[];
+ extern const GeoLayout red_coin_geo[];
+ extern const GeoLayout red_coin_no_shadow_geo[];
+-extern const Gfx coin_seg3_dl_03007780[];
+-extern const Gfx coin_seg3_dl_030077D0[];
+-extern const Gfx coin_seg3_dl_03007800[];
+-extern const Gfx coin_seg3_dl_03007828[];
+-extern const Gfx coin_seg3_dl_03007850[];
+-extern const Gfx coin_seg3_dl_03007878[];
+-extern const Gfx coin_seg3_dl_030078A0[];
+-extern const Gfx coin_seg3_dl_030078C8[];
+-extern const Gfx coin_seg3_dl_030078F0[];
+-extern const Gfx coin_seg3_dl_03007918[];
+-extern const Gfx coin_seg3_dl_03007940[];
+-extern const Gfx coin_seg3_dl_03007968[];
+-extern const Gfx coin_seg3_dl_03007990[];
+-extern const Gfx coin_seg3_dl_030079B8[];
++
++extern const coin_material_yellow[];
++extern const coin_material_blue[];
++extern const coin_material_red[];
+ 
+ // dirt
+ extern const GeoLayout dirt_animation_geo[];
+diff -Naur sm64_refresh11/assets.json sm64_refresh11_edit/assets.json
+--- sm64_refresh11/assets.json	2020-07-04 10:18:55.000000000 -0500
++++ sm64_refresh11_edit/assets.json	2020-07-16 13:11:01.094843000 -0500
+@@ -182,10 +182,6 @@
+ "actors/chuckya/chuckya_hand_antenna.rgba16.png": [32,32,2048,{"jp":[2032944,30584],"us":[2040320,30584],"eu":[1912288,30584],"sh":[1888800,30584]}],
+ "actors/clam_shell/clam_shell.rgba16.png": [32,32,2048,{"jp":[1285392,48],"us":[1292560,48],"eu":[1164528,48],"sh":[1141040,48]}],
+ "actors/clam_shell/clam_shell_mouth.rgba16.png": [32,32,2048,{"jp":[1285392,2096],"us":[1292560,2096],"eu":[1164528,2096],"sh":[1141040,2096]}],
+-"actors/coin/coin_front.ia16.png": [32,32,2048,{"jp":[2094912,22400],"us":[2102288,22400],"eu":[1974256,22400],"sh":[1950768,22400]}],
+-"actors/coin/coin_side.ia16.png": [32,32,2048,{"jp":[2094912,26496],"us":[2102288,26496],"eu":[1974256,26496],"sh":[1950768,26496]}],
+-"actors/coin/coin_tilt_left.ia16.png": [32,32,2048,{"jp":[2094912,28544],"us":[2102288,28544],"eu":[1974256,28544],"sh":[1950768,28544]}],
+-"actors/coin/coin_tilt_right.ia16.png": [32,32,2048,{"jp":[2094912,24448],"us":[2102288,24448],"eu":[1974256,24448],"sh":[1950768,24448]}],
+ "actors/cyan_fish/cyan_fish.rgba16.png": [32,32,2048,{"jp":[1802256,54376],"us":[1809600,54376],"eu":[1681568,54376],"sh":[1658080,54376]}],
+ "actors/dirt/dirt_particle.rgba16.png": [16,16,512,{"jp":[2094912,179704],"us":[2102288,179704],"eu":[1974256,179704],"sh":[1950768,179704]}],
+ "actors/door/bbh_door.rgba16.png": [32,64,4096,{"jp":[2094912,66832],"us":[2102288,66832],"eu":[1974256,66832],"sh":[1950768,66832]}],
+diff -Naur sm64_refresh11/data/behavior_data.c sm64_refresh11_edit/data/behavior_data.c
+--- sm64_refresh11/data/behavior_data.c	2020-07-04 10:18:55.000000000 -0500
++++ sm64_refresh11_edit/data/behavior_data.c	2020-07-16 17:39:10.538777500 -0500
+@@ -328,6 +328,7 @@
+     BC_B(0x37), \
+     BC_PTR(dropletParams)
+ 
++#define COIN_MODEL_ROTATION_SPEED 0x0C00
+ 
+ const BehaviorScript bhvStarDoor[] = {
+     BEGIN(OBJ_LIST_SURFACE),
+@@ -872,17 +873,15 @@
+     BEGIN(OBJ_LIST_LEVEL),
+     SET_INT(oInteractType, INTERACT_COIN),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+-    BILLBOARD(),
+     SET_INT(oIntangibleTimer, 0),
+     SET_FLOAT(oMrIUnk110, 20),
+-    SET_INT(oAnimState, -1),
+     SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
+     CALL_NATIVE(bhv_coin_init),
+     SET_INT(oDamageOrCoinValue, 5),
+     SET_HITBOX(/*Radius*/ 120, /*Height*/ 64),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_coin_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+@@ -892,20 +891,19 @@
+     SET_INT(oInteractType, INTERACT_COIN),
+     OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
+     SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
+-    BILLBOARD(),
+     CALL_NATIVE(bhv_init_room),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_coin_inside_boo_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+ const BehaviorScript bhvCoinFormationSpawn[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+-    BILLBOARD(),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_coin_formation_spawn_loop),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+@@ -927,21 +925,21 @@
+ const BehaviorScript bhvYellowCoin[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+     // Yellow coin - common:
+-    BILLBOARD(),
+     OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
+     CALL_NATIVE(bhv_yellow_coin_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_yellow_coin_loop),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+ const BehaviorScript bhvTemporaryYellowCoin[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+-    BILLBOARD(),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+     CALL_NATIVE(bhv_yellow_coin_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_temp_coin_loop),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+@@ -966,12 +964,11 @@
+ const BehaviorScript bhvSingleCoinGetsSpawned[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+-    BILLBOARD(),
+     CALL_NATIVE(bhv_coin_init),
+     SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_coin_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+@@ -2831,14 +2828,12 @@
+     BEGIN(OBJ_LIST_LEVEL),
+     SET_INT(oInteractType, INTERACT_COIN),
+     OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
+-    BILLBOARD(),
+     SET_HITBOX(/*Radius*/ 100, /*Height*/ 64),
+     SET_INT(oDamageOrCoinValue, 5),
+     SET_INT(oIntangibleTimer, 0),
+-    SET_INT(oAnimState, -1),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_hidden_blue_coin_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+@@ -3658,54 +3653,46 @@
+ const BehaviorScript bhvMovingYellowCoin[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+-    BILLBOARD(),
+     SET_HITBOX(/*Radius*/ 100, /*Height*/ 64),
+     SET_INT(oInteractType, INTERACT_COIN),
+     SET_INT(oIntangibleTimer, 0),
+-    SET_INT(oAnimState, -1),
+     CALL_NATIVE(bhv_moving_yellow_coin_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_moving_yellow_coin_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+ const BehaviorScript bhvMovingBlueCoin[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+-    BILLBOARD(),
+     SET_INT(oIntangibleTimer, 0),
+-    SET_INT(oAnimState, -1),
+     CALL_NATIVE(bhv_moving_blue_coin_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_moving_blue_coin_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+ const BehaviorScript bhvBlueCoinSliding[] = {
+     BEGIN(OBJ_LIST_GENACTOR),
+     OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
+-    BILLBOARD(),
+     SET_INT(oIntangibleTimer, 0),
+-    SET_INT(oAnimState, -1),
+     CALL_NATIVE(bhv_blue_coin_sliding_jumping_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_blue_coin_sliding_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+ const BehaviorScript bhvBlueCoinJumping[] = {
+     BEGIN(OBJ_LIST_GENACTOR),
+     OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
+-    BILLBOARD(),
+     SET_INT(oIntangibleTimer, 0),
+-    SET_INT(oAnimState, -1),
+     CALL_NATIVE(bhv_blue_coin_sliding_jumping_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_blue_coin_jumping_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+@@ -4632,14 +4619,12 @@
+ const BehaviorScript bhvRedCoin[] = {
+     BEGIN(OBJ_LIST_LEVEL),
+     OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
+-    BILLBOARD(),
+     SET_INT(oIntangibleTimer, 0),
+-    SET_INT(oAnimState, -1),
+     CALL_NATIVE(bhv_init_room),
+     CALL_NATIVE(bhv_red_coin_init),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_red_coin_loop),
+-        ADD_INT(oAnimState, 1),
++        ADD_INT(oFaceAngleYaw, COIN_MODEL_ROTATION_SPEED),
+     END_LOOP(),
+ };
+ 
+diff -Naur sm64_refresh11/src/game/behaviors/coin.inc.c sm64_refresh11_edit/src/game/behaviors/coin.inc.c
+--- sm64_refresh11/src/game/behaviors/coin.inc.c	2020-07-04 10:18:55.000000000 -0500
++++ sm64_refresh11_edit/src/game/behaviors/coin.inc.c	2020-07-16 13:10:59.790798300 -0500
+@@ -55,6 +55,8 @@
+     cur_obj_set_behavior(bhvYellowCoin);
+     obj_set_hitbox(o, &sYellowCoinHitbox);
+     cur_obj_become_intangible();
++    o->oFaceAnglePitch = 0;
++    o->oFaceAngleRoll = 0;
+ }
+ 
+ void bhv_coin_loop(void) {
+@@ -105,6 +107,9 @@
+     if (cur_obj_wait_then_blink(400, 20))
+         obj_mark_for_deletion(o);
+     bhv_coin_sparkles_init();
++    
++    o->oFaceAnglePitch = 0;
++    o->oFaceAngleRoll = 0;
+ }
+ 
+ void bhv_coin_formation_spawn_loop(void) {
+diff -Naur sm64_refresh11/src/game/ingame_menu.c sm64_refresh11_edit/src/game/ingame_menu.c
+--- sm64_refresh11/src/game/ingame_menu.c	2020-07-04 10:18:55.000000000 -0500
++++ sm64_refresh11_edit/src/game/ingame_menu.c	2020-07-16 13:22:45.779947400 -0500
+@@ -2130,38 +2130,8 @@
+     gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
+ }
+ 
+-void print_animated_red_coin(s16 x, s16 y) {
+-    s32 timer = gGlobalTimer;
+-
+-    create_dl_translation_matrix(MENU_MTX_PUSH, x, y, 0);
+-    create_dl_scale_matrix(MENU_MTX_NOPUSH, 0.2f, 0.2f, 1.0f);
+-    gDPSetRenderMode(gDisplayListHead++, G_RM_TEX_EDGE, G_RM_TEX_EDGE2);
+-
+-    switch (timer & 6) {
+-        case 0:
+-            gSPDisplayList(gDisplayListHead++, coin_seg3_dl_03007940);
+-            break;
+-        case 2:
+-            gSPDisplayList(gDisplayListHead++, coin_seg3_dl_03007968);
+-            break;
+-        case 4:
+-            gSPDisplayList(gDisplayListHead++, coin_seg3_dl_03007990);
+-            break;
+-        case 6:
+-            gSPDisplayList(gDisplayListHead++, coin_seg3_dl_030079B8);
+-            break;
+-    }
+-
+-    gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+-    gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
+-}
+-
+ void render_pause_red_coins(void) {
+-    s8 x;
+-
+-    for (x = 0; x < gRedCoinsCollected; x++) {
+-        print_animated_red_coin(GFX_DIMENSIONS_FROM_RIGHT_EDGE(30) - x * 20, 16);
+-    }
++    print_text_fmt_int(GFX_DIMENSIONS_FROM_LEFT_EDGE(30), 16, "RED COINS %d", gRedCoinsCollected);
+ }
+ 
+ #ifdef VERSION_EU
