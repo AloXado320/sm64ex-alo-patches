@@ -1,0 +1,248 @@
+diff --git a/include/level_commands.h b/include/level_commands.h
+index f2490fe..af6a953 100644
+--- a/include/level_commands.h
++++ b/include/level_commands.h
+@@ -315,4 +315,10 @@
+ #define GET_OR_SET(op, var) \
+     CMD_BBBB(0x3C, 0x04, op, var)
+ 
++#define ADV_DEMO() \
++    CMD_BBH(0x3D, 0x04, 0x0000)
++    
++#define CLEAR_DEMO_PTR() \
++    CMD_BBH(0x3E, 0x04, 0x0000)
++
+ #endif // LEVEL_COMMANDS_H
+diff --git a/levels/intro/script.c b/levels/intro/script.c
+index a130cc0..7cdaed8 100644
+--- a/levels/intro/script.c
++++ b/levels/intro/script.c
+@@ -47,50 +47,28 @@ const LevelScript level_intro_mario_head_regular[] = {
+     INIT_LEVEL(),
+     BLACKOUT(/*active*/ TRUE),
+     FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-    LOAD_MARIO_HEAD(/*loadHeadID*/ REGULAR_FACE),
+     LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
+     LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
+ 
+     ALLOC_LEVEL_POOL(),
+-    AREA(/*index*/ 1, intro_geo_mario_head_regular),
+-    END_AREA(),
+     FREE_LEVEL_POOL(),
+ 
+     SLEEP(/*frames*/ 2),
+     BLACKOUT(/*active*/ FALSE),
+-    LOAD_AREA(/*area*/ 1),
++
++    CLEAR_DEMO_PTR(), // we need to do this or else file select will be tainted with inputs
++    GET_OR_SET(/*op*/ OP_GET, /*var*/ 5),
++    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 1, script_intro_L1), // was start pressed when demo ended last time?
++
+     SET_MENU_MUSIC(/*seq*/ 0x0002),
+     TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
+     SLEEP(/*frames*/ 20),
+-    CALL_LOOP(/*arg*/ 1, /*func*/ lvl_intro_update),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
+-    JUMP(script_intro_L4),
++    ADV_DEMO(), // advance the demo ID manually with a new command which sets the level as script register
++    JUMP(script_intro_L4), // go to ingame
+ };
+ 
+ const LevelScript level_intro_mario_head_dizzy[] = {
+-    INIT_LEVEL(),
+-    BLACKOUT(/*active*/ TRUE),
+-    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-    LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
+-    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
+-    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
+-    ALLOC_LEVEL_POOL(),
+-
+-    AREA(/*index*/ 1, intro_geo_mario_head_dizzy),
+-    END_AREA(),
+-
+-    FREE_LEVEL_POOL(),
+-    SLEEP(/*frames*/ 2),
+-    BLACKOUT(/*active*/ FALSE),
+-    LOAD_AREA(/*area*/ 1),
+-    SET_MENU_MUSIC(/*seq*/ 0x0082),
+-    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
+-    SLEEP(/*frames*/ 20),
+-    CALL_LOOP(/*arg*/ 2, /*func*/ lvl_intro_update),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
+-    JUMP(script_intro_L4),
++    JUMP(level_intro_mario_head_regular),
+ };
+ 
+ const LevelScript level_intro_entry_4[] = {
+@@ -103,6 +81,7 @@ const LevelScript level_intro_entry_4[] = {
+ 
+     AREA(/*index*/ 1, intro_geo_000414),
+     END_AREA(),
++    CLEAR_DEMO_PTR(),
+ 
+     FREE_LEVEL_POOL(),
+     LOAD_AREA(/*area*/ 1),
+diff --git a/src/engine/level_script.c b/src/engine/level_script.c
+index c72654f..1744e5e 100644
+--- a/src/engine/level_script.c
++++ b/src/engine/level_script.c
+@@ -740,6 +740,8 @@ static void level_cmd_38(void) {
+     sCurrentCmd = CMD_NEXT;
+ }
+ 
++extern int gPressedStart;
++
+ static void level_cmd_get_or_set_var(void) {
+     if (CMD_GET(u8, 2) == 0) {
+         switch (CMD_GET(u8, 3)) {
+@@ -758,6 +760,9 @@ static void level_cmd_get_or_set_var(void) {
+             case 4:
+                 gCurrAreaIndex = sRegister;
+                 break;
++            case 5: 
++                gPressedStart = sRegister; 
++                break;
+         }
+     } else {
+         switch (CMD_GET(u8, 3)) {
+@@ -776,12 +781,48 @@ static void level_cmd_get_or_set_var(void) {
+             case 4:
+                 sRegister = gCurrAreaIndex;
+                 break;
++            case 5: 
++                sRegister = gPressedStart; 
++                break;
+         }
+     }
+ 
+     sCurrentCmd = CMD_NEXT;
+ }
+ 
++int gDemoLevels[] = {
++    LEVEL_BOWSER_1,
++    LEVEL_WF,
++    LEVEL_CCM,
++    LEVEL_BBH,
++    LEVEL_JRB,
++    LEVEL_HMC,
++    LEVEL_PSS
++};
++
++int gDemoLevelID = 0;
++
++extern s32 start_demo_intro(int);
++
++static void level_cmd_advdemo(void) {
++    s16 count = ARRAY_COUNT(gDemoLevels) - 1;
++    
++    start_demo_intro(0);
++    if (gDemoLevelID == count) {
++        sRegister = gDemoLevels[count];
++        gDemoLevelID = 0;
++    } else {
++        sRegister = gDemoLevels[gDemoLevelID++];
++    }
++
++    sCurrentCmd = CMD_NEXT;
++}
++
++static void level_cmd_cleardemoptr(void) {
++    gCurrDemoInput = NULL;
++    sCurrentCmd = CMD_NEXT;
++}
++
+ static void (*LevelScriptJumpTable[])(void) = {
+     /*00*/ level_cmd_load_and_execute,
+     /*01*/ level_cmd_exit_and_execute,
+@@ -844,6 +885,8 @@ static void (*LevelScriptJumpTable[])(void) = {
+     /*3A*/ level_cmd_3A,
+     /*3B*/ level_cmd_create_whirlpool,
+     /*3C*/ level_cmd_get_or_set_var,
++    /*3D*/ level_cmd_advdemo,
++    /*3E*/ level_cmd_cleardemoptr,
+ };
+ 
+ struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
+diff --git a/src/game/area.c b/src/game/area.c
+index 8eea70a..914a49b 100644
+--- a/src/game/area.c
++++ b/src/game/area.c
+@@ -133,6 +133,18 @@ void print_intro_text(void) {
+     }
+ }
+ 
++void print_intro_text_demo(void) {
++    if (gControllerBits == 0) {
++        print_text_centered(160, 20, "NO CONTROLLER");
++    } else {
++        print_text_centered(160, 164, "SUPER MARIO 64");
++        print_text_centered(160, 128, "MADE BY");
++        print_text_centered(160, 110, "NINTENDO");
++        print_text_centered(160, 38, "PRESS START");
++        print_text_centered(160, 20, "COPYRIGHT 1996");
++    }
++}
++
+ u32 get_mario_spawn_type(struct Object *o) {
+     s32 i;
+     const BehaviorScript *behavior = virtual_to_segmented(0x13, o->behavior);
+diff --git a/src/game/level_update.c b/src/game/level_update.c
+index 0ce7b1e..19d049b 100644
+--- a/src/game/level_update.c
++++ b/src/game/level_update.c
+@@ -989,14 +989,18 @@ void basic_update(UNUSED s16 *arg) {
+     }
+ }
+ 
++extern void print_intro_text_demo(void);
++int gPressedStart = FALSE;
++
+ s32 play_mode_normal(void) {
+     if (gCurrDemoInput != NULL) {
+-        print_intro_text();
++        print_intro_text_demo();
+         if (gPlayer1Controller->buttonPressed & END_DEMO) {
+             level_trigger_warp(gMarioState,
+                                gCurrLevelNum == LEVEL_PSS ? WARP_OP_DEMO_END : WARP_OP_DEMO_NEXT);
+         } else if (!gWarpTransition.isActive && sDelayedWarpOp == WARP_OP_NONE
+                    && (gPlayer1Controller->buttonPressed & START_BUTTON)) {
++            gPressedStart = TRUE;
+             level_trigger_warp(gMarioState, WARP_OP_DEMO_NEXT);
+         }
+     }
+diff --git a/src/menu/level_select_menu.c b/src/menu/level_select_menu.c
+index a9e91cf..03e94f7 100644
+--- a/src/menu/level_select_menu.c
++++ b/src/menu/level_select_menu.c
+@@ -72,6 +72,29 @@ s32 run_press_start_demo_timer(s32 timer) {
+     return timer;
+ }
+ 
++extern int gPressedStart;
++u16 gDemoInputListIDForIntro = 0;
++
++s32 start_demo_intro(int timer) {
++	gCurrDemoInput = NULL;
++	gPressedStart = FALSE;
++    // start the mario demo animation for the demo list.
++    load_patchable_table(&gDemo, gDemoInputListIDForIntro);
++
++    // if the next demo sequence ID is the count limit, reset it back to
++    // the first sequence.
++
++    if((++gDemoInputListIDForIntro) == gDemo.animDmaTable->count)
++        gDemoInputListIDForIntro = 0;
++
++    // add 1 (+4) to the pointer to skip the demoID.
++    gCurrDemoInput = ((struct DemoInput *) gDemo.targetAnim) + 1;
++    timer = (s8)((struct DemoInput *) gDemo.targetAnim)->timer;
++    gCurrSaveFileNum = 1;
++    gCurrActNum = 6;
++    return timer;
++}
++
+ // input loop for the level select menu. updates the selected stage
+ // count if an input was received. signals the stage to be started
+ // or the level select to be exited if start or the quit combo is
