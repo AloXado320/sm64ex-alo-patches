@@ -94,7 +94,7 @@ index 0000000..23003cf
 +
 +#endif // __EXTENDED_BOUNDS_H__
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index a66b67c..f09380d 100644
+index a66b67c..7cc1ed3 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -191,13 +191,6 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
@@ -123,7 +123,7 @@ index a66b67c..f09380d 100644
  
      // Stay in this loop until out of ceilings.
      while (surfaceNode != NULL) {
-@@ -267,37 +260,38 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -267,12 +260,10 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
              continue;
          }
  
@@ -133,57 +133,40 @@ index a66b67c..f09380d 100644
 -            f32 nz = surf->normal.z;
 -            f32 oo = surf->originOffset;
 -            f32 height;
--
--            // If a wall, ignore it. Likely a remnant, should never occur.
--            if (ny == 0.0f) {
--                continue;
--            }
--
--            // Find the ceil height at the specific point.
--            height = -(x * nx + nz * z + oo) / ny;
--
++        nx = surf->normal.x;
++        ny = surf->normal.y;
++        nz = surf->normal.z;
++        oo = surf->originOffset;
+ 
+         // If a wall, ignore it. Likely a remnant, should never occur.
+         if (ny == 0.0f) {
+@@ -281,23 +272,26 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+ 
+         // Find the ceil height at the specific point.
+         height = -(x * nx + nz * z + oo) / ny;
++        if (height > *pheight) {
++            continue;
++        }
++
++        // Checks for ceiling interaction
++        if (y > height) {
++            continue;
++        }
+ 
 -            // Checks for ceiling interaction with a 78 unit buffer.
 -            //! (Exposed Ceilings) Because any point above a ceiling counts
 -            //  as interacting with a ceiling, ceilings far below can cause
 -            // "invisible walls" that are really just exposed ceilings.
 -            if (y - (height - -78.0f) > 0.0f) {
--                continue;
--            }
--
--            *pheight = height;
--            ceil = surf;
--            break;
--        }
-+		nx = surf->normal.x;
-+		ny = surf->normal.y;
-+		nz = surf->normal.z;
-+		oo = surf->originOffset;
-+
-+		// If a wall, ignore it. Likely a remnant, should never occur.
-+		if (ny == 0.0f) {
-+			continue;
-+		}
-+
-+		// Find the ceil height at the specific point.
-+		height = -(x * nx + nz * z + oo) / ny;
-+		if (height > *pheight) {
-+			continue;
-+		}
-+
-+		// Checks for ceiling interaction
-+		if (y > height) {
-+			continue;
-+		}
-+
-+		if (y >= surf->upperY) {
-+			continue;
-+		}
-+
-+		*pheight = height;
-+		ceil = surf;
-+		if (height == y) {
-+			break;
-+		}
++        if (y >= surf->upperY) {
+             continue;
+         }
+ 
+         *pheight = height;
+         ceil = surf;
++        if (height == y) {
+             break;
+         }
      }
  
 -    //! (Surface Cucking) Since only the first ceil is returned and not the lowest,
@@ -218,18 +201,7 @@ index a66b67c..f09380d 100644
  
      // Iterate through the list of floors until there are no more floors.
      while (surfaceNode != NULL) {
-@@ -447,25 +433,29 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
-         nz = surf->normal.z;
-         oo = surf->originOffset;
- 
--        // If a wall, ignore it. Likely a remnant, should never occur.
--        if (ny == 0.0f) {
--            continue;
--        }
-+		// If a wall, ignore it. Likely a remnant, should never occur.
-+		if (ny == 0.0f) {
-+			continue;
-+		}
+@@ -454,18 +440,22 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
  
          // Find the height of the floor at a given location.
          height = -(x * nx + nz * z + oo) / ny;
@@ -245,11 +217,10 @@ index a66b67c..f09380d 100644
  
          *pheight = height;
          floor = surf;
--        break;
 +        if (height - 78.0f == y) {
-+            break;
-+        }
-     }
+             break;
+         }
++    }
  
 -    //! (Surface Cucking) Since only the first floor is returned and not the highest,
 -    //  higher floors can be "cucked" by lower floors.
@@ -503,16 +474,14 @@ index 6a85802..0c5a58f 100644
      return yaw;
  }
  
-@@ -8427,7 +8415,8 @@ BAD_RETURN(s32) cutscene_red_coin_star_warp(struct Camera *c) {
+@@ -8427,6 +8415,7 @@ BAD_RETURN(s32) cutscene_red_coin_star_warp(struct Camera *c) {
      f32 dist;
      s16 pitch, yaw, posYaw;
      struct Object *o = gCutsceneFocus;
--
 +    gIsGameCutsceneActive = TRUE;
-+    
+     
      vec3f_set(sCutsceneVars[1].point, o->oHomeX, o->oHomeY, o->oHomeZ);
      vec3f_get_dist_and_angle(sCutsceneVars[1].point, c->pos, &dist, &pitch, &yaw);
-     posYaw = calculate_yaw(sCutsceneVars[1].point, c->pos);
 @@ -8469,6 +8458,7 @@ BAD_RETURN(s32) cutscene_red_coin_star(struct Camera *c) {
   * End the red coin star spawning cutscene
   */
@@ -721,7 +690,7 @@ index c7ef0bd..b9429b0 100644
  
              if (sp20) {
                  gMarioCurrentRoom = sp20->room;
-@@ -1833,29 +1838,11 @@ void cur_obj_move_standard(s16 steepSlopeAngleDegrees) {
+@@ -1833,30 +1838,12 @@ void cur_obj_move_standard(s16 steepSlopeAngleDegrees) {
      }
  }
  
@@ -747,10 +716,11 @@ index c7ef0bd..b9429b0 100644
          o->oPosZ += o->oVelZ;
          o->oVelY += o->oGravity; //! No terminal velocity
          o->oPosY += o->oVelY;
--    }
  }
+-}
  
  void cur_obj_move_using_fvel_and_gravity(void) {
+     cur_obj_compute_vel_xz();
 @@ -2428,6 +2415,10 @@ void cur_obj_enable_rendering_if_mario_in_room(void) {
              marioInRoom = TRUE;
          } else if (gDoorAdjacentRooms[gMarioCurrentRoom][1] == o->oRoom) {
