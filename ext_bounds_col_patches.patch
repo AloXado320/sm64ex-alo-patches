@@ -439,7 +439,7 @@ index e41a04a..b62e157 100644
  extern SpatialPartitionCell gDynamicSurfacePartition[NUM_CELLS][NUM_CELLS];
  extern struct SurfaceNode *sSurfaceNodePool;
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 6a85802..0c5a58f 100644
+index 6a85802..9a047c3 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -388,6 +388,8 @@ struct CameraStoredInfo sCameraStoreCUp;
@@ -479,7 +479,7 @@ index 6a85802..0c5a58f 100644
      s16 pitch, yaw, posYaw;
      struct Object *o = gCutsceneFocus;
 +    gIsGameCutsceneActive = TRUE;
-     
+ 
      vec3f_set(sCutsceneVars[1].point, o->oHomeX, o->oHomeY, o->oHomeZ);
      vec3f_get_dist_and_angle(sCutsceneVars[1].point, c->pos, &dist, &pitch, &yaw);
 @@ -8469,6 +8458,7 @@ BAD_RETURN(s32) cutscene_red_coin_star(struct Camera *c) {
@@ -539,7 +539,7 @@ index 32a733e..9671d70 100644
      }
  }
 diff --git a/src/game/mario.c b/src/game/mario.c
-index f95c89f..773f3e5 100644
+index f95c89f..5e17434 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
 @@ -528,6 +528,10 @@ u32 mario_get_terrain_sound_addend(struct MarioState *m) {
@@ -592,6 +592,15 @@ index f95c89f..773f3e5 100644
  }
  
  /**
+@@ -1348,7 +1363,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
+     f32 ceilToFloorDist;
+ 
+     f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 60.0f, 50.0f);
+-    f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 30.0f, 24.0f);
++    f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 30.0f, 25.0f);
+ 
+     m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
+ 
 @@ -1361,7 +1376,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
          m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
      }
