@@ -1,5 +1,5 @@
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index d27cf09..ba89b2e 100644
+index 207c5d5..9ac76e0 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
 @@ -1577,6 +1577,25 @@ const BehaviorScript bhvBlackSmokeUpward[] = {
@@ -29,7 +29,7 @@ index d27cf09..ba89b2e 100644
      BEGIN(OBJ_LIST_DEFAULT),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
 diff --git a/include/behavior_data.h b/include/behavior_data.h
-index 6a92882..02eb361 100644
+index 7acb330..47d8953 100644
 --- a/include/behavior_data.h
 +++ b/include/behavior_data.h
 @@ -117,6 +117,8 @@ extern const BehaviorScript bhvFireParticleSpawner[];
@@ -42,7 +42,7 @@ index 6a92882..02eb361 100644
  extern const BehaviorScript bhvSpindrift[];
  extern const BehaviorScript bhvTowerPlatformGroup[];
 diff --git a/src/game/behavior_actions.h b/src/game/behavior_actions.h
-index ba6e99b..42391cc 100644
+index d068492..9520b55 100644
 --- a/src/game/behavior_actions.h
 +++ b/src/game/behavior_actions.h
 @@ -111,6 +111,8 @@ void bhv_flame_mario_loop(void);
@@ -55,7 +55,7 @@ index ba6e99b..42391cc 100644
  void bhv_spindrift_loop(void);
  void bhv_tower_platform_group_loop(void);
 diff --git a/src/game/behaviors/beta_fish_splash_spawner.inc.c b/src/game/behaviors/beta_fish_splash_spawner.inc.c
-index 6daab4c..121dbc6 100644
+index 6daab4c..a967a8c 100644
 --- a/src/game/behaviors/beta_fish_splash_spawner.inc.c
 +++ b/src/game/behaviors/beta_fish_splash_spawner.inc.c
 @@ -8,10 +8,81 @@
@@ -106,7 +106,7 @@ index 6daab4c..121dbc6 100644
 +    f32 scale;
 +    struct Object *dropObj;
 +    f32 waterLvl = find_water_level(o->oPosX, o->oPosZ);
-+    
++
 +    switch (o->oAction) {
 +        case 0:
 +            if (o->oDistanceToMario < 200.0f) {
@@ -119,7 +119,7 @@ index 6daab4c..121dbc6 100644
 +                    if (gGlobalTimer % 32 == 0) {
 +                        cur_obj_play_sound_2(SOUND_GENERAL_MOVING_WATER);
 +                    }
-+                    
++    
 +                    for (i = 0; i < 2; i++) {
 +                        if ((random_u16() & 0x1F) == 0) {
 +                            dropObj = spawn_object(o, MODEL_FISH, bhvBetaFishSmallDrop);
@@ -135,13 +135,13 @@ index 6daab4c..121dbc6 100644
 +                        dropObj->oPosY = waterLvl;
 +                        dropObj->oForwardVel = random_float() * 3 + 2;
 +                        dropObj->oVelY = random_float() * 20 + 20;
-+					}
-+				}
-+			}
-+            
++                    }
++                }
++            }
++
 +            if (o->oDistanceToMario > 300.0f) {
 +                o->oAction = 0;
 +            }
 +            break;
-+        }
++    }
  }
