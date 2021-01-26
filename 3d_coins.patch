@@ -1,13 +1,23 @@
 diff --git a/actors/coin/coin_custom.i4.png b/actors/coin/coin_custom.i4.png
 new file mode 100644
-index 0000000..d55727c
---- /dev/null
-+++ b/actors/coin/coin_custom.i4.png
-@@ -0,0 +1,4 @@
-+臼NG
-+
-+   
-IHDR           szz・  	pHYs     囿  )IDATX	﨑ｯr1ﾆCｧ吋・吋"・準・N"践$吋"践$ｮ蝸ﾎﾇ､嶺r9ｦﾅｰ3irawｿodﾛ;渮_諷Bl&ﾐ9ﾗ・TUeﾖ・SU・b}ｻﾝ,x4~ﾟ④3扼ｻｸ2・ ｿ・;sMCﾔo6ﾃN・ﾎ"3ｹ綻｢?扼xｹ\Z<｢g].SE・騅ｻｵ 4 ﾍ銛Gｲﾐ・ﾑ侵-9=対f3・＆eiﾆ羈ﾍﾉﾂ`0ｰ菻｡L1・ｨﾁ L烟#D⊆@>澪｢・$X舅ｱXﾔﾍ・(ｭﾔ#刑Dﾅo憖・・・弴ﾑ孝u錝ｻG・ﾊｱ 3z\BD蓴Yｯ	u・・"p・ﾄ# %㌫ｨｺﾏﾙ	<H・獪'粋E"┓ﾀ氏c% ﾇdg鼓6佇ｦﾀ$Cｧ-｢_ｭVv\7E酸$I@｣7\・'的・I8・・a鑛in@>%・pN=yJ!!ﾝ錙ﾒ%ﾂ=淘=Uoｻ@8悋ﾆ｢!q,蹈・錦ﾍ=wzAｮｿﾐﾙ寇ｮﾏ・g"wsIe・汗綾~ﾝs#・+｣ｰ・g|ﾇ､ｱJs塔芯・8:庚・.86・ｶIr蕙ﾀ;ﾟs5f・k ｦ    IENDｮB`・\ No newline at end of file
+index 0000000000000000000000000000000000000000..588cd42044a0a7473ce4dcb90ffcb89b026458b2
+GIT binary patch
+literal 539
+zcmV+$0_6RPP)<h;3K|Lk000e1NJLTq001BW001Be1^@s6b9#F80005vNkl<Zc-rlj
+zEsVlI5Jne=tgJ*Lkw_#Gi9{liNMvOtva%A1L?V$$B(f66-P`0NJ<@iE-ob^0NhXD5
+zcjnE{PU)OZr>px%>3jg*7N95!mt~oYqR7o=v)2M#E*H06uifEraNTa#O(qjJ9*<uK
+zu;1@pk|ZvUW3Oamu~@iXulIZaoUK+XAN^=F@&Ewwc{-i?j64-!x7+#XsXaY_0EA<D
+z;n6HS1fb}T$D?;n^a$VSiNRp-a6{Gt&}dQ|^Caz?&Biy}d_MoNKhJXy0t8tgLn?<r
+zO#nC{%{cu2?dBXsFiN!dM%hbg&gZk=%RV5`e!uV6Xw)D8Q2+o4hlmCPJTc1Wx<(T)
+z5PG7VL5IU(7y#os2mmSljQ}EeY?^yO(KJPD5%q#fX$DXa@N5f#bJ?nL-Ux7?33awb
+zfE93)a}xlEsU6dfNf#11<CcV+n*o-~<?Zcfku*(x*(@)pAOMjw{TMvF^(>-U!kJL-
+z1ObRfqqZtLWafS-vA*4I{d(2iHv>?691{g)sEbwus|->eLQPp{1i(0oaSbHhYg8G~
+z<kJYoDKHv5tpP|qhZUKeS9Nz81_7A;thFuyM$2inTr2Gpc-;gv0VsVIr)|%^@89wd
+dzz5*3<O}p=)(}esU#tKC002ovPDHLkV1hE>=v@E+
+
+literal 0
+HcmV?d00001
+
 diff --git a/actors/coin/geo.inc.c b/actors/coin/geo.inc.c
 index bfb2d92..b8067f8 100644
 --- a/actors/coin/geo.inc.c
@@ -137,10 +147,10 @@ index bfb2d92..b8067f8 100644
     GEO_END(),
  };
 diff --git a/actors/coin/model.inc.c b/actors/coin/model.inc.c
-index dcb637d..899782e 100644
+index dcb637d..24429e9 100644
 --- a/actors/coin/model.inc.c
 +++ b/actors/coin/model.inc.c
-@@ -1,176 +1,167 @@
+@@ -1,176 +1,166 @@
 -// Coin
 -
 -// 0x030056C0
@@ -186,139 +196,139 @@ index dcb637d..899782e 100644
 -ALIGNED8 static const Texture coin_seg3_texture_03006F80[] = {
 -#include "actors/coin/coin_tilt_left.ia16.inc.c"
 +ALIGNED8 const Texture coin_i4[] = {
-+	#include "actors/coin/coin_custom.i4.inc.c"
++    #include "actors/coin/coin_custom.i4.inc.c"
 +};
 +
 +Vtx coin_material_mesh_vtx_0[53] = {
-+	{{{-17, 6, -5},0, {-784, 939},{0xD1, 0xAC, 0xAD, 0xFF}}},
-+	{{{17, 6, -5},0, {-272, 939},{0x2F, 0xAC, 0xAD, 0xFF}}},
-+	{{{0, 2, -5},0, {-528, 1008},{0x0, 0xA0, 0xAC, 0xFF}}},
-+	{{{30, 19, -5},0, {-85, 752},{0x52, 0xCF, 0xAD, 0xFF}}},
-+	{{{-30, 19, -5},0, {-972, 752},{0xAE, 0xCF, 0xAD, 0xFF}}},
-+	{{{35, 36, -5},0, {-16, 496},{0x60, 0x0, 0xAD, 0xFF}}},
-+	{{{-35, 36, -5},0, {-1040, 496},{0xA0, 0x0, 0xAD, 0xFF}}},
-+	{{{30, 53, -5},0, {-85, 240},{0x52, 0x31, 0xAD, 0xFF}}},
-+	{{{-30, 53, -5},0, {-972, 240},{0xAE, 0x31, 0xAD, 0xFF}}},
-+	{{{17, 66, -5},0, {-272, 52},{0x2F, 0x54, 0xAD, 0xFF}}},
-+	{{{-17, 66, -5},0, {-784, 52},{0xD1, 0x54, 0xAD, 0xFF}}},
-+	{{{0, 70, -5},0, {-528, -16},{0x0, 0x60, 0xAC, 0xFF}}},
-+	{{{-17, 6, -5},0, {-272, -84},{0xD1, 0xAC, 0xAD, 0xFF}}},
-+	{{{-30, 19, 5},0, {-85, -272},{0xAE, 0xCF, 0x53, 0xFF}}},
-+	{{{-30, 19, -5},0, {-85, -272},{0xAE, 0xCF, 0xAD, 0xFF}}},
-+	{{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
-+	{{{0, 2, -5},0, {-528, -16},{0x0, 0xA0, 0xAC, 0xFF}}},
-+	{{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
-+	{{{-17, 6, -5},0, {-272, -84},{0xD1, 0xAC, 0xAD, 0xFF}}},
-+	{{{0, 2, 5},0, {-528, -16},{0x0, 0xA0, 0x54, 0xFF}}},
-+	{{{17, 6, -5},0, {-784, -84},{0x2F, 0xAC, 0xAD, 0xFF}}},
-+	{{{17, 6, 5},0, {-784, -84},{0x2F, 0xAC, 0x53, 0xFF}}},
-+	{{{30, 19, -5},0, {-972, -272},{0x52, 0xCF, 0xAD, 0xFF}}},
-+	{{{30, 19, 5},0, {-972, -272},{0x52, 0xCF, 0x53, 0xFF}}},
-+	{{{35, 36, 5},0, {-1040, -528},{0x60, 0x0, 0x53, 0xFF}}},
-+	{{{35, 36, -5},0, {-1040, -528},{0x60, 0x0, 0xAD, 0xFF}}},
-+	{{{30, 53, -5},0, {-972, -784},{0x52, 0x31, 0xAD, 0xFF}}},
-+	{{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
-+	{{{17, 66, -5},0, {-784, -971},{0x2F, 0x54, 0xAD, 0xFF}}},
-+	{{{17, 66, 5},0, {-784, -971},{0x2F, 0x54, 0x53, 0xFF}}},
-+	{{{0, 70, -5},0, {-528, -1040},{0x0, 0x60, 0xAC, 0xFF}}},
-+	{{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
-+	{{{-17, 66, -5},0, {-272, -971},{0xD1, 0x54, 0xAD, 0xFF}}},
-+	{{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
-+	{{{0, 70, -5},0, {-528, -1040},{0x0, 0x60, 0xAC, 0xFF}}},
-+	{{{-17, 66, 5},0, {-272, -971},{0xD1, 0x54, 0x53, 0xFF}}},
-+	{{{-30, 53, -5},0, {-85, -784},{0xAE, 0x31, 0xAD, 0xFF}}},
-+	{{{-30, 53, 5},0, {-85, -784},{0xAE, 0x31, 0x53, 0xFF}}},
-+	{{{-35, 36, 5},0, {-16, -528},{0xA0, 0x0, 0x53, 0xFF}}},
-+	{{{-35, 36, -5},0, {-16, -528},{0xA0, 0x0, 0xAD, 0xFF}}},
-+	{{{-30, 19, -5},0, {-85, -272},{0xAE, 0xCF, 0xAD, 0xFF}}},
-+	{{{-30, 19, 5},0, {-85, -272},{0xAE, 0xCF, 0x53, 0xFF}}},
-+	{{{35, 36, 5},0, {-1040, -528},{0x60, 0x0, 0x53, 0xFF}}},
-+	{{{30, 19, 5},0, {-972, -272},{0x52, 0xCF, 0x53, 0xFF}}},
-+	{{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
-+	{{{17, 6, 5},0, {-784, -84},{0x2F, 0xAC, 0x53, 0xFF}}},
-+	{{{0, 2, 5},0, {-528, -16},{0x0, 0xA0, 0x54, 0xFF}}},
-+	{{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
-+	{{{-30, 53, 5},0, {-85, -784},{0xAE, 0x31, 0x53, 0xFF}}},
-+	{{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
-+	{{{17, 66, 5},0, {-784, -971},{0x2F, 0x54, 0x53, 0xFF}}},
-+	{{{-17, 66, 5},0, {-272, -971},{0xD1, 0x54, 0x53, 0xFF}}},
-+	{{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
++    {{{-17, 6, -5},0, {-784, 939},{0xD1, 0xAC, 0xAD, 0xFF}}},
++    {{{17, 6, -5},0, {-272, 939},{0x2F, 0xAC, 0xAD, 0xFF}}},
++    {{{0, 2, -5},0, {-528, 1008},{0x0, 0xA0, 0xAC, 0xFF}}},
++    {{{30, 19, -5},0, {-85, 752},{0x52, 0xCF, 0xAD, 0xFF}}},
++    {{{-30, 19, -5},0, {-972, 752},{0xAE, 0xCF, 0xAD, 0xFF}}},
++    {{{35, 36, -5},0, {-16, 496},{0x60, 0x0, 0xAD, 0xFF}}},
++    {{{-35, 36, -5},0, {-1040, 496},{0xA0, 0x0, 0xAD, 0xFF}}},
++    {{{30, 53, -5},0, {-85, 240},{0x52, 0x31, 0xAD, 0xFF}}},
++    {{{-30, 53, -5},0, {-972, 240},{0xAE, 0x31, 0xAD, 0xFF}}},
++    {{{17, 66, -5},0, {-272, 52},{0x2F, 0x54, 0xAD, 0xFF}}},
++    {{{-17, 66, -5},0, {-784, 52},{0xD1, 0x54, 0xAD, 0xFF}}},
++    {{{0, 70, -5},0, {-528, -16},{0x0, 0x60, 0xAC, 0xFF}}},
++    {{{-17, 6, -5},0, {-272, -84},{0xD1, 0xAC, 0xAD, 0xFF}}},
++    {{{-30, 19, 5},0, {-85, -272},{0xAE, 0xCF, 0x53, 0xFF}}},
++    {{{-30, 19, -5},0, {-85, -272},{0xAE, 0xCF, 0xAD, 0xFF}}},
++    {{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
++    {{{0, 2, -5},0, {-528, -16},{0x0, 0xA0, 0xAC, 0xFF}}},
++    {{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
++    {{{-17, 6, -5},0, {-272, -84},{0xD1, 0xAC, 0xAD, 0xFF}}},
++    {{{0, 2, 5},0, {-528, -16},{0x0, 0xA0, 0x54, 0xFF}}},
++    {{{17, 6, -5},0, {-784, -84},{0x2F, 0xAC, 0xAD, 0xFF}}},
++    {{{17, 6, 5},0, {-784, -84},{0x2F, 0xAC, 0x53, 0xFF}}},
++    {{{30, 19, -5},0, {-972, -272},{0x52, 0xCF, 0xAD, 0xFF}}},
++    {{{30, 19, 5},0, {-972, -272},{0x52, 0xCF, 0x53, 0xFF}}},
++    {{{35, 36, 5},0, {-1040, -528},{0x60, 0x0, 0x53, 0xFF}}},
++    {{{35, 36, -5},0, {-1040, -528},{0x60, 0x0, 0xAD, 0xFF}}},
++    {{{30, 53, -5},0, {-972, -784},{0x52, 0x31, 0xAD, 0xFF}}},
++    {{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
++    {{{17, 66, -5},0, {-784, -971},{0x2F, 0x54, 0xAD, 0xFF}}},
++    {{{17, 66, 5},0, {-784, -971},{0x2F, 0x54, 0x53, 0xFF}}},
++    {{{0, 70, -5},0, {-528, -1040},{0x0, 0x60, 0xAC, 0xFF}}},
++    {{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
++    {{{-17, 66, -5},0, {-272, -971},{0xD1, 0x54, 0xAD, 0xFF}}},
++    {{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
++    {{{0, 70, -5},0, {-528, -1040},{0x0, 0x60, 0xAC, 0xFF}}},
++    {{{-17, 66, 5},0, {-272, -971},{0xD1, 0x54, 0x53, 0xFF}}},
++    {{{-30, 53, -5},0, {-85, -784},{0xAE, 0x31, 0xAD, 0xFF}}},
++    {{{-30, 53, 5},0, {-85, -784},{0xAE, 0x31, 0x53, 0xFF}}},
++    {{{-35, 36, 5},0, {-16, -528},{0xA0, 0x0, 0x53, 0xFF}}},
++    {{{-35, 36, -5},0, {-16, -528},{0xA0, 0x0, 0xAD, 0xFF}}},
++    {{{-30, 19, -5},0, {-85, -272},{0xAE, 0xCF, 0xAD, 0xFF}}},
++    {{{-30, 19, 5},0, {-85, -272},{0xAE, 0xCF, 0x53, 0xFF}}},
++    {{{35, 36, 5},0, {-1040, -528},{0x60, 0x0, 0x53, 0xFF}}},
++    {{{30, 19, 5},0, {-972, -272},{0x52, 0xCF, 0x53, 0xFF}}},
++    {{{-17, 6, 5},0, {-272, -84},{0xD1, 0xAC, 0x53, 0xFF}}},
++    {{{17, 6, 5},0, {-784, -84},{0x2F, 0xAC, 0x53, 0xFF}}},
++    {{{0, 2, 5},0, {-528, -16},{0x0, 0xA0, 0x54, 0xFF}}},
++    {{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
++    {{{-30, 53, 5},0, {-85, -784},{0xAE, 0x31, 0x53, 0xFF}}},
++    {{{30, 53, 5},0, {-972, -784},{0x52, 0x31, 0x53, 0xFF}}},
++    {{{17, 66, 5},0, {-784, -971},{0x2F, 0x54, 0x53, 0xFF}}},
++    {{{-17, 66, 5},0, {-272, -971},{0xD1, 0x54, 0x53, 0xFF}}},
++    {{{0, 70, 5},0, {-528, -1040},{0x0, 0x60, 0x54, 0xFF}}},
 +};
 +
 +Gfx coin_material_mesh_tri_0[] = {
-+	gsSPVertex(coin_material_mesh_vtx_0 + 0, 16, 0),
-+	gsSP1Triangle(0, 1, 2, 0),
-+	gsSP1Triangle(1, 0, 3, 0),
-+	gsSP1Triangle(3, 0, 4, 0),
-+	gsSP1Triangle(3, 4, 5, 0),
-+	gsSP1Triangle(5, 4, 6, 0),
-+	gsSP1Triangle(5, 6, 7, 0),
-+	gsSP1Triangle(7, 6, 8, 0),
-+	gsSP1Triangle(7, 8, 9, 0),
-+	gsSP1Triangle(9, 8, 10, 0),
-+	gsSP1Triangle(9, 10, 11, 0),
-+	gsSP1Triangle(12, 13, 14, 0),
-+	gsSP1Triangle(13, 12, 15, 0),
-+	gsSPVertex(coin_material_mesh_vtx_0 + 16, 16, 0),
-+	gsSP1Triangle(0, 1, 2, 0),
-+	gsSP1Triangle(1, 0, 3, 0),
-+	gsSP1Triangle(4, 3, 0, 0),
-+	gsSP1Triangle(3, 4, 5, 0),
-+	gsSP1Triangle(6, 5, 4, 0),
-+	gsSP1Triangle(5, 6, 7, 0),
-+	gsSP1Triangle(6, 8, 7, 0),
-+	gsSP1Triangle(8, 6, 9, 0),
-+	gsSP1Triangle(10, 8, 9, 0),
-+	gsSP1Triangle(8, 10, 11, 0),
-+	gsSP1Triangle(12, 11, 10, 0),
-+	gsSP1Triangle(11, 12, 13, 0),
-+	gsSP1Triangle(14, 13, 12, 0),
-+	gsSP1Triangle(13, 14, 15, 0),
-+	gsSPVertex(coin_material_mesh_vtx_0 + 32, 16, 0),
-+	gsSP1Triangle(0, 1, 2, 0),
-+	gsSP1Triangle(1, 0, 3, 0),
-+	gsSP1Triangle(4, 3, 0, 0),
-+	gsSP1Triangle(3, 4, 5, 0),
-+	gsSP1Triangle(4, 6, 5, 0),
-+	gsSP1Triangle(6, 4, 7, 0),
-+	gsSP1Triangle(8, 6, 7, 0),
-+	gsSP1Triangle(6, 8, 9, 0),
-+	gsSP1Triangle(9, 10, 6, 0),
-+	gsSP1Triangle(9, 11, 10, 0),
-+	gsSP1Triangle(12, 11, 9, 0),
-+	gsSP1Triangle(12, 13, 11, 0),
-+	gsSP1Triangle(13, 12, 14, 0),
-+	gsSP1Triangle(6, 10, 15, 0),
-+	gsSP1Triangle(6, 15, 5, 0),
-+	gsSPVertex(coin_material_mesh_vtx_0 + 48, 5, 0),
-+	gsSP1Triangle(0, 1, 2, 0),
-+	gsSP1Triangle(0, 2, 3, 0),
-+	gsSP1Triangle(3, 2, 4, 0),
-+	gsSPEndDisplayList(),
++    gsSPVertex(coin_material_mesh_vtx_0 + 0, 16, 0),
++    gsSP1Triangle(0, 1, 2, 0),
++    gsSP1Triangle(1, 0, 3, 0),
++    gsSP1Triangle(3, 0, 4, 0),
++    gsSP1Triangle(3, 4, 5, 0),
++    gsSP1Triangle(5, 4, 6, 0),
++    gsSP1Triangle(5, 6, 7, 0),
++    gsSP1Triangle(7, 6, 8, 0),
++    gsSP1Triangle(7, 8, 9, 0),
++    gsSP1Triangle(9, 8, 10, 0),
++    gsSP1Triangle(9, 10, 11, 0),
++    gsSP1Triangle(12, 13, 14, 0),
++    gsSP1Triangle(13, 12, 15, 0),
++    gsSPVertex(coin_material_mesh_vtx_0 + 16, 16, 0),
++    gsSP1Triangle(0, 1, 2, 0),
++    gsSP1Triangle(1, 0, 3, 0),
++    gsSP1Triangle(4, 3, 0, 0),
++    gsSP1Triangle(3, 4, 5, 0),
++    gsSP1Triangle(6, 5, 4, 0),
++    gsSP1Triangle(5, 6, 7, 0),
++    gsSP1Triangle(6, 8, 7, 0),
++    gsSP1Triangle(8, 6, 9, 0),
++    gsSP1Triangle(10, 8, 9, 0),
++    gsSP1Triangle(8, 10, 11, 0),
++    gsSP1Triangle(12, 11, 10, 0),
++    gsSP1Triangle(11, 12, 13, 0),
++    gsSP1Triangle(14, 13, 12, 0),
++    gsSP1Triangle(13, 14, 15, 0),
++    gsSPVertex(coin_material_mesh_vtx_0 + 32, 16, 0),
++    gsSP1Triangle(0, 1, 2, 0),
++    gsSP1Triangle(1, 0, 3, 0),
++    gsSP1Triangle(4, 3, 0, 0),
++    gsSP1Triangle(3, 4, 5, 0),
++    gsSP1Triangle(4, 6, 5, 0),
++    gsSP1Triangle(6, 4, 7, 0),
++    gsSP1Triangle(8, 6, 7, 0),
++    gsSP1Triangle(6, 8, 9, 0),
++    gsSP1Triangle(9, 10, 6, 0),
++    gsSP1Triangle(9, 11, 10, 0),
++    gsSP1Triangle(12, 11, 9, 0),
++    gsSP1Triangle(12, 13, 11, 0),
++    gsSP1Triangle(13, 12, 14, 0),
++    gsSP1Triangle(6, 10, 15, 0),
++    gsSP1Triangle(6, 15, 5, 0),
++    gsSPVertex(coin_material_mesh_vtx_0 + 48, 5, 0),
++    gsSP1Triangle(0, 1, 2, 0),
++    gsSP1Triangle(0, 2, 3, 0),
++    gsSP1Triangle(3, 2, 4, 0),
++    gsSPEndDisplayList(),
  };
  
 -// 0x03007780 - 0x030077D0
 -const Gfx coin_seg3_dl_03007780[] = {
-+Gfx mat_coin_coin[] = {
- 	gsDPPipeSync(),
+-    gsDPPipeSync(),
 -    gsSPClearGeometryMode(G_LIGHTING),
 -    gsDPSetCombineMode(G_CC_MODULATEIA, G_CC_MODULATEIA),
 -    gsSPTexture(0x8000, 0x8000, 0, G_TX_RENDERTILE, G_ON),
 -    gsDPSetTile(G_IM_FMT_IA, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0, G_TX_CLAMP, 5, G_TX_NOLOD, G_TX_CLAMP, 5, G_TX_NOLOD),
-+	gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT, TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT),
-+	gsSPTexture(65535, 65535, 0, 0, 1),
-+	gsDPTileSync(),
-+	gsDPSetTextureImage(G_IM_FMT_I, G_IM_SIZ_8b, 16, coin_i4),
-+	gsDPSetTile(G_IM_FMT_I, G_IM_SIZ_8b, 2, 0, 7, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0),
- 	gsDPLoadSync(),
++Gfx mat_coin_coin[] = {
++    gsDPSetCombineLERP(TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT, TEXEL0, 0, SHADE, 0, 0, 0, 0, ENVIRONMENT),
++    gsSPTexture(65535, 65535, 0, 0, 1),
++    gsDPTileSync(),
++    gsDPSetTextureImage(G_IM_FMT_I, G_IM_SIZ_8b, 16, coin_i4),
++    gsDPSetTile(G_IM_FMT_I, G_IM_SIZ_8b, 2, 0, 7, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0),
+     gsDPLoadSync(),
 -    gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 32 * 32 - 1, CALC_DXT(32, G_IM_SIZ_16b_BYTES)),
 -    gsDPSetTile(G_IM_FMT_IA, G_IM_SIZ_16b, 8, 0, G_TX_RENDERTILE, 0, G_TX_CLAMP, 5, G_TX_NOLOD, G_TX_CLAMP, 5, G_TX_NOLOD),
 -    gsDPSetTileSize(0, 0, 0, (32 - 1) << G_TEXTURE_IMAGE_FRAC, (32 - 1) << G_TEXTURE_IMAGE_FRAC),
-+	gsDPLoadTile(7, 0, 0, 62, 124),
-+	gsDPPipeSync(),
-+	gsDPSetTile(G_IM_FMT_I, G_IM_SIZ_4b, 2, 0, 0, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0),
-+	gsDPSetTileSize(0, 0, 0, 124, 124),
- 	gsSPEndDisplayList(),
++    gsDPLoadTile(7, 0, 0, 62, 124),
++    gsDPPipeSync(),
++    gsDPSetTile(G_IM_FMT_I, G_IM_SIZ_4b, 2, 0, 0, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0, G_TX_WRAP | G_TX_NOMIRROR, 5, 0),
++    gsDPSetTileSize(0, 0, 0, 124, 124),
+     gsSPEndDisplayList(),
  };
  
 -// 0x030077D0 - 0x03007800
@@ -327,14 +337,14 @@ index dcb637d..899782e 100644
 -    gsSPTexture(0x0001, 0x0001, 0, G_TX_RENDERTILE, G_OFF),
 -    gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
 +Gfx coin_material_mesh[] = {
-+	gsSPDisplayList(mat_coin_coin),
-+	gsSPDisplayList(coin_material_mesh_tri_0),
-+	gsDPPipeSync(),
- 	gsSPSetGeometryMode(G_LIGHTING),
-+	gsSPClearGeometryMode(G_TEXTURE_GEN),
-+	gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT),
-+	gsSPTexture(65535, 65535, 0, 0, 0),
- 	gsSPEndDisplayList(),
++    gsSPDisplayList(mat_coin_coin),
++    gsSPDisplayList(coin_material_mesh_tri_0),
++    gsDPPipeSync(),
+     gsSPSetGeometryMode(G_LIGHTING),
++    gsSPClearGeometryMode(G_TEXTURE_GEN),
++    gsDPSetCombineLERP(0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT, 0, 0, 0, SHADE, 0, 0, 0, ENVIRONMENT),
++    gsSPTexture(65535, 65535, 0, 0, 0),
+     gsSPEndDisplayList(),
  };
  
 -// 0x03007800 - 0x03007828
@@ -345,16 +355,22 @@ index dcb637d..899782e 100644
 -    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
 -};
--
++Lights1 coin_lights_yellow = gdSPDefLights1(
++    0x7F, 0x61, 0x07,
++    0xFF, 0xC2, 0x0E, 0x28, 0x28, 0x28);
+ 
 -// 0x03007828 - 0x03007850
 -const Gfx coin_seg3_dl_03007828[] = {
--    gsDPPipeSync(),
++Gfx coin_material_yellow[] = {
+     gsDPPipeSync(),
 -    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005F80),
 -    gsSPDisplayList(coin_seg3_dl_03007780),
 -    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
--};
--
++    gsSPSetLights1(coin_lights_yellow),
++    gsSPBranchList(coin_material_mesh),
+ };
+ 
 -// 0x03007850 - 0x03007878
 -const Gfx coin_seg3_dl_03007850[] = {
 -    gsDPPipeSync(),
@@ -363,16 +379,22 @@ index dcb637d..899782e 100644
 -    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
 -};
--
++Lights1 coin_lights_blue = gdSPDefLights1(
++    0x0D, 0x35, 0x73,
++    0x1A, 0x6B, 0xE6, 0x28, 0x28, 0x28);
+ 
 -// 0x03007878 - 0x030078A0
 -const Gfx coin_seg3_dl_03007878[] = {
--    gsDPPipeSync(),
++Gfx coin_material_blue[] = {
+     gsDPPipeSync(),
 -    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006F80),
 -    gsSPDisplayList(coin_seg3_dl_03007780),
 -    gsSPVertex(coin_seg3_vertex_030056C0, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
--};
--
++    gsSPSetLights1(coin_lights_blue),
++    gsSPBranchList(coin_material_mesh),
+ };
+ 
 -// 0x030078A0 - 0x030078C8
 -const Gfx coin_seg3_dl_030078A0[] = {
 -    gsDPPipeSync(),
@@ -399,22 +421,16 @@ index dcb637d..899782e 100644
 -    gsSPVertex(coin_seg3_vertex_03005700, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
 -};
-+Lights1 coin_lights_yellow = gdSPDefLights1(
-+	0x7F, 0x61, 0x07,
-+	0xFF, 0xC2, 0x0E, 0x28, 0x28, 0x28);
- 
+-
 -// 0x03007918 - 0x03007940
 -const Gfx coin_seg3_dl_03007918[] = {
-+Gfx coin_material_yellow[] = {
- 	gsDPPipeSync(),
+-    gsDPPipeSync(),
 -    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006F80),
 -    gsSPDisplayList(coin_seg3_dl_03007780),
 -    gsSPVertex(coin_seg3_vertex_03005700, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
-+    gsSPSetLights1(coin_lights_yellow),
-+    gsSPBranchList(coin_material_mesh),
- };
- 
+-};
+-
 -// 0x03007940 - 0x03007968
 -const Gfx coin_seg3_dl_03007940[] = {
 -    gsDPPipeSync(),
@@ -423,22 +439,16 @@ index dcb637d..899782e 100644
 -    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
 -};
-+Lights1 coin_lights_blue = gdSPDefLights1(
-+	0x0D, 0x35, 0x73,
-+	0x1A, 0x6B, 0xE6, 0x28, 0x28, 0x28);
- 
+-
 -// 0x03007968 - 0x03007990
 -const Gfx coin_seg3_dl_03007968[] = {
-+Gfx coin_material_blue[] = {
- 	gsDPPipeSync(),
+-    gsDPPipeSync(),
 -    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03005F80),
 -    gsSPDisplayList(coin_seg3_dl_03007780),
 -    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
 -    gsSPBranchList(coin_seg3_dl_030077D0),
-+    gsSPSetLights1(coin_lights_blue),
-+    gsSPBranchList(coin_material_mesh),
- };
- 
+-};
+-
 -// 0x03007990 - 0x030079B8
 -const Gfx coin_seg3_dl_03007990[] = {
 -    gsDPPipeSync(),
@@ -448,13 +458,13 @@ index dcb637d..899782e 100644
 -    gsSPBranchList(coin_seg3_dl_030077D0),
 -};
 +Lights1 coin_lights_red = gdSPDefLights1(
-+	0x78, 0x12, 0x07,
-+	0xF0, 0x25, 0x0F, 0x28, 0x28, 0x28);
++    0x78, 0x12, 0x07,
++    0xF0, 0x25, 0x0F, 0x28, 0x28, 0x28);
  
 -// 0x030079B8 - 0x030079E0
 -const Gfx coin_seg3_dl_030079B8[] = {
 +Gfx coin_material_red[] = {
- 	gsDPPipeSync(),
+     gsDPPipeSync(),
 -    gsDPSetTextureImage(G_IM_FMT_IA, G_IM_SIZ_16b, 1, coin_seg3_texture_03006F80),
 -    gsSPDisplayList(coin_seg3_dl_03007780),
 -    gsSPVertex(coin_seg3_vertex_03005740, 4, 0),
@@ -492,7 +502,7 @@ index 9a1b650..89e7b26 100644
  // dirt
  extern const GeoLayout dirt_animation_geo[];
 diff --git a/assets.json b/assets.json
-index dd27f39..d6e6b6c 100644
+index 85305a1..8ab3fb5 100644
 --- a/assets.json
 +++ b/assets.json
 @@ -178,10 +178,6 @@
@@ -619,16 +629,17 @@ index 207c5d5..e931481 100644
      SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_init_room),
 diff --git a/src/game/ingame_menu.c b/src/game/ingame_menu.c
-index 3171542..0858339 100644
+index f2f7eb6..6f9dfa9 100644
 --- a/src/game/ingame_menu.c
 +++ b/src/game/ingame_menu.c
-@@ -2152,28 +2152,16 @@ void shade_screen(void) {
+@@ -2153,26 +2153,14 @@ void shade_screen(void) {
  }
  
  void print_animated_red_coin(s16 x, s16 y) {
 -    s32 timer = gGlobalTimer;
+-
 +    f32 rotation = gGlobalTimer * 16;
-     
++    
      create_dl_translation_matrix(MENU_MTX_PUSH, x, y, 0);
 -    create_dl_scale_matrix(MENU_MTX_NOPUSH, 0.2f, 0.2f, 1.0f);
 -    gDPSetRenderMode(gDisplayListHead++, G_RM_TEX_EDGE, G_RM_TEX_EDGE2);
@@ -649,16 +660,14 @@ index 3171542..0858339 100644
 -    }
 +    create_dl_scale_matrix(MENU_MTX_NOPUSH, 0.2f, 0.2f, 0);
 +    create_dl_rotation_matrix(MENU_MTX_NOPUSH, rotation, 0, 1.0f, 0);
-     
++     
 +    gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_TEX_EDGE, G_RM_AA_ZB_TEX_EDGE2);
 +    gSPDisplayList(gDisplayListHead++, coin_material_red);
-     gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
-+
-     gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
- }
  
+     gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
+     gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index c7ef0bd..edc611c 100644
+index d80f555..dac8b86 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
 @@ -126,6 +126,21 @@ Gfx *geo_update_layer_transparency(s32 callContext, struct GraphNode *node, UNUS

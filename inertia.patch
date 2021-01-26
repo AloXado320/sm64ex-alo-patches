@@ -1,20 +1,20 @@
 diff --git a/include/types.h b/include/types.h
-index 0824598..a5dab8b 100644
+index 0824598..c1f4055 100644
 --- a/include/types.h
 +++ b/include/types.h
 @@ -344,6 +344,7 @@ struct MarioState
      /*0xBC*/ f32 peakHeight;
      /*0xC0*/ f32 quicksandDepth;
      /*0xC4*/ f32 unkC4;
-+    /*0xC8*/ Vec3f platformDisplacement;    //for inertia
++    /*0xC8*/ Vec3f platformDisplacement; // for inertia
  };
  
  #endif // _SM64_TYPES_H_
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 02a8fb5..349a65a 100644
+index c9e5451..d2ad09b 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -2192,8 +2192,46 @@ s32 check_common_airborne_cancels(struct MarioState *m) {
+@@ -2189,8 +2189,47 @@ s32 check_common_airborne_cancels(struct MarioState *m) {
      return FALSE;
  }
  
@@ -33,8 +33,8 @@ index 02a8fb5..349a65a 100644
 +    f32 magnitude;
 +    const float inertiaDisplacementScale = 16.0f;
 +
-+    magnitude = sqrtf(m->controller->stickX*m->controller->stickX + m->controller->stickY*m->controller->stickY); 
-+    magnitude = magnitude/inertiaDisplacementScale;
++    magnitude = sqrtf(m->controller->stickX * m->controller->stickX + m->controller->stickY * m->controller->stickY); 
++    magnitude /= inertiaDisplacementScale;
 +    
 +    //16.0f by default 
 +    x = magnitude * sins(m->intendedYaw); 
@@ -43,8 +43,9 @@ index 02a8fb5..349a65a 100644
 +    //reduce displacement if you arent holding in the direction of it
 +    m->pos[0] += m->platformDisplacement[0];
 +    m->vel[1] += m->platformDisplacement[1];
-+    m->platformDisplacement[1] = 0;
 +    m->pos[2] += m->platformDisplacement[2];
++
++    m->platformDisplacement[1] = 0;
 +
 +    if (absf2(m->platformDisplacement[0] + x) < absf2(m->platformDisplacement[0])){
 +        m->platformDisplacement[0] += x;

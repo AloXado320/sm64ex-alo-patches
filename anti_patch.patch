@@ -1,9 +1,9 @@
 diff --git a/include/anti_patches.h b/include/anti_patches.h
 new file mode 100644
-index 0000000..12e7e49
+index 0000000..ec68f65
 --- /dev/null
 +++ b/include/anti_patches.h
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,37 @@
 +#ifndef ANTI_PATCHES_H
 +#define ANTI_PATCHES_H
 +
@@ -37,10 +37,12 @@ index 0000000..12e7e49
 +#define ANTI_PATCH_SPEED_WALLKICK (0 || ANTI_PATCHES)
 +/// Fix hat in hand glitch
 +#define ANTI_PATCH_HAT_IN_HAND (0 || ANTI_PATCHES)
++/// Fix groundpound height damage
++#define ANTI_PATCH_GROUNDPOUND_HEIGHT (0 || ANTI_PATCHES)
 +
 +#endif // ANTI_PATCHES
 diff --git a/include/config.h b/include/config.h
-index 7c37163..a64a14b 100644
+index 04f7aa0..fa75955 100644
 --- a/include/config.h
 +++ b/include/config.h
 @@ -2,6 +2,8 @@
@@ -149,10 +151,10 @@ index 4bd7ecd..0b59947 100644
  }
  
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 51609e0..3c824d0 100644
+index d878bd0..9d113da 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
-@@ -1057,7 +1057,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -1061,7 +1061,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
  }
  
  u32 interact_cannon_base(struct MarioState *m, UNUSED u32 interactType, struct Object *o) {
@@ -166,10 +168,26 @@ index 51609e0..3c824d0 100644
          o->oInteractStatus = INT_STATUS_INTERACTED;
          m->interactObj = o;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 02a8fb5..df2467d 100644
+index c9e5451..243d309 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -412,12 +412,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
+@@ -70,7 +70,15 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+ 
+     fallHeight = m->peakHeight - m->pos[1];
+ 
++#if ANTI_PATCH_GROUNDPOUND_HEIGHT
++    if (m->action == ACT_GROUND_POUND) {
++        damageHeight = 600.0f;
++    } else {
++        damageHeight = 1150.0f;
++    } 
++#else
+     damageHeight = 1150.0f;
++#endif
+ 
+     if (m->action != ACT_TWIRLING && m->floor->type != SURFACE_BURNING) {
+         if (m->vel[1] < -55.0f) {
+@@ -405,12 +413,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
                      // not able to ledge grab it.
                      if (m->forwardVel >= 38.0f) {
                          m->particleFlags |= PARTICLE_VERTICAL_STAR;
@@ -190,7 +208,7 @@ index 02a8fb5..df2467d 100644
                      }
                  }
              } else {
-@@ -1314,6 +1322,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
+@@ -1307,6 +1323,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
          if (m->input & INPUT_A_PRESSED) {
              m->vel[1] = 52.0f;
              m->faceAngle[1] += 0x8000;
@@ -201,10 +219,10 @@ index 02a8fb5..df2467d 100644
          }
      } else if (m->forwardVel >= 38.0f) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index 3ba506f..ec53309 100644
+index aa51315..c646cab 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
-@@ -1617,6 +1617,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
+@@ -1635,6 +1635,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
      }
  
      if (is_anim_at_end(m)) {
@@ -218,28 +236,23 @@ index 3ba506f..ec53309 100644
          disable_time_stop();
      }
 diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
-index 8c2d8a0..a49d5a8 100644
+index f12cd26..46f474c 100644
 --- a/src/game/mario_actions_moving.c
 +++ b/src/game/mario_actions_moving.c
-@@ -151,8 +151,16 @@ void slide_bonk(struct MarioState *m, u32 fastAction, u32 slowAction) {
+@@ -151,7 +151,11 @@ void slide_bonk(struct MarioState *m, u32 fastAction, u32 slowAction) {
  s32 set_triple_jump_action(struct MarioState *m, UNUSED u32 action, UNUSED u32 actionArg) {
      if (m->flags & MARIO_WING_CAP) {
          return set_mario_action(m, ACT_FLYING_TRIPLE_JUMP, 0);
 -    } else if (m->forwardVel > 20.0f) {
 +    } else if (m->forwardVel > 20.0f
 +#if ANTI_PATCH_TRIPLE_JUMP_SLOPES
-+    && !(mario_floor_is_slope(m))
++    && !mario_floor_is_slope(m)
 +#endif
 +    ) {
          return set_mario_action(m, ACT_TRIPLE_JUMP, 0);
-+#if ANTI_PATCH_TRIPLE_JUMP_SLOPES
-+    } else if (mario_floor_is_slope(m)) {
-+        return set_mario_action(m, ACT_JUMP, 0);
-+#endif
      } else {
          return set_mario_action(m, ACT_JUMP, 0);
-     }
-@@ -388,6 +396,12 @@ void update_shell_speed(struct MarioState *m) {
+@@ -388,6 +392,12 @@ void update_shell_speed(struct MarioState *m) {
          m->forwardVel = 64.0f;
      }
  
@@ -252,25 +265,20 @@ index 8c2d8a0..a49d5a8 100644
      m->faceAngle[1] =
          m->intendedYaw - approach_s32((s16)(m->intendedYaw - m->faceAngle[1]), 0, 0x800, 0x800);
  
-@@ -868,8 +882,17 @@ s32 act_move_punching(struct MarioState *m) {
+@@ -862,7 +872,11 @@ s32 act_move_punching(struct MarioState *m) {
+         return set_mario_action(m, ACT_BEGIN_SLIDING, 0);
      }
  
-     if (m->actionState == 0 && (m->input & INPUT_A_DOWN)) {
+-    if (m->actionState == 0 && (m->input & INPUT_A_DOWN)) {
++    if (m->actionState == 0 && (m->input & INPUT_A_DOWN)
 +#if ANTI_PATCH_KICKING_SLOPES
-+		if (mario_floor_is_slope(m)) {
-+			return set_mario_action(m, ACT_DIVE, 0);
-+		}
-+		else {
- 			return set_mario_action(m, ACT_JUMP_KICK, 0);
- 		}
-+#else
-+        return set_mario_action(m, ACT_JUMP_KICK, 0);
++    && !mario_floor_is_slope(m)
 +#endif
-+    }
++    ) {
+         return set_mario_action(m, ACT_JUMP_KICK, 0);
+     }
  
-     m->actionState = 1;
- 
-@@ -1868,7 +1891,7 @@ s32 act_hold_freefall_land(struct MarioState *m) {
+@@ -1863,7 +1877,7 @@ s32 act_hold_freefall_land(struct MarioState *m) {
  }
  
  s32 act_long_jump_land(struct MarioState *m) {
