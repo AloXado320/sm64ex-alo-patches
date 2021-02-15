@@ -42,18 +42,18 @@ index 0000000..ec68f65
 +
 +#endif // ANTI_PATCHES
 diff --git a/include/config.h b/include/config.h
-index 04f7aa0..fa75955 100644
+index a53af26..80519e4 100644
 --- a/include/config.h
 +++ b/include/config.h
-@@ -2,6 +2,8 @@
+@@ -10,6 +10,8 @@
  
- #define CONFIG_H
- 
+ // Qol Defines
+ #include "qol_defines.h"
++// Anti Patches
 +#include "anti_patches.h"
-+
- /**
-  * @file config.h
-  * A catch-all file for configuring various bugfixes and other settings
+ 
+ // Bug Fixes
+ // --| Post-JP Version Nintendo Bug Fixes
 diff --git a/levels/wf/script.c b/levels/wf/script.c
 index 6697b49..b129500 100644
 --- a/levels/wf/script.c
@@ -168,26 +168,35 @@ index d878bd0..9d113da 100644
          o->oInteractStatus = INT_STATUS_INTERACTED;
          m->interactObj = o;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index c9e5451..243d309 100644
+index 2d92a94..deb70f6 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -70,7 +70,15 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+@@ -70,18 +70,17 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
  
      fallHeight = m->peakHeight - m->pos[1];
  
+-#pragma GCC diagnostic push
+-#pragma GCC diagnostic ignored "-Wtype-limits"
+-
+-    //! Never true
+-    if (m->actionState == ACT_GROUND_POUND) {
 +#if ANTI_PATCH_GROUNDPOUND_HEIGHT
-+    if (m->action == ACT_GROUND_POUND) {
-+        damageHeight = 600.0f;
-+    } else {
-+        damageHeight = 1150.0f;
-+    } 
++    if (m->action == ACT_GROUND_POUND)
 +#else
-     damageHeight = 1150.0f;
++    if (m->actionState == ACT_GROUND_POUND)
 +#endif
++    {
+         damageHeight = 600.0f;
+     } else {
+         damageHeight = 1150.0f;
+     }
  
+-#pragma GCC diagnostic pop
+-
      if (m->action != ACT_TWIRLING && m->floor->type != SURFACE_BURNING) {
          if (m->vel[1] < -55.0f) {
-@@ -405,12 +413,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
+             if (fallHeight > 3000.0f) {
+@@ -415,12 +414,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
                      // not able to ledge grab it.
                      if (m->forwardVel >= 38.0f) {
                          m->particleFlags |= PARTICLE_VERTICAL_STAR;
@@ -208,7 +217,7 @@ index c9e5451..243d309 100644
                      }
                  }
              } else {
-@@ -1307,6 +1323,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
+@@ -1317,6 +1324,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
          if (m->input & INPUT_A_PRESSED) {
              m->vel[1] = 52.0f;
              m->faceAngle[1] += 0x8000;
