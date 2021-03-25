@@ -1,33 +1,37 @@
 diff --git a/include/level_commands.h b/include/level_commands.h
-index f2490fe..af6a953 100644
+index 8de5aa1..892ee12 100644
 --- a/include/level_commands.h
 +++ b/include/level_commands.h
-@@ -315,4 +315,10 @@
+@@ -320,4 +320,10 @@
  #define GET_OR_SET(op, var) \
      CMD_BBBB(0x3C, 0x04, op, var)
  
 +#define ADV_DEMO() \
-+    CMD_BBH(0x3D, 0x04, 0x0000)
++    CMD_BBH(0x3E, 0x04, 0x0000)
 +    
 +#define CLEAR_DEMO_PTR() \
-+    CMD_BBH(0x3E, 0x04, 0x0000)
++    CMD_BBH(0x3F, 0x04, 0x0000)
 +
  #endif // LEVEL_COMMANDS_H
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index a130cc0..7cdaed8 100644
+index 9adb6dd..8f4ba82 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
-@@ -47,50 +47,28 @@ const LevelScript level_intro_mario_head_regular[] = {
+@@ -47,54 +47,30 @@ const LevelScript level_intro_mario_head_regular[] = {
      INIT_LEVEL(),
      BLACKOUT(/*active*/ TRUE),
      FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-#ifdef GODDARD_MFACE
 -    LOAD_MARIO_HEAD(/*loadHeadID*/ REGULAR_FACE),
+-#endif
++
      LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
      LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
  
      ALLOC_LEVEL_POOL(),
 -    AREA(/*index*/ 1, intro_geo_mario_head_regular),
 -    END_AREA(),
++
      FREE_LEVEL_POOL(),
  
      SLEEP(/*frames*/ 2),
@@ -53,7 +57,9 @@ index a130cc0..7cdaed8 100644
 -    INIT_LEVEL(),
 -    BLACKOUT(/*active*/ TRUE),
 -    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-#ifdef GODDARD_MFACE
 -    LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
+-#endif
 -    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
 -    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
 -    ALLOC_LEVEL_POOL(),
@@ -76,7 +82,7 @@ index a130cc0..7cdaed8 100644
  };
  
  const LevelScript level_intro_entry_4[] = {
-@@ -103,6 +81,7 @@ const LevelScript level_intro_entry_4[] = {
+@@ -107,6 +83,7 @@ const LevelScript level_intro_entry_4[] = {
  
      AREA(/*index*/ 1, intro_geo_000414),
      END_AREA(),
@@ -85,10 +91,10 @@ index a130cc0..7cdaed8 100644
      FREE_LEVEL_POOL(),
      LOAD_AREA(/*area*/ 1),
 diff --git a/src/engine/level_script.c b/src/engine/level_script.c
-index c72654f..1744e5e 100644
+index 54395ed..b587589 100644
 --- a/src/engine/level_script.c
 +++ b/src/engine/level_script.c
-@@ -740,6 +740,8 @@ static void level_cmd_38(void) {
+@@ -749,6 +749,8 @@ static void level_cmd_38(void) {
      sCurrentCmd = CMD_NEXT;
  }
  
@@ -97,7 +103,7 @@ index c72654f..1744e5e 100644
  static void level_cmd_get_or_set_var(void) {
      if (CMD_GET(u8, 2) == 0) {
          switch (CMD_GET(u8, 3)) {
-@@ -758,6 +760,9 @@ static void level_cmd_get_or_set_var(void) {
+@@ -767,6 +769,9 @@ static void level_cmd_get_or_set_var(void) {
              case 4:
                  gCurrAreaIndex = sRegister;
                  break;
@@ -107,12 +113,12 @@ index c72654f..1744e5e 100644
          }
      } else {
          switch (CMD_GET(u8, 3)) {
-@@ -776,12 +781,48 @@ static void level_cmd_get_or_set_var(void) {
+@@ -785,12 +790,49 @@ static void level_cmd_get_or_set_var(void) {
              case 4:
                  sRegister = gCurrAreaIndex;
                  break;
-+            case 5: 
-+                sRegister = gPressedStart; 
++            case 5:
++                sRegister = gPressedStart;
 +                break;
          }
      }
@@ -136,7 +142,7 @@ index c72654f..1744e5e 100644
 +
 +static void level_cmd_advdemo(void) {
 +    s16 count = ARRAY_COUNT(gDemoLevels) - 1;
-+    
++
 +    start_demo_intro(0);
 +    if (gDemoLevelID == count) {
 +        sRegister = gDemoLevels[count];
@@ -153,20 +159,21 @@ index c72654f..1744e5e 100644
 +    sCurrentCmd = CMD_NEXT;
 +}
 +
- static void (*LevelScriptJumpTable[])(void) = {
-     /*00*/ level_cmd_load_and_execute,
-     /*01*/ level_cmd_exit_and_execute,
-@@ -844,6 +885,8 @@ static void (*LevelScriptJumpTable[])(void) = {
-     /*3A*/ level_cmd_3A,
-     /*3B*/ level_cmd_create_whirlpool,
-     /*3C*/ level_cmd_get_or_set_var,
-+    /*3D*/ level_cmd_advdemo,
-+    /*3E*/ level_cmd_cleardemoptr,
++
+ #ifdef BETTERCAMERA
+ static void level_cmd_puppyvolume(void) {
+     if ((sPuppyVolumeStack[gPuppyVolumeCount] = mem_pool_alloc(gPuppyMemoryPool,sizeof(struct sPuppyVolume))) == NULL) {
+@@ -890,6 +932,8 @@ static void (*LevelScriptJumpTable[])(void) = {
+ #ifdef BETTERCAMERA
+     /*3D*/ level_cmd_puppyvolume,
+ #endif
++    /*3E*/ level_cmd_advdemo,
++    /*3F*/ level_cmd_cleardemoptr,
  };
  
  struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
 diff --git a/src/game/area.c b/src/game/area.c
-index 8eea70a..914a49b 100644
+index 0fc47b5..954fc95 100644
 --- a/src/game/area.c
 +++ b/src/game/area.c
 @@ -133,6 +133,18 @@ void print_intro_text(void) {
@@ -189,10 +196,10 @@ index 8eea70a..914a49b 100644
      s32 i;
      const BehaviorScript *behavior = virtual_to_segmented(0x13, o->behavior);
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 0ce7b1e..19d049b 100644
+index 9fac1ca..6991d8f 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -989,14 +989,18 @@ void basic_update(UNUSED s16 *arg) {
+@@ -995,14 +995,18 @@ void basic_update(UNUSED s16 *arg) {
      }
  }
  
