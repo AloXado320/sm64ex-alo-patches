@@ -124,23 +124,32 @@ index 0824598..2c27045 100644
  
  #endif // _SM64_TYPES_H_
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index 77466c4..50ef41b 100644
+index 7f4f588..e7122cc 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
-@@ -851,7 +851,7 @@ static void puppycam_input_core(void)
-     if (gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_8DIR || gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_4DIR)
-         puppycam_input_press();
+@@ -268,7 +268,7 @@ void puppycam_input_pitch(void)
+ void puppycam_input_zoom(void)
+ {
      //Handles R button zooming.
 -    if (gPlayer1Controller->buttonPressed & R_TRIG && gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_ZOOM_CHANGE)
 +    if (gPlayer1Controller->buttonPressed & R_JPAD && gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_ZOOM_CHANGE)
      {
          gPuppyCam.zoomSet++;
  
+@@ -396,7 +396,7 @@ static void puppycam_input_hold_preset3(f32 ivX)
+     }
+     else
+     {
+-        if (gPlayer1Controller->buttonPressed & R_TRIG)
++        if (gPlayer1Controller->buttonPressed & R_JPAD)
+         {
+             if (gPuppyCam.yawTarget % 0x2000)
+                 gPuppyCam.yawTarget += 0x2000 - gPuppyCam.yawTarget % 0x2000;
 diff --git a/src/game/behaviors/blue_coin.inc.c b/src/game/behaviors/blue_coin.inc.c
-index d10e360..59a3cb1 100644
+index e0d5025..7463d86 100644
 --- a/src/game/behaviors/blue_coin.inc.c
 +++ b/src/game/behaviors/blue_coin.inc.c
-@@ -68,7 +68,9 @@ void bhv_blue_coin_switch_loop(void) {
+@@ -80,7 +80,9 @@ void bhv_blue_coin_switch_loop(void) {
              // If Mario is on the switch and has ground-pounded,
              // recede and get ready to start ticking.
              if (gMarioObject->platform == o) {
@@ -180,7 +189,7 @@ index 23c97a0..a265e89 100644
                      cur_obj_spawn_particles(&D_8032F134);
                      spawn_triangle_break_particles(20, 138, 0.3f, 3);
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 8facfda..d1b0dbf 100644
+index af35695..e4ce601 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -1782,7 +1782,7 @@ s32 update_behind_mario_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
@@ -193,7 +202,7 @@ index 8facfda..d1b0dbf 100644
          maxDist = 350.f;
          focYOff = 120.f;
 @@ -3036,9 +3036,9 @@ void update_camera(struct Camera *c) {
-     && !gPuppyCam.enabled && !(gCurrentArea->camera->mode == CAMERA_MODE_INSIDE_CANNON)
+     && !gPuppyCam.enabled && !gCurrDemoInput && !(gCurrentArea->camera->mode == CAMERA_MODE_INSIDE_CANNON)
  #endif
      ) {
 -        // Only process R_TRIG if 'fixed' is not selected in the menu
@@ -247,7 +256,7 @@ index 8facfda..d1b0dbf 100644
      } else if (set_cam_angle(0) == CAM_ANGLE_MARIO) {
          status |= CAM_STATUS_MARIO;
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index d878bd0..c3fb6d9 100644
+index 665ec49..8e50ef5 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -209,11 +209,13 @@ u32 determine_interaction(struct MarioState *m, struct Object *o) {
@@ -267,10 +276,10 @@ index d878bd0..c3fb6d9 100644
              // so the speed check is nearly always true (perhaps not if you land while going upwards?)
              // Additionally, actionState it set on each first thing in their action, so this is
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 1dcacc8..67d613e 100644
+index 92dd7bd..a701053 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -788,7 +788,7 @@ static u32 set_mario_action_airborne(struct MarioState *m, u32 action, u32 actio
+@@ -793,7 +793,7 @@ static u32 set_mario_action_airborne(struct MarioState *m, u32 action, u32 actio
      f32 fowardVel;
  
      if ((m->squishTimer != 0 || m->quicksandDepth >= 1.0f)
@@ -279,7 +288,7 @@ index 1dcacc8..67d613e 100644
          action = ACT_JUMP;
      }
  
-@@ -836,6 +836,17 @@ static u32 set_mario_action_airborne(struct MarioState *m, u32 action, u32 actio
+@@ -841,6 +841,17 @@ static u32 set_mario_action_airborne(struct MarioState *m, u32 action, u32 actio
              m->forwardVel *= 0.8f;
              break;
  
@@ -297,7 +306,7 @@ index 1dcacc8..67d613e 100644
          case ACT_WALL_KICK_AIR:
          case ACT_TOP_OF_POLE_JUMP:
              set_mario_y_vel_based_on_fspeed(m, 62.0f, 0.0f);
-@@ -893,6 +904,10 @@ static u32 set_mario_action_airborne(struct MarioState *m, u32 action, u32 actio
+@@ -898,6 +909,10 @@ static u32 set_mario_action_airborne(struct MarioState *m, u32 action, u32 actio
          case ACT_JUMP_KICK:
              m->vel[1] = 20.0f;
              break;
@@ -308,7 +317,7 @@ index 1dcacc8..67d613e 100644
      }
  
      m->peakHeight = m->pos[1];
-@@ -1038,7 +1053,11 @@ s32 set_jump_from_landing(struct MarioState *m) {
+@@ -1043,7 +1058,11 @@ s32 set_jump_from_landing(struct MarioState *m) {
      if (mario_floor_is_steep(m)) {
          set_steep_jump_action(m);
      } else {
@@ -321,7 +330,7 @@ index 1dcacc8..67d613e 100644
              set_mario_action(m, ACT_JUMP, 0);
          } else {
              switch (m->prevAction) {
-@@ -1127,7 +1146,12 @@ s32 hurt_and_set_mario_action(struct MarioState *m, u32 action, u32 actionArg, s
+@@ -1132,7 +1151,12 @@ s32 hurt_and_set_mario_action(struct MarioState *m, u32 action, u32 actionArg, s
   */
  s32 check_common_action_exits(struct MarioState *m) {
      if (m->input & INPUT_A_PRESSED) {
@@ -334,7 +343,7 @@ index 1dcacc8..67d613e 100644
      }
      if (m->input & INPUT_OFF_FLOOR) {
          return set_mario_action(m, ACT_FREEFALL, 0);
-@@ -1200,7 +1224,12 @@ s32 set_water_plunge_action(struct MarioState *m) {
+@@ -1205,7 +1229,12 @@ s32 set_water_plunge_action(struct MarioState *m) {
          set_camera_mode(m->area->camera, CAMERA_MODE_WATER_SURFACE, 1);
      }
  
@@ -347,7 +356,7 @@ index 1dcacc8..67d613e 100644
  }
  
  /**
-@@ -1307,8 +1336,12 @@ void update_mario_button_inputs(struct MarioState *m) {
+@@ -1312,8 +1341,12 @@ void update_mario_button_inputs(struct MarioState *m) {
   * Updates the joystick intended magnitude.
   */
  void update_mario_joystick_inputs(struct MarioState *m) {
@@ -360,7 +369,7 @@ index 1dcacc8..67d613e 100644
  
      if (m->squishTimer == 0) {
          m->intendedMag = mag / 2.0f;
-@@ -1317,11 +1350,81 @@ void update_mario_joystick_inputs(struct MarioState *m) {
+@@ -1322,11 +1355,81 @@ void update_mario_joystick_inputs(struct MarioState *m) {
      }
  
      if (m->intendedMag > 0.0f) {
@@ -443,7 +452,7 @@ index 1dcacc8..67d613e 100644
  }
  
  /**
-@@ -1901,6 +2004,8 @@ void init_mario(void) {
+@@ -1913,6 +2016,8 @@ void init_mario(void) {
  }
  
  void init_mario_from_save_file(void) {
@@ -452,7 +461,7 @@ index 1dcacc8..67d613e 100644
      gMarioState->unk00 = 0;
      gMarioState->flags = 0;
      gMarioState->action = 0;
-@@ -1908,6 +2013,9 @@ void init_mario_from_save_file(void) {
+@@ -1920,6 +2025,9 @@ void init_mario_from_save_file(void) {
      gMarioState->statusForCamera = &gPlayerCameraState[0];
      gMarioState->marioBodyState = &gBodyStates[0];
      gMarioState->controller = &gControllers[0];
@@ -932,10 +941,10 @@ index 9c89ea7..fb2653d 100644
      /* clang-format on */
  
 diff --git a/src/game/mario_actions_automatic.c b/src/game/mario_actions_automatic.c
-index 244188b..a0b07df 100644
+index c0c3f93..cf1190d 100644
 --- a/src/game/mario_actions_automatic.c
 +++ b/src/game/mario_actions_automatic.c
-@@ -574,6 +574,10 @@ s32 act_ledge_grab(struct MarioState *m) {
+@@ -587,6 +587,10 @@ s32 act_ledge_grab(struct MarioState *m) {
      s16 intendedDYaw = m->intendedYaw - m->faceAngle[1];
      s32 hasSpaceForMario = (m->ceilHeight - m->floorHeight >= 160.0f);
  
@@ -946,7 +955,7 @@ index 244188b..a0b07df 100644
      if (m->actionTimer < 10) {
          m->actionTimer++;
      }
-@@ -590,6 +594,15 @@ s32 act_ledge_grab(struct MarioState *m) {
+@@ -603,6 +607,15 @@ s32 act_ledge_grab(struct MarioState *m) {
          return set_mario_action(m, ACT_LEDGE_CLIMB_FAST, 0);
      }
  
@@ -1724,7 +1733,7 @@ index 836a856..b274319 100644
          m->vel[1] -= 3.2f;
          if (m->vel[1] < -65.0f) {
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index 7cf6726..98867f1 100644
+index a1427dd..fc61b54 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
 @@ -2188,7 +2188,9 @@ s32 cur_obj_wait_then_blink(s32 timeUntilBlinking, s32 numBlinks) {

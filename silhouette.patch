@@ -36,7 +36,7 @@ index 3d630d1..dcd36fb 100644
  // Passed as first argument to a GraphNodeFunc to give information about in
  // which context it was called and what it is expected to do.
 diff --git a/src/game/rendering_graph_node.c b/src/game/rendering_graph_node.c
-index c39178c..e695189 100644
+index 63866d6..d959ba2 100644
 --- a/src/game/rendering_graph_node.c
 +++ b/src/game/rendering_graph_node.c
 @@ -68,7 +68,7 @@ s16 *gCurAnimData;

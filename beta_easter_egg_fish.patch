@@ -1,8 +1,8 @@
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index 207c5d5..9ac76e0 100644
+index 6a51c0d..466d8b7 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
-@@ -1577,6 +1577,25 @@ const BehaviorScript bhvBlackSmokeUpward[] = {
+@@ -1640,6 +1640,25 @@ const BehaviorScript bhvBlackSmokeUpward[] = {
      DEACTIVATE(),
  };
  

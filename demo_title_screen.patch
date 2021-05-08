@@ -1,23 +1,36 @@
 diff --git a/include/level_commands.h b/include/level_commands.h
-index 8de5aa1..892ee12 100644
+index c5940bf..c9769f7 100644
 --- a/include/level_commands.h
 +++ b/include/level_commands.h
-@@ -320,4 +320,10 @@
- #define GET_OR_SET(op, var) \
-     CMD_BBBB(0x3C, 0x04, op, var)
+@@ -22,6 +22,7 @@
+ #define VAR_CURR_ACT_NUM        2
+ #define VAR_CURR_LEVEL_NUM      3
+ #define VAR_CURR_AREA_INDEX     4
++#define VAR_CURR_DEMO_START_BUTTON  5
  
-+#define ADV_DEMO() \
-+    CMD_BBH(0x3E, 0x04, 0x0000)
-+    
-+#define CLEAR_DEMO_PTR() \
-+    CMD_BBH(0x3F, 0x04, 0x0000)
-+
- #endif // LEVEL_COMMANDS_H
+ #define WARP_CHECKPOINT 0x80
+ #define WARP_NO_CHECKPOINT 0x00
+@@ -102,6 +103,7 @@ enum LevelCommandsIDList
+ #ifdef BETTERCAMERA
+     LVL_SCRIPT_CMD_PUPPYVOLUME,
+ #endif
++    LVL_SCRIPT_DEMO_SCREEN,
+ };
+ 
+ #ifdef NO_SEGMENTED_MEMORY
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index 9adb6dd..8f4ba82 100644
+index 9adb6dd..2fd4502 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
-@@ -47,54 +47,30 @@ const LevelScript level_intro_mario_head_regular[] = {
+@@ -9,6 +9,7 @@
+ #include "game/area.h"
+ #include "game/level_update.h"
+ #include "menu/level_select_menu.h"
++#include "extras/demo_screen.h"
+ 
+ #include "levels/scripts.h"
+ #include "levels/menu/header.h"
+@@ -47,54 +48,30 @@ const LevelScript level_intro_mario_head_regular[] = {
      INIT_LEVEL(),
      BLACKOUT(/*active*/ TRUE),
      FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
@@ -38,8 +51,8 @@ index 9adb6dd..8f4ba82 100644
      BLACKOUT(/*active*/ FALSE),
 -    LOAD_AREA(/*area*/ 1),
 +
-+    CLEAR_DEMO_PTR(), // we need to do this or else file select will be tainted with inputs
-+    GET_OR_SET(/*op*/ OP_GET, /*var*/ 5),
++    DEMO_SCRIPT(LVL_DEMO_CLEAR), // we need to do this or else file select will be tainted with inputs
++    GET_OR_SET(/*op*/ OP_GET, /*var*/ VAR_CURR_DEMO_START_BUTTON),
 +    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 1, script_intro_L1), // was start pressed when demo ended last time?
 +
      SET_MENU_MUSIC(/*seq*/ 0x0002),
@@ -49,7 +62,7 @@ index 9adb6dd..8f4ba82 100644
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
 -    JUMP(script_intro_L4),
-+    ADV_DEMO(), // advance the demo ID manually with a new command which sets the level as script register
++    DEMO_SCRIPT(LVL_DEMO_SET_ADVANCE), // advance the demo ID manually with a new command which sets the level as script register
 +    JUMP(script_intro_L4), // go to ingame
  };
  
@@ -82,104 +95,114 @@ index 9adb6dd..8f4ba82 100644
  };
  
  const LevelScript level_intro_entry_4[] = {
-@@ -107,6 +83,7 @@ const LevelScript level_intro_entry_4[] = {
+@@ -107,6 +84,7 @@ const LevelScript level_intro_entry_4[] = {
  
      AREA(/*index*/ 1, intro_geo_000414),
      END_AREA(),
-+    CLEAR_DEMO_PTR(),
++    DEMO_SCRIPT(LVL_DEMO_CLEAR), // we need to do this or else file select will be tainted with inputs
  
      FREE_LEVEL_POOL(),
      LOAD_AREA(/*area*/ 1),
 diff --git a/src/engine/level_script.c b/src/engine/level_script.c
-index 54395ed..b587589 100644
+index 54395ed..d2c6dea 100644
 --- a/src/engine/level_script.c
 +++ b/src/engine/level_script.c
-@@ -749,6 +749,8 @@ static void level_cmd_38(void) {
-     sCurrentCmd = CMD_NEXT;
- }
+@@ -32,6 +32,8 @@
+ #include "extras/bettercamera.h"
+ #endif
  
-+extern int gPressedStart;
++#include "extras/demo_screen.h"
 +
- static void level_cmd_get_or_set_var(void) {
-     if (CMD_GET(u8, 2) == 0) {
-         switch (CMD_GET(u8, 3)) {
+ #define CMD_GET(type, offset) (*(type *) (CMD_PROCESS_OFFSET(offset) + (u8 *) sCurrentCmd))
+ 
+ // These are equal
 @@ -767,6 +769,9 @@ static void level_cmd_get_or_set_var(void) {
              case 4:
                  gCurrAreaIndex = sRegister;
                  break;
 +            case 5: 
-+                gPressedStart = sRegister; 
++                gDemoPressedStart = sRegister; 
 +                break;
          }
      } else {
          switch (CMD_GET(u8, 3)) {
-@@ -785,12 +790,49 @@ static void level_cmd_get_or_set_var(void) {
+@@ -785,6 +790,9 @@ static void level_cmd_get_or_set_var(void) {
              case 4:
                  sRegister = gCurrAreaIndex;
                  break;
 +            case 5:
-+                sRegister = gPressedStart;
++                sRegister = gDemoPressedStart;
 +                break;
          }
      }
  
-     sCurrentCmd = CMD_NEXT;
+@@ -825,6 +833,37 @@ static void level_cmd_puppyvolume(void) {
  }
+ #endif
  
-+int gDemoLevels[] = {
-+    LEVEL_BOWSER_1,
-+    LEVEL_WF,
-+    LEVEL_CCM,
-+    LEVEL_BBH,
-+    LEVEL_JRB,
-+    LEVEL_HMC,
-+    LEVEL_PSS
-+};
++void level_cmd_demo(void) {
++    s16 screenDemoLvls[] = {
++        LEVEL_BOWSER_1,
++        LEVEL_WF,
++        LEVEL_CCM,
++        LEVEL_BBH,
++        LEVEL_JRB,
++        LEVEL_HMC,
++        LEVEL_PSS
++    };
 +
-+int gDemoLevelID = 0;
++    s16 count = ARRAY_COUNT(screenDemoLvls) - 1;
 +
-+extern s32 start_demo_intro(int);
-+
-+static void level_cmd_advdemo(void) {
-+    s16 count = ARRAY_COUNT(gDemoLevels) - 1;
-+
-+    start_demo_intro(0);
-+    if (gDemoLevelID == count) {
-+        sRegister = gDemoLevels[count];
-+        gDemoLevelID = 0;
-+    } else {
-+        sRegister = gDemoLevels[gDemoLevelID++];
++    switch (CMD_GET(s16, 2)) {
++        case LVL_DEMO_SET_ADVANCE:
++            start_demo_intro(0);
++            if (gScreenDemoLevelID == count) {
++                sRegister = screenDemoLvls[count];
++                gScreenDemoLevelID = 0;
++            } else {
++                sRegister = screenDemoLvls[gScreenDemoLevelID++];
++            }
++            break;
++        case LVL_DEMO_CLEAR:
++            gCurrDemoInput = NULL;
++            break;
 +    }
 +
 +    sCurrentCmd = CMD_NEXT;
 +}
 +
-+static void level_cmd_cleardemoptr(void) {
-+    gCurrDemoInput = NULL;
-+    sCurrentCmd = CMD_NEXT;
-+}
-+
-+
- #ifdef BETTERCAMERA
- static void level_cmd_puppyvolume(void) {
-     if ((sPuppyVolumeStack[gPuppyVolumeCount] = mem_pool_alloc(gPuppyMemoryPool,sizeof(struct sPuppyVolume))) == NULL) {
-@@ -890,6 +932,8 @@ static void (*LevelScriptJumpTable[])(void) = {
+ static void (*LevelScriptJumpTable[])(void) = {
+     /*00*/ level_cmd_load_and_execute,
+     /*01*/ level_cmd_exit_and_execute,
+@@ -890,6 +929,7 @@ static void (*LevelScriptJumpTable[])(void) = {
  #ifdef BETTERCAMERA
      /*3D*/ level_cmd_puppyvolume,
  #endif
-+    /*3E*/ level_cmd_advdemo,
-+    /*3F*/ level_cmd_cleardemoptr,
++    level_cmd_demo,
  };
  
  struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
-diff --git a/src/game/area.c b/src/game/area.c
-index 0fc47b5..954fc95 100644
---- a/src/game/area.c
-+++ b/src/game/area.c
-@@ -133,6 +133,18 @@ void print_intro_text(void) {
-     }
- }
- 
+diff --git a/src/extras/demo_screen.c b/src/extras/demo_screen.c
+new file mode 100644
+index 0000000..288a7c2
+--- /dev/null
++++ b/src/extras/demo_screen.c
+@@ -0,0 +1,46 @@
++#include <ultra64.h>
++#include "sm64.h"
++
++#include "demo_screen.h"
++#include "game/area.h"
++#include "game/game_init.h"
++#include "game/memory.h"
++#include "game/print.h"
++#include "level_table.h"
++
++s16 gDemoPressedStart = FALSE;
++s16 gScreenDemoLevelID = 0;
++
++u16 gDemoInputListIDForIntro = 0;
++
 +void print_intro_text_demo(void) {
 +    if (gControllerBits == 0) {
 +        print_text_centered(160, 20, "NO CONTROLLER");
@@ -192,47 +215,9 @@ index 0fc47b5..954fc95 100644
 +    }
 +}
 +
- u32 get_mario_spawn_type(struct Object *o) {
-     s32 i;
-     const BehaviorScript *behavior = virtual_to_segmented(0x13, o->behavior);
-diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 9fac1ca..6991d8f 100644
---- a/src/game/level_update.c
-+++ b/src/game/level_update.c
-@@ -995,14 +995,18 @@ void basic_update(UNUSED s16 *arg) {
-     }
- }
- 
-+extern void print_intro_text_demo(void);
-+int gPressedStart = FALSE;
-+
- s32 play_mode_normal(void) {
-     if (gCurrDemoInput != NULL) {
--        print_intro_text();
-+        print_intro_text_demo();
-         if (gPlayer1Controller->buttonPressed & END_DEMO) {
-             level_trigger_warp(gMarioState,
-                                gCurrLevelNum == LEVEL_PSS ? WARP_OP_DEMO_END : WARP_OP_DEMO_NEXT);
-         } else if (!gWarpTransition.isActive && sDelayedWarpOp == WARP_OP_NONE
-                    && (gPlayer1Controller->buttonPressed & START_BUTTON)) {
-+            gPressedStart = TRUE;
-             level_trigger_warp(gMarioState, WARP_OP_DEMO_NEXT);
-         }
-     }
-diff --git a/src/menu/level_select_menu.c b/src/menu/level_select_menu.c
-index a9e91cf..03e94f7 100644
---- a/src/menu/level_select_menu.c
-+++ b/src/menu/level_select_menu.c
-@@ -72,6 +72,29 @@ s32 run_press_start_demo_timer(s32 timer) {
-     return timer;
- }
- 
-+extern int gPressedStart;
-+u16 gDemoInputListIDForIntro = 0;
-+
-+s32 start_demo_intro(int timer) {
++s32 start_demo_intro(s16 timer) {
 +	gCurrDemoInput = NULL;
-+	gPressedStart = FALSE;
++	gDemoPressedStart = FALSE;
 +    // start the mario demo animation for the demo list.
 +    load_patchable_table(&gDemo, gDemoInputListIDForIntro);
 +
@@ -249,7 +234,61 @@ index a9e91cf..03e94f7 100644
 +    gCurrActNum = 6;
 +    return timer;
 +}
+diff --git a/src/extras/demo_screen.h b/src/extras/demo_screen.h
+new file mode 100644
+index 0000000..8f0efc6
+--- /dev/null
++++ b/src/extras/demo_screen.h
+@@ -0,0 +1,24 @@
++#ifndef DEMO_SCREEN_H
++#define DEMO_SCREEN_H
 +
- // input loop for the level select menu. updates the selected stage
- // count if an input was received. signals the stage to be started
- // or the level select to be exited if start or the quit combo is
++#include "level_commands.h"
++
++extern s16 gDemoPressedStart;
++extern s16 gScreenDemoLevelID;
++
++extern u16 gDemoInputListIDForIntro;
++
++enum LevelScriptDemoArgs {
++    LVL_DEMO_SET_ADVANCE,
++    LVL_DEMO_CLEAR
++};
++
++extern void print_intro_text_demo(void);
++extern s32 start_demo_intro(s16 timer);
++
++extern void level_cmd_demo(void);
++
++#define DEMO_SCRIPT(arg) \
++    CMD_BBH(LVL_SCRIPT_DEMO_SCREEN, 0x04, arg)
++
++#endif // OPTIONS_MENU_H
+diff --git a/src/game/level_update.c b/src/game/level_update.c
+index 03b3e91..71a639a 100644
+--- a/src/game/level_update.c
++++ b/src/game/level_update.c
+@@ -43,6 +43,8 @@
+ #include "extras/bettercamera.h"
+ #endif
+ 
++#include "extras/demo_screen.h"
++
+ #define PLAY_MODE_NORMAL 0
+ #define PLAY_MODE_PAUSED 2
+ #define PLAY_MODE_CHANGE_AREA 3
+@@ -1001,12 +1003,13 @@ void basic_update(UNUSED s16 *arg) {
+ 
+ s32 play_mode_normal(void) {
+     if (gCurrDemoInput != NULL) {
+-        print_intro_text();
++        print_intro_text_demo();
+         if (gPlayer1Controller->buttonPressed & END_DEMO) {
+             level_trigger_warp(gMarioState,
+                                gCurrLevelNum == LEVEL_PSS ? WARP_OP_DEMO_END : WARP_OP_DEMO_NEXT);
+         } else if (!gWarpTransition.isActive && sDelayedWarpOp == WARP_OP_NONE
+                    && (gPlayer1Controller->buttonPressed & START_BUTTON)) {
++            gDemoPressedStart = TRUE;
+             level_trigger_warp(gMarioState, WARP_OP_DEMO_NEXT);
+         }
+     }

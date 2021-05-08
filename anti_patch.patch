@@ -105,19 +105,19 @@ index 2e3a314..9fdafbe 100644
          o->oAction = BOBOMB_ACT_EXPLODE; /* bit 0 */
  }
 diff --git a/src/game/behaviors/breakable_wall.inc.c b/src/game/behaviors/breakable_wall.inc.c
-index dbb92c8..b7d92eb 100644
+index e3195f7..b4aa980 100644
 --- a/src/game/behaviors/breakable_wall.inc.c
 +++ b/src/game/behaviors/breakable_wall.inc.c
-@@ -5,6 +5,9 @@ void bhv_wf_breakable_wall_loop(void) {
-         cur_obj_become_tangible();
-         if (obj_check_if_collided_with_object(o, gMarioObject)) {
-             if (cur_obj_has_behavior(bhvWfBreakableWallRight))
+@@ -9,6 +9,9 @@ void bhv_wf_breakable_wall_loop(void) {
+ #if QOL_FEATURE_BETTER_WF_BREAKEABLE_WALL
+                 play_sound(SOUND_MARIO_HAHA, gMarioState->marioObj->header.gfx.cameraToObject);
+ #endif
 +                #if ANTI_PATCH_BLAST_AWAY_WALL   
-+                spawn_default_star(590.0f, 2450.0f, 2650.0f);
++                spawn_default_star(o->oPosX, o->oPosY, o->oPosZ);
 +                #endif
-                 play_puzzle_jingle();
-             create_sound_spawner(SOUND_GENERAL_WALL_EXPLOSION);
-             o->oInteractType = 8;
+             }
+ 
+ #if QOL_FEATURE_BETTER_WF_BREAKEABLE_WALL
 diff --git a/src/game/behaviors/camera_lakitu.inc.c b/src/game/behaviors/camera_lakitu.inc.c
 index c3e7f44..8d13148 100644
 --- a/src/game/behaviors/camera_lakitu.inc.c
@@ -151,7 +151,7 @@ index 4bd7ecd..0b59947 100644
  }
  
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index d878bd0..9d113da 100644
+index 665ec49..8dfc059 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -1061,7 +1061,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
@@ -168,10 +168,10 @@ index d878bd0..9d113da 100644
          o->oInteractStatus = INT_STATUS_INTERACTED;
          m->interactObj = o;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 2d92a94..deb70f6 100644
+index 9c89ea7..1e1e3b1 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -70,18 +70,17 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+@@ -67,18 +67,17 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
  
      fallHeight = m->peakHeight - m->pos[1];
  
@@ -196,7 +196,7 @@ index 2d92a94..deb70f6 100644
      if (m->action != ACT_TWIRLING && m->floor->type != SURFACE_BURNING) {
          if (m->vel[1] < -55.0f) {
              if (fallHeight > 3000.0f) {
-@@ -415,12 +414,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
+@@ -412,12 +411,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
                      // not able to ledge grab it.
                      if (m->forwardVel >= 38.0f) {
                          m->particleFlags |= PARTICLE_VERTICAL_STAR;
@@ -217,7 +217,7 @@ index 2d92a94..deb70f6 100644
                      }
                  }
              } else {
-@@ -1317,6 +1324,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
+@@ -1314,6 +1321,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
          if (m->input & INPUT_A_PRESSED) {
              m->vel[1] = 52.0f;
              m->faceAngle[1] += 0x8000;
@@ -228,10 +228,10 @@ index 2d92a94..deb70f6 100644
          }
      } else if (m->forwardVel >= 38.0f) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index aa51315..c646cab 100644
+index c00d53f..a75fb32 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
-@@ -1635,6 +1635,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
+@@ -1650,6 +1650,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
      }
  
      if (is_anim_at_end(m)) {

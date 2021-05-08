@@ -232,18 +232,19 @@ index db590e1..19fb10f 100644
          break;
      }
 diff --git a/src/engine/surface_load.c b/src/engine/surface_load.c
-index 2a827c1..122d1e5 100644
+index 2a827c1..86b5a5f 100644
 --- a/src/engine/surface_load.c
 +++ b/src/engine/surface_load.c
-@@ -14,6 +14,7 @@
+@@ -14,6 +14,8 @@
  #include "game/mario.h"
  #include "game/object_list_processor.h"
  #include "surface_load.h"
 +#include "game/game_init.h"
++#include "engine/math_util.h"
  
  s32 unused8038BE90;
  
-@@ -383,6 +384,11 @@ static struct Surface *read_surface_data(s16 *vertexData, s16 **vertexIndices) {
+@@ -383,6 +385,11 @@ static struct Surface *read_surface_data(s16 *vertexData, s16 **vertexIndices) {
  
      surface = alloc_surface();
  
@@ -742,9 +743,18 @@ index 44e5fc4..fa56b95 100644
  #endif
      }
 diff --git a/src/game/level_geo.c b/src/game/level_geo.c
-index 1fc4b88..088a679 100644
+index 1fc4b88..b6674b7 100644
 --- a/src/game/level_geo.c
 +++ b/src/game/level_geo.c
+@@ -13,7 +13,7 @@
+  * Geo function that generates a displaylist for environment effects such as
+  * snow or jet stream bubbles.
+  */
+-Gfx *geo_envfx_main(s32 callContext, struct GraphNode *node, Mat4 mtxf) {
++Gfx *geo_envfx_main(s32 callContext, struct GraphNode *node, UNUSED Mat4 mtxf) {
+     Vec3s marioPos;
+     Vec3s camFrom;
+     Vec3s camTo;
 @@ -34,12 +34,16 @@ Gfx *geo_envfx_main(s32 callContext, struct GraphNode *node, Mat4 mtxf) {
              vec3f_to_vec3s(marioPos, gPlayerCameraState->pos);
              particleList = envfx_update_particles(snowMode, marioPos, camTo, camFrom);
@@ -762,8 +772,21 @@ index 1fc4b88..088a679 100644
                  execNode->fnNode.node.flags = (execNode->fnNode.node.flags & 0xFF) | 0x400;
              }
              SET_HIGH_U16_OF_32(*params, gAreaUpdateCounter);
+diff --git a/src/game/mario_step.c b/src/game/mario_step.c
+index 836a856..f60cb03 100644
+--- a/src/game/mario_step.c
++++ b/src/game/mario_step.c
+@@ -17,7 +17,7 @@ static s16 sMovingSandSpeeds[] = { 12, 8, 4, 0 };
+ 
+ struct Surface gWaterSurfacePseudoFloor = {
+     SURFACE_VERY_SLIPPERY, 0,    0,    0, 0, 0, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 },
+-    { 0.0f, 1.0f, 0.0f },  0.0f, NULL,
++    { 0.0f, 1.0f, 0.0f },  0.0f, NULL, { 0, 0, 0 }, { 0, 0, 0 }, { 0, 0, 0 }, 0
+ };
+ 
+ /**
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index 7cf6726..0aaff1d 100644
+index a1427dd..a6c2915 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
 @@ -1549,6 +1549,7 @@ void cur_obj_set_pos_to_home(void) {
@@ -1700,6 +1723,18 @@ index 63866d6..dda16fa 100644
          gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(gMatStackFixed[gMatStackIndex]),
                    G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
          gCurGraphNodeRoot = node;
+diff --git a/src/game/rendering_graph_node.h b/src/game/rendering_graph_node.h
+index 097c787..c6f10ef 100644
+--- a/src/game/rendering_graph_node.h
++++ b/src/game/rendering_graph_node.h
+@@ -30,4 +30,7 @@ extern u16 gAreaUpdateCounter;
+ void geo_process_node_and_siblings(struct GraphNode *firstNode);
+ void geo_process_root(struct GraphNodeRoot *node, Vp *b, Vp *c, s32 clearColor);
+ 
++void interpolate_vectors(Vec3f res, Vec3f a, Vec3f b);
++void interpolate_vectors_s16(Vec3s res, Vec3s a, Vec3s b);
++
+ #endif // RENDERING_GRAPH_NODE_H
 diff --git a/src/game/screen_transition.c b/src/game/screen_transition.c
 index 7de7ff4..7ad1239 100644
 --- a/src/game/screen_transition.c
@@ -1914,10 +1949,17 @@ index 750515a..2c03d0e 100644
  static int desktop_w = 640;
  static int desktop_h = 480;
 diff --git a/src/pc/gfx/gfx_sdl2.c b/src/pc/gfx/gfx_sdl2.c
-index 18af703..527c45c 100644
+index 18af703..ece0729 100644
 --- a/src/pc/gfx/gfx_sdl2.c
 +++ b/src/pc/gfx/gfx_sdl2.c
-@@ -154,7 +154,11 @@ static inline void gfx_sdl_set_vsync(const bool enabled) {
+@@ -148,13 +148,17 @@ static int test_vsync(void) {
+ 
+ static inline void gfx_sdl_set_vsync(const bool enabled) {
+     #ifdef TARGET_SWITCH
+-    SDL_GL_SetSwapInterval(2); // change to 1 if 60 fps patch is applied
++    SDL_GL_SetSwapInterval(1); // change to 1 if 60 fps patch is applied
+     use_timer = false;
+     #else
      if (enabled) {
          // try to detect refresh rate
          SDL_GL_SetSwapInterval(1);
@@ -1953,7 +1995,7 @@ index b4059c9..0b31deb 100644
  
  static void gfx_whb_window_main_loop(void (*run_one_game_iter)(void)) {
 diff --git a/src/pc/pc_main.c b/src/pc/pc_main.c
-index 78e1222..c9cce56 100644
+index 097389c..0807484 100644
 --- a/src/pc/pc_main.c
 +++ b/src/pc/pc_main.c
 @@ -90,6 +90,25 @@ void send_display_list(struct SPTask *spTask) {

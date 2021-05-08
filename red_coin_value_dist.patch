@@ -1,32 +1,47 @@
 diff --git a/src/game/object_list_processor.c b/src/game/object_list_processor.c
-index 828e3b5..7c8f7d2 100644
+index 828e3b5..bec8720 100644
 --- a/src/game/object_list_processor.c
 +++ b/src/game/object_list_processor.c
-@@ -9,6 +9,7 @@
+@@ -9,6 +9,8 @@
  #include "engine/graph_node.h"
  #include "engine/surface_collision.h"
  #include "engine/surface_load.h"
++#include "game_init.h"
 +#include "gfx_dimensions.h"
  #include "interaction.h"
  #include "level_update.h"
  #include "mario.h"
-@@ -263,6 +264,15 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
+@@ -17,6 +19,7 @@
+ #include "object_helpers.h"
+ #include "object_list_processor.h"
+ #include "platform_displacement.h"
++#include "print.h"
+ #include "profiler.h"
+ #include "spawn_object.h"
+ 
+@@ -263,6 +266,21 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
      }
  }
  
++s16 gRedCoinDistActive;
++
 +void print_value_of_nearest_red_coin(void) {
 +    s32 redCount = count_objects_with_behavior(bhvRedCoin); 
-+    s32 redDist = (s32) cur_obj_dist_to_nearest_object_with_behavior(bhvRedCoin) / 100;
++    s32 redDist = (s32) cur_obj_dist_to_nearest_object_with_behavior(bhvRedCoin);
 +    
-+    if (redCount != 0) {
-+        print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(20), 20, "red %d", redDist);
++    if (gPlayer1Controller->buttonPressed & L_TRIG) {
++        gRedCoinDistActive ^= 1;
++    }
++
++    if (redCount && gRedCoinDistActive) {
++        print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_LEFT_EDGE(20), 20, "RED %d", redDist / 100);
 +    }
 +}
 +
  /**
   * Mario's primary behavior update function.
   */
-@@ -286,6 +296,8 @@ void bhv_mario_update(void) {
+@@ -286,6 +304,8 @@ void bhv_mario_update(void) {
  
          i++;
      }
