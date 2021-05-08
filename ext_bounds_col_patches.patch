@@ -13,10 +13,10 @@ index 669a0ac..29ccb03 100644
  #define SURFACE_SLOW                         0x0009 // Slow down Mario, unused
 diff --git a/src/engine/extended_bounds.h b/src/engine/extended_bounds.h
 new file mode 100644
-index 0000000..affd6ab
+index 0000000..1f9da20
 --- /dev/null
 +++ b/src/engine/extended_bounds.h
-@@ -0,0 +1,110 @@
+@@ -0,0 +1,119 @@
 +#ifndef __EXTENDED_BOUNDS_H__
 +#define __EXTENDED_BOUNDS_H__
 +
@@ -46,7 +46,10 @@ index 0000000..affd6ab
 +        level boundaries are 4 times as big (-32768 to 32767)
 +        Collision calculations remain as fast as vanilla, at the cost of using far more RAM (16 times vanilla).
 +        64x64 collision cells.
-+    
++	4: 4x extended bounds (Mem saver)
++        level boundaries are 4 times as big (-32768 to 32767)
++        Collision cells are the same size as vanilla, at the cost of being much slower.
++        32x32 collision cells.
 +
 +    If you see "SURFACE POOL FULL" or "SURFACE NODE POOL FULL" in game, you should increase 
 +    SURFACE_POOL_SIZE or SURFACE_NODE_POOL_SIZE, respectively, or reduce the amount of 
@@ -118,6 +121,12 @@ index 0000000..affd6ab
 +    #undef WORLD_SCALE
 +    #define LEVEL_BOUNDARY_MAX 0x8000L
 +    #define CELL_SIZE          0x400
++    #define WORLD_SCALE        4.f
++#elif EXTENDED_BOUNDS_MODE == 4
++    #undef LEVEL_BOUNDARY_MAX
++    #undef WORLD_SCALE
++    #define LEVEL_BOUNDARY_MAX 0x8000L
++    #define CELL_SIZE          0x800
 +    #define WORLD_SCALE        4.f
 +#endif
 +
