@@ -1,9 +1,22 @@
+diff --git a/include/surface_terrains.h b/include/surface_terrains.h
+index 669a0ac..29ccb03 100644
+--- a/include/surface_terrains.h
++++ b/include/surface_terrains.h
+@@ -4,6 +4,8 @@
+ // Surface Types
+ #define SURFACE_DEFAULT                      0x0000 // Environment default
+ #define SURFACE_BURNING                      0x0001 // Lava / Frostbite (in SL), but is used mostly for Lava
++#define SURFACE_NEW_WATER                    0x0002 // Custom water surface
++#define SURFACE_NEW_WATER_BOTTOM             0x0003 // Custom water surface bottom marker
+ #define SURFACE_0004                         0x0004 // Unused, has no function and has parameters
+ #define SURFACE_HANGABLE                     0x0005 // Ceiling that Mario can climb on
+ #define SURFACE_SLOW                         0x0009 // Slow down Mario, unused
 diff --git a/src/engine/extended_bounds.h b/src/engine/extended_bounds.h
 new file mode 100644
-index 0000000..23003cf
+index 0000000..affd6ab
 --- /dev/null
 +++ b/src/engine/extended_bounds.h
-@@ -0,0 +1,89 @@
+@@ -0,0 +1,110 @@
 +#ifndef __EXTENDED_BOUNDS_H__
 +#define __EXTENDED_BOUNDS_H__
 +
@@ -12,7 +25,10 @@ index 0000000..23003cf
 +        Thanks to anonymous_moose for the original Better Extended Bounds patch
 +        Thanks to someone2639 for the shiftable segments patch
 +        Thanks to Wiseguy for the Surface Pool Full error code and 4x bounds fix
-+        Thanks to JoshDuman, Kaze, Arceveti and various people for the QoL collsion code changes
++        Thanks to FramePerfection/chaosBrick for the wall collision rewrite
++        Thanks to Arthurtilly for the platform displacement rewrite
++        Thanks to falcobuster for the long render distance fix
++        Thanks to JoshDuman, Kaze, Arceveti and various people for the QoL collision code changes
 +        Patch compilated by AloXado320
 +
 +    0: Regular bounds
@@ -45,14 +61,15 @@ index 0000000..23003cf
 +
 +// SURFACE_POOL_SIZE and SURFACE_NODE_POOL_SIZE only matter on N64
 +// On non-N64 targets, surface sizes are allocated using SYSTEM_MALLOC
++// If SYSTEM_MALLOC is not defined on PC Port, then fhese fixed pools are used instead
 +
 +//the maximum amount of collision surfaces (static and dynamic combined)
 +//8200 should work fine for a 2x extended stage, the vanilla value is 2300
-+#define SURFACE_POOL_SIZE 4000
++#define SURFACE_POOL_SIZE 8000
 +
 +//make this approximately (amount of collision cells) + (SURFACE_POOL_SIZE * 3)
 +//22000 should work fine for a 2x extended stage, the vanilla value is 7000
-+#define SURFACE_NODE_POOL_SIZE 12000
++#define SURFACE_NODE_POOL_SIZE 16000
 +
 +//cell and height limits
 +#define CELL_HEIGHT_LIMIT           20000
@@ -69,22 +86,39 @@ index 0000000..23003cf
 +//default value to check if the user set a proper extended bounds mode
 +#define LEVEL_BOUNDARY_MAX 0x0000
 +
++//Scales the world down by this factor, increasing how far you can render on
++//console (and PC) in exchange for a slight loss in precision.
++#define WORLD_SCALE 1.f
++
++//show ingame text info if any surface pool is full (N64 and Non-sys malloc only)
++#ifndef SYSTEM_MALLOC
++#define SURFACE_POOLS_FULL_MESSAGES FALSE
++#endif
++
 +#if EXTENDED_BOUNDS_MODE == 0
 +    #undef LEVEL_BOUNDARY_MAX // Undefine the old value to avoid compiler warnings
++    #undef WORLD_SCALE
 +    #define LEVEL_BOUNDARY_MAX 0x2000L
 +    #define CELL_SIZE          0x400
++    #define WORLD_SCALE        1.f
 +#elif EXTENDED_BOUNDS_MODE == 1
 +    #undef LEVEL_BOUNDARY_MAX
++    #undef WORLD_SCALE
 +    #define LEVEL_BOUNDARY_MAX 0x4000L
 +    #define CELL_SIZE          0x400
++    #define WORLD_SCALE        2.f
 +#elif EXTENDED_BOUNDS_MODE == 2
 +    #undef LEVEL_BOUNDARY_MAX
++    #undef WORLD_SCALE
 +    #define LEVEL_BOUNDARY_MAX 0x2000L
 +    #define CELL_SIZE          0x200
++    #define WORLD_SCALE        1.f
 +#elif EXTENDED_BOUNDS_MODE == 3
 +    #undef LEVEL_BOUNDARY_MAX
++    #undef WORLD_SCALE
 +    #define LEVEL_BOUNDARY_MAX 0x8000L
 +    #define CELL_SIZE          0x400
++    #define WORLD_SCALE        4.f
 +#endif
 +
 +STATIC_ASSERT(LEVEL_BOUNDARY_MAX != 0, "You must set a valid extended bounds mode!");
@@ -93,24 +127,287 @@ index 0000000..23003cf
 +#define NUM_CELLS_INDEX (NUM_CELLS - 1)
 +
 +#endif // __EXTENDED_BOUNDS_H__
+diff --git a/src/engine/math_util.c b/src/engine/math_util.c
+index 3f49817..e01621b 100644
+--- a/src/engine/math_util.c
++++ b/src/engine/math_util.c
+@@ -611,23 +611,17 @@ void mtxf_mul_vec3s(Mat4 mtx, Vec3s b) {
+  * and no crashes occur.
+  */
+ void mtxf_to_mtx(Mtx *dest, Mat4 src) {
+-#ifdef AVOID_UB
+-    // Avoid type-casting which is technically UB by calling the equivalent
+-    // guMtxF2L function. This helps little-endian systems, as well.
+-    guMtxF2L(src, dest);
+-#else
+-    s32 asFixedPoint;
+-    register s32 i;
+-    register s16 *a3 = (s16 *) dest;      // all integer parts stored in first 16 bytes
+-    register s16 *t0 = (s16 *) dest + 16; // all fraction parts stored in last 16 bytes
+-    register f32 *t1 = (f32 *) src;
++	Mat4 temp;
++	register s32 i, j;
+ 
+-    for (i = 0; i < 16; i++) {
+-        asFixedPoint = *t1++ * (1 << 16); //! float-to-integer conversion responsible for PU crashes
+-        *a3++ = GET_HIGH_S16_OF_32(asFixedPoint); // integer part
+-        *t0++ = GET_LOW_S16_OF_32(asFixedPoint);  // fraction part
+-    }
+-#endif
++	for( i = 0; i < 4; i++ ) {
++		for( j = 0; j < 3; j++ ) {
++			temp[i][j] = src[i][j] / WORLD_SCALE;
++		}
++		temp[i][3] = src[i][3];
++	}
++
++	guMtxF2L( temp, dest );
+ }
+ 
+ /**
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index 3d89385..0462643 100644
+index db590e1..7ae969f 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
-@@ -138,10 +138,10 @@ static s32 find_wall_collisions_from_list(struct SurfaceNode *surfaceNode, struc
+@@ -21,15 +21,21 @@
+  * have given their wall push.
+  */
+ static s32 find_wall_collisions_from_list(struct SurfaceNode *surfaceNode, struct WallCollisionData *data) {
++    const f32 corner_threshold = -0.9f;
++
+     register struct Surface *surf;
+     register f32 offset;
+     register f32 radius = data->radius;
+     register f32 x = data->x;
+     register f32 y = data->y + data->offsetY;
+     register f32 z = data->z;
+-    register f32 px, pz;
+-    register f32 w1, w2, w3;
+-    register f32 y1, y2, y3;
++    register f32 v0x, v0y, v0z;
++    register f32 v1x, v1y, v1z;
++    register f32 v2x, v2y, v2z;
++    register f32 d00, d01, d11, d20, d21;
++    register f32 invDenom;
++    register f32 v, w;
++    register f32 margin_radius = radius - 1.0f;
+     s32 numCols = 0;
+ 
+     // Max collision radius = 200
+@@ -49,76 +55,18 @@ static s32 find_wall_collisions_from_list(struct SurfaceNode *surfaceNode, struc
+ 
+         offset = surf->normal.x * x + surf->normal.y * y + surf->normal.z * z + surf->originOffset;
+ 
+-        if (offset < -radius || offset > radius) {
++        if (offset < 0 || offset > radius) {
+             continue;
+         }
+ 
+-        px = x;
+-        pz = z;
+-
+-        //! (Quantum Tunneling) Due to issues with the vertices walls choose and
+-        //  the fact they are floating point, certain floating point positions
+-        //  along the seam of two walls may collide with neither wall or both walls.
+-        if (surf->flags & SURFACE_FLAG_X_PROJECTION) {
+-            w1 = -surf->vertex1[2];           w2 = -surf->vertex2[2];           w3 = -surf->vertex3[2];
+-            y1 = surf->vertex1[1];            y2 = surf->vertex2[1];            y3 = surf->vertex3[1];
+-
+-            if (surf->normal.x > 0.0f) {
+-                if ((y1 - y) * (w2 - w1) - (w1 - -pz) * (y2 - y1) > 0.0f) {
+-                    continue;
+-                }
+-                if ((y2 - y) * (w3 - w2) - (w2 - -pz) * (y3 - y2) > 0.0f) {
+-                    continue;
+-                }
+-                if ((y3 - y) * (w1 - w3) - (w3 - -pz) * (y1 - y3) > 0.0f) {
+-                    continue;
+-                }
+-            } else {
+-                if ((y1 - y) * (w2 - w1) - (w1 - -pz) * (y2 - y1) < 0.0f) {
+-                    continue;
+-                }
+-                if ((y2 - y) * (w3 - w2) - (w2 - -pz) * (y3 - y2) < 0.0f) {
+-                    continue;
+-                }
+-                if ((y3 - y) * (w1 - w3) - (w3 - -pz) * (y1 - y3) < 0.0f) {
+-                    continue;
+-                }
+-            }
+-        } else {
+-            w1 = surf->vertex1[0];            w2 = surf->vertex2[0];            w3 = surf->vertex3[0];
+-            y1 = surf->vertex1[1];            y2 = surf->vertex2[1];            y3 = surf->vertex3[1];
+-
+-            if (surf->normal.z > 0.0f) {
+-                if ((y1 - y) * (w2 - w1) - (w1 - px) * (y2 - y1) > 0.0f) {
+-                    continue;
+-                }
+-                if ((y2 - y) * (w3 - w2) - (w2 - px) * (y3 - y2) > 0.0f) {
+-                    continue;
+-                }
+-                if ((y3 - y) * (w1 - w3) - (w3 - px) * (y1 - y3) > 0.0f) {
+-                    continue;
+-                }
+-            } else {
+-                if ((y1 - y) * (w2 - w1) - (w1 - px) * (y2 - y1) < 0.0f) {
+-                    continue;
+-                }
+-                if ((y2 - y) * (w3 - w2) - (w2 - px) * (y3 - y2) < 0.0f) {
+-                    continue;
+-                }
+-                if ((y3 - y) * (w1 - w3) - (w3 - px) * (y1 - y3) < 0.0f) {
+-                    continue;
+-                }
+-            }
+-        }
+-
+         // Determine if checking for the camera or not.
+         if (gCheckingSurfaceCollisionsForCamera) {
+-            if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION) {
++            if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION || surf->type == SURFACE_NEW_WATER || surf->type == SURFACE_NEW_WATER_BOTTOM) {
+                 continue;
+             }
+         } else {
+             // Ignore camera only surfaces.
+-            if (surf->type == SURFACE_CAMERA_BOUNDARY) {
++            if (surf->type == SURFACE_CAMERA_BOUNDARY || surf->type == SURFACE_NEW_WATER || surf->type == SURFACE_NEW_WATER_BOTTOM) {
+                 continue;
+             }
+ 
+@@ -138,10 +86,118 @@ static s32 find_wall_collisions_from_list(struct SurfaceNode *surfaceNode, struc
              }
          }
  
 -        //! (Wall Overlaps) Because this doesn't update the x and z local variables,
 -        //  multiple walls can push mario more than is required.
-         data->x += surf->normal.x * (radius - offset);
-+        x +=       surf->normal.x * (radius - offset);
-         data->z += surf->normal.z * (radius - offset);
-+        z +=       surf->normal.z * (radius - offset);
+-        data->x += surf->normal.x * (radius - offset);
+-        data->z += surf->normal.z * (radius - offset);
++        v0x = (f32)(surf->vertex2[0] - surf->vertex1[0]);
++        v0y = (f32)(surf->vertex2[1] - surf->vertex1[1]);
++        v0z = (f32)(surf->vertex2[2] - surf->vertex1[2]);
++
++        v1x = (f32)(surf->vertex3[0] - surf->vertex1[0]);
++        v1y = (f32)(surf->vertex3[1] - surf->vertex1[1]);
++        v1z = (f32)(surf->vertex3[2] - surf->vertex1[2]);
++
++        v2x = x - (f32)surf->vertex1[0];
++        v2y = y - (f32)surf->vertex1[1];
++        v2z = z - (f32)surf->vertex1[2];
++
++        //Face
++        d00 = v0x * v0x + v0y * v0y + v0z * v0z;
++        d01 = v0x * v1x + v0y * v1y + v0z * v1z;
++        d11 = v1x * v1x + v1y * v1y + v1z * v1z;
++        d20 = v2x * v0x + v2y * v0y + v2z * v0z;
++        d21 = v2x * v1x + v2y * v1y + v2z * v1z;
++        invDenom = 1.0f / (d00 * d11 - d01 * d01);
++        v = (d11 * d20 - d01 * d21) * invDenom;
++        if (v < 0.0f || v > 1.0f)
++            goto edge_1_2;
++
++        w = (d00 * d21 - d01 * d20) * invDenom;
++        if (w < 0.0f || w > 1.0f || v + w > 1.0f)
++            goto edge_1_2;
++
++        x += surf->normal.x * (radius - offset);
++        z += surf->normal.z * (radius - offset);
++        goto hasCollision;
++
++    edge_1_2:
++        if (offset < 0)
++            continue;
++        //Edge 1-2
++        if (v0y != 0.0f) {
++            v = (v2y / v0y);
++            if (v < 0.0f || v > 1.0f)
++                goto edge_1_3;
++            d00 = v0x * v - v2x;
++            d01 = v0z * v - v2z;
++            invDenom = sqrtf(d00 * d00 + d01 * d01);
++            offset = invDenom - margin_radius;
++            if (offset > 0.0f)
++                goto edge_1_3;
++            invDenom = offset / invDenom;
++            x += (d00 *= invDenom);
++            z += (d01 *= invDenom);
++            margin_radius += 0.01f;
++
++            if (d00 * surf->normal.x + d01 * surf->normal.z < corner_threshold * offset)
++                continue;
++            else
++                goto hasCollision;
++        }
++
++    edge_1_3:
++        //Edge 1-3
++        if (v1y != 0.0f) {
++            v = (v2y / v1y);
++            if (v < 0.0f || v > 1.0f)
++                goto edge_2_3;
++            d00 = v1x * v - v2x;
++            d01 = v1z * v - v2z;
++            invDenom = sqrtf(d00 * d00 + d01 * d01);
++            offset = invDenom - margin_radius;
++            if (offset > 0.0f)
++                goto edge_2_3;
++            invDenom = offset / invDenom;
++            x += (d00 *= invDenom);
++            z += (d01 *= invDenom);
++            margin_radius += 0.01f;
++
++            if (d00 * surf->normal.x + d01 * surf->normal.z < corner_threshold * offset)
++                continue;
++            else
++                goto hasCollision;
++        }
++
++    edge_2_3:
++        //Edge 2-3
++        v1x = (f32)(surf->vertex3[0] - surf->vertex2[0]);
++        v1y = (f32)(surf->vertex3[1] - surf->vertex2[1]);
++        v1z = (f32)(surf->vertex3[2] - surf->vertex2[2]);
++
++        v2x = x - (f32)surf->vertex2[0];
++        v2y = y - (f32)surf->vertex2[1];
++        v2z = z - (f32)surf->vertex2[2];
++
++        if (v1y != 0.0f) {
++            v = (v2y / v1y);
++            if (v < 0.0f || v > 1.0f)
++                continue;
++            d00 = v1x * v - v2x;
++            d01 = v1z * v - v2z;
++            invDenom = sqrtf(d00 * d00 + d01 * d01);
++            offset = invDenom - margin_radius;
++            if (offset > 0.0f)
++                continue;
++            invDenom = offset / invDenom;
++            x += (d00 *= invDenom);
++            z += (d01 *= invDenom);
++            margin_radius += 0.01f;
++            if (d00 * surf->normal.x + d01 * surf->normal.z < corner_threshold * offset)
++                continue;
++            else
++                goto hasCollision;
++        }
++        else
++            continue;
++
++    hasCollision:
  
          //! (Unreferenced Walls) Since this only returns the first four walls,
          //  this can lead to wall interaction being missed. Typically unreferenced walls
-@@ -193,13 +193,6 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
+@@ -153,6 +209,9 @@ static s32 find_wall_collisions_from_list(struct SurfaceNode *surfaceNode, struc
+         numCols++;
+     }
+ 
++    data->x = x;
++    data->z = z;
++
+     return numCols;
+ }
+ 
+@@ -193,13 +252,6 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
  
      colData->numWalls = 0;
  
@@ -124,19 +421,73 @@ index 3d89385..0462643 100644
      // World (level) consists of a 16x16 grid. Find where the collision is on
      // the grid (round toward -inf)
      cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
-@@ -229,9 +222,9 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
- static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32 x, s32 y, s32 z, f32 *pheight) {
+@@ -223,15 +275,26 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
+  *                     CEILINGS                   *
+  **************************************************/
+ 
++void add_ceil_margin(f32 *x, f32 *z, Vec3s target1, Vec3s target2, f32 margin) {
++    register f32 diff_x, diff_z, invDenom;
++    diff_x = target1[0] - *x + target2[0] - *x;
++    diff_z = target1[2] - *z + target2[2] - *z;
++    invDenom = margin / sqrtf(diff_x * diff_x + diff_z * diff_z);
++    *x += diff_x * invDenom;
++    *z += diff_z * invDenom;
++}
++
+ /**
+  * Iterate through the list of ceilings and find the first ceiling over a given point.
+  */
+-static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32 x, s32 y, s32 z, f32 *pheight) {
++static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, f32 x, f32 y, f32 z, f32 *pheight) {
      register struct Surface *surf;
-     register s32 x1, z1, x2, z2, x3, z3;
+-    register s32 x1, z1, x2, z2, x3, z3;
++    f32 x1, z1, x2, z2, x3, z3;
 +    f32 nx, ny, nz, oo, height;
      struct Surface *ceil = NULL;
 -
 -    ceil = NULL;
++    f32 newHeight;
++    const f32 margin = 1.5f;
 +    *pheight = CELL_HEIGHT_LIMIT;
  
      // Stay in this loop until out of ceilings.
      while (surfaceNode != NULL) {
-@@ -269,11 +262,10 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -240,8 +303,13 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+ 
+         x1 = surf->vertex1[0];
+         z1 = surf->vertex1[2];
++        if (surf->type != SURFACE_HANGABLE)
++            add_ceil_margin(&x1, &z1, surf->vertex2, surf->vertex3, margin);
++
+         z2 = surf->vertex2[2];
+         x2 = surf->vertex2[0];
++        if (surf->type != SURFACE_HANGABLE)
++            add_ceil_margin(&x2, &z2, surf->vertex3, surf->vertex1, margin);
+ 
+         // Checking if point is in bounds of the triangle laterally.
+         if ((z1 - z) * (x2 - x1) - (x1 - x) * (z2 - z1) > 0) {
+@@ -251,6 +319,9 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+         // Slight optimization by checking these later.
+         x3 = surf->vertex3[0];
+         z3 = surf->vertex3[2];
++        if (surf->type != SURFACE_HANGABLE)
++            add_ceil_margin(&x3, &z3, surf->vertex1, surf->vertex2, margin);
++
+         if ((z2 - z) * (x3 - x2) - (x2 - x) * (z3 - z2) > 0) {
+             continue;
+         }
+@@ -260,20 +331,19 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+ 
+         // Determine if checking for the camera or not.
+         if (gCheckingSurfaceCollisionsForCamera != 0) {
+-            if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION) {
++            if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION || surf->type == SURFACE_NEW_WATER || surf->type == SURFACE_NEW_WATER_BOTTOM) {
+                 continue;
+             }
+         }
+         // Ignore camera only surfaces.
+-        else if (surf->type == SURFACE_CAMERA_BOUNDARY) {
++        else if (surf->type == SURFACE_CAMERA_BOUNDARY || surf->type == SURFACE_NEW_WATER || surf->type == SURFACE_NEW_WATER_BOTTOM) {
              continue;
          }
  
@@ -152,33 +503,38 @@ index 3d89385..0462643 100644
  
          // If a wall, ignore it. Likely a remnant, should never occur.
          if (ny == 0.0f) {
-@@ -283,21 +275,26 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -281,63 +351,54 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+         }
+ 
          // Find the ceil height at the specific point.
-         height = -(x * nx + nz * z + oo) / ny;
+-        height = -(x * nx + nz * z + oo) / ny;
++        newHeight = -(x * nx + nz * z + oo) / ny;
  
 -        // Checks for ceiling interaction with a 78 unit buffer.
 -        //! (Exposed Ceilings) Because any point above a ceiling counts
 -        //  as interacting with a ceiling, ceilings far below can cause
 -        // "invisible walls" that are really just exposed ceilings.
 -        if (y - (height - -78.0f) > 0.0f) {
-+        if (height > *pheight) {
-+            continue;
-+        }
-+
++        if (newHeight > *pheight) {
+             continue;
+         }
+ 
+-        *pheight = height;
+-        ceil = surf;
+-        break;
 +        // Checks for ceiling interaction
-+        if (y > height) {
++        if (y > newHeight) {
 +            continue;
 +        }
 +
 +        if (y >= surf->upperY) {
-             continue;
-         }
- 
-         *pheight = height;
-         ceil = surf;
--        break;
-+        if (height == y) {
-+            break;
++            continue;
++        }
++
++        if (ceil == NULL || newHeight < height) {
++            height = newHeight;
++            *pheight = height;
++            ceil = surf;
 +        }
      }
  
@@ -187,9 +543,25 @@ index 3d89385..0462643 100644
      return ceil;
  }
  
-@@ -320,13 +317,6 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
-     z = (s16) posZ;
-     *pceil = NULL;
+ /**
+  * Find the lowest ceiling above a given position and return the height.
+  */
+-f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
++f32 find_ceil(f32 xPos, f32 yPos, f32 zPos, struct Surface **pceil) {
+     s16 cellZ, cellX;
+     struct Surface *ceil, *dynamicCeil;
+     struct SurfaceNode *surfaceList;
+     f32 height = CELL_HEIGHT_LIMIT;
+     f32 dynamicHeight = CELL_HEIGHT_LIMIT;
+-    s16 x, y, z;
+-
+-    //! (Parallel Universes) Because position is casted to an s16, reaching higher
+-    // float locations  can return ceilings despite them not existing there.
+-    //(Dynamic ceilings will unload due to the range.)
+-    x = (s16) posX;
+-    y = (s16) posY;
+-    z = (s16) posZ;
+-    *pceil = NULL;
  
 -    if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
 -        return height;
@@ -197,44 +569,165 @@ index 3d89385..0462643 100644
 -    if (z <= -LEVEL_BOUNDARY_MAX || z >= LEVEL_BOUNDARY_MAX) {
 -        return height;
 -    }
--
++    *pceil = NULL;
+ 
      // Each level is split into cells to limit load, find the appropriate cell.
-     cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
-     cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
-@@ -400,10 +390,9 @@ f32 find_floor_height_and_data(f32 xPos, f32 yPos, f32 zPos, struct FloorGeometr
+-    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+-    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellZ = (((s32)zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+ 
+     // Check for surfaces belonging to objects.
+     surfaceList = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_CEILS].next;
+-    dynamicCeil = find_ceil_from_list(surfaceList, x, y, z, &dynamicHeight);
++    dynamicCeil = find_ceil_from_list(surfaceList, xPos, yPos, zPos, &dynamicHeight);
+ 
+     // Check for surfaces that are a part of level geometry.
+     surfaceList = gStaticSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_CEILS].next;
+-    ceil = find_ceil_from_list(surfaceList, x, y, z, &height);
++    ceil = find_ceil_from_list(surfaceList, xPos, yPos, zPos, &height);
+ 
+     if (dynamicHeight < height) {
+         ceil = dynamicCeil;
+@@ -370,8 +431,6 @@ f32 unused_obj_find_floor_height(struct Object *obj) {
+  */
+ struct FloorGeometry sFloorGeo;
+ 
+-static u8 unused8038BE50[0x40];
+-
+ /**
+  * Return the floor height underneath (xPos, yPos, zPos) and populate `floorGeo`
+  * with data about the floor's normal vector and origin offset. Also update
+@@ -399,11 +458,11 @@ f32 find_floor_height_and_data(f32 xPos, f32 yPos, f32 zPos, struct FloorGeometr
+  */
  static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32 x, s32 y, s32 z, f32 *pheight) {
      register struct Surface *surf;
-     register s32 x1, z1, x2, z2, x3, z3;
+-    register s32 x1, z1, x2, z2, x3, z3;
 -    f32 nx, ny, nz;
 -    f32 oo;
 -    f32 height;
++    register f32 x1, z1, x2, z2, x3, z3;
 +    f32 nx, ny, nz, oo, height;
++    f32 newHeight;
      struct Surface *floor = NULL;
 +    *pheight = FLOOR_LOWER_LIMIT;
  
      // Iterate through the list of floors until there are no more floors.
      while (surfaceNode != NULL) {
-@@ -454,8 +443,12 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -433,12 +492,12 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+ 
+         // Determine if we are checking for the camera or not.
+         if (gCheckingSurfaceCollisionsForCamera != 0) {
+-            if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION) {
++            if (surf->flags & SURFACE_FLAG_NO_CAM_COLLISION || surf->type == SURFACE_NEW_WATER || surf->type == SURFACE_NEW_WATER_BOTTOM) {
+                 continue;
+             }
+         }
+         // If we are not checking for the camera, ignore camera only floors.
+-        else if (surf->type == SURFACE_CAMERA_BOUNDARY) {
++        else if (surf->type == SURFACE_CAMERA_BOUNDARY || surf->type == SURFACE_NEW_WATER || surf->type == SURFACE_NEW_WATER_BOTTOM) {
+             continue;
+         }
+ 
+@@ -453,23 +512,98 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+         }
  
          // Find the height of the floor at a given location.
-         height = -(x * nx + nz * z + oo) / ny;
+-        height = -(x * nx + nz * z + oo) / ny;
++        newHeight = -(x * nx + nz * z + oo) / ny;
 +
-+        if (height < *pheight) {
++        if (newHeight < *pheight) {
 +            continue;
 +        }
          // Checks for floor interaction with a 78 unit buffer.
 -        if (y - (height + -78.0f) < 0.0f) {
-+        if (y < (height - 78.0f)) {
++        if (y < (newHeight - 78.0f)) {
              continue;
          }
  
-@@ -465,11 +458,11 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+ #ifdef CHEATS_ACTIONS
+-        height = cheats_walk_on_environment(height, x, z);
++        newHeight = cheats_walk_on_environment(newHeight, x, z);
+ #endif
  
-         *pheight = height;
-         floor = surf;
+-        *pheight = height;
+-        floor = surf;
 -        break;
-+        if (height - 78.0f == y) {
-+            break;
++        if (floor == NULL || newHeight > height) {
++            height = newHeight;
++            *pheight = height;
++            floor = surf;
++        }
++    }
++
++    return floor;
++}
++
++static s16 check_within_triangle_bounds(s32 x, s32 z, struct Surface *surf) {
++    register s32 x1, z1, x2, z2, x3, z3;
++    x1 = surf->vertex1[0];
++    z1 = surf->vertex1[2];
++    x2 = surf->vertex2[0];
++    z2 = surf->vertex2[2];
++
++    if ((z1 - z) * (x2 - x1) - (x1 - x) * (z2 - z1) < 0) return FALSE;
++
++    x3 = surf->vertex3[0];
++    z3 = surf->vertex3[2];
++
++    if ((z2 - z) * (x3 - x2) - (x2 - x) * (z3 - z2) < 0) return FALSE;
++    if ((z3 - z) * (x1 - x3) - (x3 - x) * (z1 - z3) < 0) return FALSE;
++
++    return TRUE;
++}
++
++// Find the height of the floor at a given location
++static f32 get_floor_height_at_location(s32 x, s32 z, struct Surface *surf) {
++    return -(x * surf->normal.x + surf->normal.z * z + surf->originOffset) / surf->normal.y;
++}
++
++/**
++ * Iterate through the list of water floors and find the first water floor under a given point.
++ */
++struct Surface *find_water_floor_from_list(struct SurfaceNode *surfaceNode, s32 x, s32 y, s32 z,
++                                            f32 *pheight) {
++    register struct Surface *surf;
++    struct Surface *floor = NULL;
++    struct SurfaceNode *topSurfaceNode = surfaceNode;
++    struct SurfaceNode *bottomSurfaceNode = surfaceNode;
++    f32 height = FLOOR_LOWER_LIMIT;
++    f32 bottomHeight = FLOOR_LOWER_LIMIT;
++
++    // Iterate through the list of water floors until there are no more water floors.
++    while (bottomSurfaceNode != NULL) {
++        f32 curBottomHeight = FLOOR_LOWER_LIMIT;
++        surf = bottomSurfaceNode->surface;
++        bottomSurfaceNode = bottomSurfaceNode->next;
++
++        if (surf->type != SURFACE_NEW_WATER_BOTTOM || !check_within_triangle_bounds(x, z, surf)) continue;
++
++        curBottomHeight = get_floor_height_at_location(x, z, surf);
++
++        if (curBottomHeight < y - 78.0f) continue;
++        if (curBottomHeight >= y - 78.0f) bottomHeight = curBottomHeight;
++    }
++
++    // Iterate through the list of water tops until there are no more water tops.
++    while (topSurfaceNode != NULL) {
++        f32 curHeight = FLOOR_LOWER_LIMIT;
++        surf = topSurfaceNode->surface;
++        topSurfaceNode = topSurfaceNode->next;
++
++        if (surf->type == SURFACE_NEW_WATER_BOTTOM || !check_within_triangle_bounds(x, z, surf)) continue;
++
++        curHeight = get_floor_height_at_location(x, z, surf);
++
++        if (bottomHeight != FLOOR_LOWER_LIMIT && curHeight > bottomHeight) continue;
++
++        if (curHeight > height) {
++            height = curHeight;
++            *pheight = curHeight;
++            floor = surf;
 +        }
      }
  
@@ -243,31 +736,34 @@ index 3d89385..0462643 100644
      return floor;
  }
  
-@@ -485,10 +478,35 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
+@@ -485,25 +619,41 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
  }
  
  /**
 - * Find the highest dynamic floor under a given position. Perhaps originally static
 - * and dynamic floors were checked separately.
 + * Find the highest static floor under a given position.
-+ */
+  */
+-f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
 +
 +f32 find_static_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
-+    struct SurfaceNode *surfaceList;
-+    struct Surface *floor;
-+    f32 floorHeight = FLOOR_LOWER_LIMIT;
-+
-+    //! PUs
-+    s16 x = (s16) xPos;
-+    s16 y = (s16) yPos;
-+    s16 z = (s16) zPos;
-+
-+    // Each level is split into cells to limit load, find the appropriate cell.
-+    s16 cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
-+    s16 cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+     struct SurfaceNode *surfaceList;
+     struct Surface *floor;
+     f32 floorHeight = FLOOR_LOWER_LIMIT;
+ 
+-    // Would normally cause PUs, but dynamic floors unload at that range.
+-    s16 x = (s16) xPos;
+-    s16 y = (s16) yPos;
+-    s16 z = (s16) zPos;
+ 
+     // Each level is split into cells to limit load, find the appropriate cell.
+-    s16 cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+-    s16 cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    s16 cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    s16 cellZ = (((s32)zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
 +
 +    surfaceList = gStaticSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_FLOORS].next;
-+    floor = find_floor_from_list(surfaceList, x, y, z, &floorHeight);
++    floor = find_floor_from_list(surfaceList, xPos, yPos, zPos, &floorHeight);
 +
 +    *pfloor = floor;
 +
@@ -276,14 +772,33 @@ index 3d89385..0462643 100644
 +
 +/**
 + * Find the highest dynamic floor under a given position.
-  */
--f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
++ */
 +f32 find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
-     struct SurfaceNode *surfaceList;
-     struct Surface *floor;
-     f32 floorHeight = FLOOR_LOWER_LIMIT;
-@@ -531,13 +549,6 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
++    struct SurfaceNode *surfaceList;
++    struct Surface *floor;
++    f32 floorHeight = FLOOR_LOWER_LIMIT;
++
++    // Each level is split into cells to limit load, find the appropriate cell.
++    s16 cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    s16 cellZ = (((s32)zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
  
+     surfaceList = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_FLOORS].next;
+-    floor = find_floor_from_list(surfaceList, x, y, z, &floorHeight);
++    floor = find_floor_from_list(surfaceList, xPos, yPos, zPos, &floorHeight);
+ 
+     *pfloor = floor;
+ 
+@@ -522,33 +672,19 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+     f32 height = FLOOR_LOWER_LIMIT;
+     f32 dynamicHeight = FLOOR_LOWER_LIMIT;
+ 
+-    //! (Parallel Universes) Because position is casted to an s16, reaching higher
+-    // float locations  can return floors despite them not existing there.
+-    //(Dynamic floors will unload due to the range.)
+-    s16 x = (s16) xPos;
+-    s16 y = (s16) yPos;
+-    s16 z = (s16) zPos;
+-
      *pfloor = NULL;
  
 -    if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
@@ -294,10 +809,136 @@ index 3d89385..0462643 100644
 -    }
 -
      // Each level is split into cells to limit load, find the appropriate cell.
-     cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
-     cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+-    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+-    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellZ = (((s32)zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+ 
+     // Check for surfaces belonging to objects.
+     surfaceList = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_FLOORS].next;
+-    dynamicFloor = find_floor_from_list(surfaceList, x, y, z, &dynamicHeight);
++    dynamicFloor = find_floor_from_list(surfaceList, xPos, yPos, zPos, &dynamicHeight);
+ 
+     // Check for surfaces that are a part of level geometry.
+     surfaceList = gStaticSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_FLOORS].next;
+-    floor = find_floor_from_list(surfaceList, x, y, z, &height);
++    floor = find_floor_from_list(surfaceList, xPos, yPos, zPos, &height);
+ 
+     // To prevent the Merry-Go-Round room from loading when Mario passes above the hole that leads
+     // there, SURFACE_INTANGIBLE is used. This prevent the wrong room from loading, but can also allow
+@@ -559,7 +695,9 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+         //  (happens when there is no floor under the SURFACE_INTANGIBLE floor) but returns the height
+         //  of the SURFACE_INTANGIBLE floor instead of the typical -11000 returned for a NULL floor.
+         if (floor != NULL && floor->type == SURFACE_INTANGIBLE) {
+-            floor = find_floor_from_list(surfaceList, x, (s32)(height - 200.0f), z, &height);
++            floor = find_floor_from_list(surfaceList, xPos, (f32)(height - 200.0f), zPos, &height);
++        } else if (floor == NULL) {
++            height = FLOOR_LOWER_LIMIT;
+         }
+     } else {
+         // To prevent accidentally leaving the floor tangible, stop checking for it.
+@@ -584,10 +722,82 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+     return height;
+ }
+ 
++/**
++ * Find the highest water floor under a given position and return the height.
++ */
++f32 find_water_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
++    s16 cellZ, cellX;
++
++    struct Surface *floor = NULL;
++    struct SurfaceNode *surfaceList;
++
++    f32 height = FLOOR_LOWER_LIMIT;
++
++    // Each level is split into cells to limit load, find the appropriate cell.
++    cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellZ = (((s32)zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++
++    // Check for surfaces that are a part of level geometry.
++    surfaceList = gStaticSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_WATER].next;
++    floor = find_water_floor_from_list(surfaceList, xPos, yPos, zPos, &height);
++
++    if (floor == NULL) {
++        height = FLOOR_LOWER_LIMIT;
++    } else {
++        *pfloor = floor;
++    }
++
++    return height;
++}
++
+ /**************************************************
+  *               ENVIRONMENTAL BOXES              *
+  **************************************************/
+ 
++/**
++ * Finds the height of water at a given location.
++ */
++f32 find_water_level_and_floor(f32 x, f32 z, struct Surface **pfloor) {
++    s32 i;
++    s32 numRegions;
++    s16 val;
++    f32 loX, hiX, loZ, hiZ;
++    f32 waterLevel = FLOOR_LOWER_LIMIT;
++    s16 *p = gEnvironmentRegions;
++    struct Surface *floor = NULL;
++
++    if (gCheckingSurfaceCollisionsForCamera) {
++        waterLevel = find_water_floor(x, gLakituState.pos[1], z, &floor);
++    } else {
++        waterLevel = find_water_floor(x, gMarioState->pos[1], z, &floor);
++    }
++
++    if (p != NULL && waterLevel == FLOOR_LOWER_LIMIT) {
++        numRegions = *p++;
++
++        for (i = 0; i < numRegions; i++) {
++            val = *p++;
++            loX = *p++;
++            loZ = *p++;
++            hiX = *p++;
++            hiZ = *p++;
++
++            // If the location is within a water box and it is a water box.
++            // Water is less than 50 val only, while above is gas and such.
++            if (loX < x && x < hiX && loZ < z && z < hiZ && val < 50) {
++                // Set the water height. Since this breaks, only return the first height.
++                waterLevel = *p;
++                break;
++            }
++            p++;
++        }
++    } else {
++        *pfloor = floor;
++    }
++
++    return waterLevel;
++}
++
+ /**
+  * Finds the height of water at a given location.
+  */
+@@ -598,8 +808,15 @@ f32 find_water_level(f32 x, f32 z) {
+     f32 loX, hiX, loZ, hiZ;
+     f32 waterLevel = FLOOR_LOWER_LIMIT;
+     s16 *p = gEnvironmentRegions;
++    struct Surface *floor;
+ 
+-    if (p != NULL) {
++    if (gCheckingSurfaceCollisionsForCamera) {
++        waterLevel = find_water_floor(x, gLakituState.pos[1], z, &floor);
++    } else {
++        waterLevel = find_water_floor(x, gMarioState->pos[1], z, &floor);
++    }
++
++    if (p != NULL && waterLevel == FLOOR_LOWER_LIMIT) {
+         numRegions = *p++;
+ 
+         for (i = 0; i < numRegions; i++) {
 diff --git a/src/engine/surface_collision.h b/src/engine/surface_collision.h
-index b47fc78..b773782 100644
+index b47fc78..79e6b20 100644
 --- a/src/engine/surface_collision.h
 +++ b/src/engine/surface_collision.h
 @@ -4,32 +4,19 @@
@@ -334,17 +975,19 @@ index b47fc78..b773782 100644
      f32 normalX;
      f32 normalY;
      f32 normalZ;
-@@ -41,6 +28,8 @@ s32 find_wall_collisions(struct WallCollisionData *colData);
+@@ -41,7 +28,10 @@ s32 find_wall_collisions(struct WallCollisionData *colData);
  f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil);
  f32 find_floor_height_and_data(f32 xPos, f32 yPos, f32 zPos, struct FloorGeometry **floorGeo);
  f32 find_floor_height(f32 x, f32 y, f32 z);
 +f32 find_static_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor);
 +f32 find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor);
  f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor);
++f32 find_water_level_and_floor(f32 x, f32 z, struct Surface **pfloor);
  f32 find_water_level(f32 x, f32 z);
  f32 find_poison_gas_level(f32 x, f32 z);
+ void debug_surface_list_info(f32 xPos, f32 zPos);
 diff --git a/src/engine/surface_load.c b/src/engine/surface_load.c
-index 2a827c1..6ce7312 100644
+index 2a827c1..2bb3855 100644
 --- a/src/engine/surface_load.c
 +++ b/src/engine/surface_load.c
 @@ -15,8 +15,6 @@
@@ -356,16 +999,19 @@ index 2a827c1..6ce7312 100644
  /**
   * Partitions for course and object surfaces. The arrays represent
   * the 16x16 cells that each level is split into.
-@@ -44,7 +42,7 @@ s16 sSurfacePoolSize;
+@@ -43,8 +41,9 @@ struct Surface *sSurfacePool;
+ s16 sSurfacePoolSize;
  #endif
  
- 
+-
 -u8 unused8038EEA8[0x30];
++#if SURFACE_POOLS_FULL_MESSAGES
 +u8 gSurfacePoolError;
++#endif
  
  /**
   * Allocate the part of the surface node pool to contain a surface node.
-@@ -62,10 +60,8 @@ static struct SurfaceNode *alloc_surface_node(void) {
+@@ -62,11 +61,11 @@ static struct SurfaceNode *alloc_surface_node(void) {
      node->next = NULL;
  
  #ifndef USE_SYSTEM_MALLOC
@@ -373,24 +1019,50 @@ index 2a827c1..6ce7312 100644
 -    //  we, um...
 -    // Perhaps originally just debug feedback?
 -    if (gSurfaceNodesAllocated >= 7000) {
++#if SURFACE_POOLS_FULL_MESSAGES
 +    if (gSurfaceNodesAllocated >= SURFACE_NODE_POOL_SIZE) {
 +        gSurfacePoolError |= NOT_ENOUGH_ROOM_FOR_NODES;
      }
++#endif
  #endif
  
-@@ -87,10 +83,8 @@ static struct Surface *alloc_surface(void) {
+     return node;
+@@ -87,11 +86,11 @@ static struct Surface *alloc_surface(void) {
      gSurfacesAllocated++;
  
  #ifndef USE_SYSTEM_MALLOC
 -    //! A bounds check! If there's more surfaces than the 2300 allowed,
 -    //  we, um...
 -    // Perhaps originally just debug feedback?
++#if SURFACE_POOLS_FULL_MESSAGES
      if (gSurfacesAllocated >= sSurfacePoolSize) {
 +        gSurfacePoolError |= NOT_ENOUGH_ROOM_FOR_SURFACES;
      }
++#endif
  #endif
  
-@@ -221,7 +215,7 @@ static s16 max_3(s16 a0, s16 a1, s16 a2) {
+     surface->type = 0;
+@@ -113,6 +112,7 @@ static void clear_spatial_partition(SpatialPartitionCell *cells) {
+         (*cells)[SPATIAL_PARTITION_FLOORS].next = NULL;
+         (*cells)[SPATIAL_PARTITION_CEILS].next = NULL;
+         (*cells)[SPATIAL_PARTITION_WALLS].next = NULL;
++        (*cells)[SPATIAL_PARTITION_WATER].next = NULL;
+ 
+         cells++;
+     }
+@@ -139,9 +139,10 @@ static void add_surface_to_cell(s16 dynamic, s16 cellX, s16 cellZ, struct Surfac
+     s16 priority;
+     s16 sortDir;
+     s16 listIndex;
++    s16 isWater = surface->type == SURFACE_NEW_WATER || surface->type == SURFACE_NEW_WATER_BOTTOM;
+ 
+     if (surface->normal.y > 0.01) {
+-        listIndex = SPATIAL_PARTITION_FLOORS;
++        listIndex = isWater ? SPATIAL_PARTITION_WATER : SPATIAL_PARTITION_FLOORS;
+         sortDir = 1; // highest to lowest, then insertion order
+     } else if (surface->normal.y < -0.01) {
+         listIndex = SPATIAL_PARTITION_CEILS;
+@@ -221,7 +222,7 @@ static s16 max_3(s16 a0, s16 a1, s16 a2) {
   * time). This function determines the lower cell for a given x/z position.
   * @param coord The coordinate to test
   */
@@ -399,7 +1071,7 @@ index 2a827c1..6ce7312 100644
      s16 index;
  
      // Move from range [-0x2000, 0x2000) to [0, 0x4000)
-@@ -253,7 +247,7 @@ static s16 lower_cell_index(s16 coord) {
+@@ -253,7 +254,7 @@ static s16 lower_cell_index(s16 coord) {
   * time). This function determines the upper cell for a given x/z position.
   * @param coord The coordinate to test
   */
@@ -408,7 +1080,7 @@ index 2a827c1..6ce7312 100644
      s16 index;
  
      // Move from range [-0x2000, 0x2000) to [0, 0x4000)
-@@ -554,8 +548,8 @@ void alloc_surface_pools(void) {
+@@ -554,8 +555,8 @@ void alloc_surface_pools(void) {
      sDynamicSurfaceNodePool = alloc_only_pool_init();
      sDynamicSurfacePool = alloc_only_pool_init();
  #else
@@ -419,7 +1091,7 @@ index 2a827c1..6ce7312 100644
      sSurfacePool = main_pool_alloc(sSurfacePoolSize * sizeof(struct Surface), MEMORY_POOL_LEFT);
  #endif
  
-@@ -624,7 +618,6 @@ void load_area_terrain(s16 index, s16 *data, s8 *surfaceRooms, s16 *macroObjects
+@@ -624,7 +625,6 @@ void load_area_terrain(s16 index, s16 *data, s8 *surfaceRooms, s16 *macroObjects
  
      // Initialize the data for this.
      gEnvironmentRegions = NULL;
@@ -428,10 +1100,10 @@ index 2a827c1..6ce7312 100644
      gSurfacesAllocated = 0;
  #ifdef USE_SYSTEM_MALLOC
 diff --git a/src/engine/surface_load.h b/src/engine/surface_load.h
-index e41a04a..b62e157 100644
+index e41a04a..93d401a 100644
 --- a/src/engine/surface_load.h
 +++ b/src/engine/surface_load.h
-@@ -3,11 +3,10 @@
+@@ -3,11 +3,12 @@
  
  #include <PR/ultratypes.h>
  
@@ -441,12 +1113,23 @@ index e41a04a..b62e157 100644
  
 -#define NUM_CELLS       (2 * LEVEL_BOUNDARY_MAX / CELL_SIZE)
 -#define NUM_CELLS_INDEX (NUM_CELLS - 1)
++#if SURFACE_POOLS_FULL_MESSAGES
 +extern u8 gSurfacePoolError;
++#endif
  
  struct SurfaceNode
  {
-@@ -25,8 +24,6 @@ enum
- typedef struct SurfaceNode SpatialPartitionCell[3];
+@@ -19,14 +20,13 @@ enum
+ {
+     SPATIAL_PARTITION_FLOORS,
+     SPATIAL_PARTITION_CEILS,
+-    SPATIAL_PARTITION_WALLS
++    SPATIAL_PARTITION_WALLS,
++    SPATIAL_PARTITION_WATER
+ };
+ 
+-typedef struct SurfaceNode SpatialPartitionCell[3];
++typedef struct SurfaceNode SpatialPartitionCell[4];
  
  // Needed for bs bss reordering memes.
 -extern s32 unused8038BE90;
@@ -454,20 +1137,63 @@ index e41a04a..b62e157 100644
  extern SpatialPartitionCell gStaticSurfacePartition[NUM_CELLS][NUM_CELLS];
  extern SpatialPartitionCell gDynamicSurfacePartition[NUM_CELLS][NUM_CELLS];
  extern struct SurfaceNode *sSurfaceNodePool;
+diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
+index 7f4f588..be39143 100644
+--- a/src/extras/bettercamera.c
++++ b/src/extras/bettercamera.c
+@@ -659,7 +659,8 @@ s32 ray_surface_intersect(Vec3f orig, Vec3f dir, f32 dir_length, struct Surface
+ 
+     //Ignore certain surface types.
+     if (surface->type == SURFACE_INTANGIBLE || surface->type == SURFACE_WALL_MISC
+-        || surface->type == SURFACE_VANISH_CAP_WALLS || surface->flags & SURFACE_FLAG_NO_CAM_COLLISION)
++        || surface->type == SURFACE_VANISH_CAP_WALLS || surface->flags & SURFACE_NEW_WATER 
++        || surface->flags & SURFACE_NEW_WATER_BOTTOM || surface->flags & SURFACE_FLAG_NO_CAM_COLLISION)
+         return FALSE;
+ 
+     // Get surface normal and some other stuff
+diff --git a/src/game/behaviors/bowser.inc.c b/src/game/behaviors/bowser.inc.c
+index 97cba2a..c7dd67a 100644
+--- a/src/game/behaviors/bowser.inc.c
++++ b/src/game/behaviors/bowser.inc.c
+@@ -972,6 +972,8 @@ s32 bowser_check_fallen_off_stage(void) // bowser off stage?
+     return 0;
+ }
+ 
++struct PlatformDisplacementInfo sBowserDisplacementInfo;
++
+ void (*sBowserActions[])(void) = { bowser_act_default,  bowser_act_thrown_dropped,  bowser_act_jump_onto_stage,  bowser_act_dance,
+                                    bowser_act_dead,  bowser_act_text_wait,  bowser_act_intro_walk,  bowser_act_charge_mario,
+                                    bowser_act_spit_fire_into_sky,  bowser_act_spit_fire_onto_floor,  bowser_act_hit_edge, bowser_act_turn_from_edge,
+@@ -1032,8 +1034,9 @@ void bowser_free_update(void) {
+     struct Surface *floor;
+     struct Object *platform;
+     UNUSED f32 floorHeight;
+-    if ((platform = o->platform) != NULL)
+-        apply_platform_displacement(FALSE, platform);
++    if ((platform = o->platform) != NULL) {
++        apply_platform_displacement(&sBowserDisplacementInfo, &o->oPosX, (s16 *) &o->oFaceAngleYaw, platform);
++    }
+     o->oBowserUnk10E = 0;
+     cur_obj_update_floor_and_walls();
+     cur_obj_call_action_function(sBowserActions);
+diff --git a/src/game/behaviors/tilting_inverted_pyramid.inc.c b/src/game/behaviors/tilting_inverted_pyramid.inc.c
+index ebce64f..29136e9 100644
+--- a/src/game/behaviors/tilting_inverted_pyramid.inc.c
++++ b/src/game/behaviors/tilting_inverted_pyramid.inc.c
+@@ -131,7 +131,7 @@ void bhv_tilting_inverted_pyramid_loop(void) {
+         mx += posAfterRotation[0] - posBeforeRotation[0];
+         my += posAfterRotation[1] - posBeforeRotation[1];
+         mz += posAfterRotation[2] - posBeforeRotation[2];
+-        set_mario_pos(mx, my, mz);
++        //set_mario_pos(mx, my, mz);
+     }
+ 
+     o->header.gfx.throwMatrix = transform;
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 753d321..9dc0c07 100644
+index af35695..93472d7 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
-@@ -392,6 +392,8 @@ struct CameraStoredInfo sCameraStoreCUp;
-  */
- struct CameraStoredInfo sCameraStoreCutscene;
- 
-+u8 gIsGameCutsceneActive = FALSE;
-+
- // first iteration of data
- u32 unused8032CFC0 = 0;
- struct Object *gCutsceneFocus = NULL;
-@@ -884,21 +886,7 @@ void pan_ahead_of_player(struct Camera *c) {
+@@ -886,21 +886,7 @@ void pan_ahead_of_player(struct Camera *c) {
      vec3f_add(c->focus, pan);
  }
  
@@ -490,45 +1216,15 @@ index 753d321..9dc0c07 100644
      return yaw;
  }
  
-@@ -8433,6 +8421,7 @@ BAD_RETURN(s32) cutscene_red_coin_star_warp(struct Camera *c) {
-     f32 dist;
-     s16 pitch, yaw, posYaw;
-     struct Object *o = gCutsceneFocus;
-+    gIsGameCutsceneActive = TRUE;
- 
-     vec3f_set(sCutsceneVars[1].point, o->oHomeX, o->oHomeY, o->oHomeZ);
-     vec3f_get_dist_and_angle(sCutsceneVars[1].point, c->pos, &dist, &pitch, &yaw);
-@@ -8475,6 +8464,7 @@ BAD_RETURN(s32) cutscene_red_coin_star(struct Camera *c) {
-  * End the red coin star spawning cutscene
-  */
- BAD_RETURN(s32) cutscene_red_coin_star_end(struct Camera *c) {
-+    gIsGameCutsceneActive = FALSE;
-     retrieve_info_star(c);
-     gCutsceneTimer = CUTSCENE_STOP;
-     c->cutscene = 0;
-diff --git a/src/game/camera.h b/src/game/camera.h
-index fb73012..a4888e6 100644
---- a/src/game/camera.h
-+++ b/src/game/camera.h
-@@ -675,6 +675,8 @@ extern s32 gObjCutsceneDone;
- extern struct Camera *gCamera;
- #endif
- 
-+extern u8 gIsGameCutsceneActive;
-+
- extern struct Object *gCutsceneFocus;
- extern struct Object *gSecondCameraFocus;
- extern u8 gRecentCutscene;
 diff --git a/src/game/hud.c b/src/game/hud.c
-index 26cbdb5..e956d45 100644
+index f362551..1e8d8d9 100644
 --- a/src/game/hud.c
 +++ b/src/game/hud.c
-@@ -431,6 +431,20 @@ extern Texture texture_hud_char_puppycam[];
+@@ -428,6 +428,19 @@ void render_hud_camera_status(void) {
      gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
  }
  
-+#ifdef TARGET_N64
-+
++#if SURFACE_POOLS_FULL_MESSAGES
 +#include "engine/surface_load.h"
 +void render_hud_surface_text(void) {
 +    if (gSurfacePoolError & NOT_ENOUGH_ROOM_FOR_NODES) {
@@ -544,21 +1240,46 @@ index 26cbdb5..e956d45 100644
  /**
   * Render HUD strings using hudDisplayFlags with it's render functions,
   * excluding the cannon reticle which detects a camera preset for it.
-@@ -516,5 +530,9 @@ void render_hud(void) {
-         ) {
+@@ -503,5 +516,9 @@ void render_hud(void) {
+         if (hudDisplayFlags & HUD_DISPLAY_FLAG_TIMER) {
              render_hud_timer();
          }
 +        
-+#ifdef TARGET_N64
++#if SURFACE_POOLS_FULL_MESSAGES
 +        render_hud_surface_text();
 +#endif
      }
  }
+diff --git a/src/game/interaction.c b/src/game/interaction.c
+index 665ec49..d32edfb 100644
+--- a/src/game/interaction.c
++++ b/src/game/interaction.c
+@@ -1757,12 +1757,14 @@ u32 interact_text(struct MarioState *m, UNUSED u32 interactType, struct Object *
+ 
+ void check_kick_or_punch_wall(struct MarioState *m) {
+     if (m->flags & (MARIO_PUNCHING | MARIO_KICKING | MARIO_TRIPPING)) {
+-        Vec3f detector;
+-        detector[0] = m->pos[0] + 50.0f * sins(m->faceAngle[1]);
+-        detector[2] = m->pos[2] + 50.0f * coss(m->faceAngle[1]);
+-        detector[1] = m->pos[1];
+-
+-        if (resolve_and_return_wall_collisions(detector, 80.0f, 5.0f) != NULL) {
++        struct WallCollisionData detector;
++        detector.x = m->pos[0] + 50.0f * sins(m->faceAngle[1]);
++        detector.z = m->pos[2] + 50.0f * coss(m->faceAngle[1]);
++        detector.y = m->pos[1];
++        detector.offsetY = 80.0f;
++        detector.radius = 5.0f;
++
++        if (find_wall_collisions(&detector) > 0) {
+             if (m->action != ACT_MOVE_PUNCHING || m->forwardVel >= 0.0f) {
+                 if (m->action == ACT_PUNCHING) {
+                     m->action = ACT_MOVE_PUNCHING;
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 3a967e5..ecf6bbf 100644
+index 92dd7bd..cddc2e2 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -534,6 +534,10 @@ u32 mario_get_terrain_sound_addend(struct MarioState *m) {
+@@ -533,6 +533,10 @@ u32 mario_get_terrain_sound_addend(struct MarioState *m) {
  struct Surface *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 radius) {
      struct WallCollisionData collisionData;
      struct Surface *wall = NULL;
@@ -569,7 +1290,7 @@ index 3a967e5..ecf6bbf 100644
  
      collisionData.x = pos[0];
      collisionData.y = pos[1];
-@@ -542,15 +546,26 @@ struct Surface *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 ra
+@@ -541,25 +545,50 @@ struct Surface *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 ra
      collisionData.offsetY = offset;
  
      if (find_wall_collisions(&collisionData)) {
@@ -599,7 +1320,23 @@ index 3a967e5..ecf6bbf 100644
      return wall;
  }
  
-@@ -560,7 +575,7 @@ struct Surface *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 ra
++void resolve_and_return_wall_collisions_simple(Vec3f pos, f32 offset, f32 radius, struct WallCollisionData *collisionData) {
++    collisionData->x = pos[0];
++    collisionData->y = pos[1];
++    collisionData->z = pos[2];
++    collisionData->radius = radius;
++    collisionData->offsetY = offset;
++
++	find_wall_collisions(collisionData);
++
++    pos[0] = collisionData->x;
++    pos[1] = collisionData->y;
++    pos[2] = collisionData->z;
++}
++
+ /**
+  * Finds the ceiling from a vec3f horizontally and a height (with 80 vertical buffer).
+  */
  f32 vec3f_find_ceil(Vec3f pos, f32 height, struct Surface **ceil) {
      UNUSED f32 unused;
  
@@ -608,7 +1345,42 @@ index 3a967e5..ecf6bbf 100644
  }
  
  /**
-@@ -1341,7 +1356,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
+@@ -1183,6 +1212,24 @@ s32 transition_submerged_to_walking(struct MarioState *m) {
+     }
+ }
+ 
++/**
++ * Transitions Mario from a submerged action to an airborne action.
++ * You may want to change these actions to fit your hack
++ */
++s32 transition_submerged_to_airborne(struct MarioState *m) {
++    set_camera_mode(m->area->camera, m->area->camera->defMode, 1);
++
++    vec3s_set(m->angleVel, 0, 0, 0);
++
++    if (m->heldObj == NULL) {
++        if (m->input & INPUT_A_DOWN) return set_mario_action(m, ACT_DIVE, 0);
++        else return set_mario_action(m, ACT_FREEFALL, 0);
++    } else {
++        if (m->input & INPUT_A_DOWN) return set_mario_action(m, ACT_HOLD_JUMP, 0);
++        else return set_mario_action(m, ACT_HOLD_FREEFALL, 0);
++    }
++}
++
+ /**
+  * This is the transition function typically for entering a submerged action for a
+  * non-submerged action. This also applies the water surface camera preset.
+@@ -1191,7 +1238,8 @@ s32 set_water_plunge_action(struct MarioState *m) {
+     m->forwardVel = m->forwardVel / 4.0f;
+     m->vel[1] = m->vel[1] / 2.0f;
+ 
+-    m->pos[1] = m->waterLevel - 100;
++    // !BUG: Causes waterbox upwarp
++    // m->pos[1] = m->waterLevel - 100;
+ 
+     m->faceAngle[2] = 0;
+ 
+@@ -1337,7 +1385,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
      f32 ceilToFloorDist;
  
      f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 60.0f, 50.0f);
@@ -617,7 +1389,7 @@ index 3a967e5..ecf6bbf 100644
  
      m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
  
-@@ -1354,7 +1369,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
+@@ -1350,7 +1398,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
          m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
      }
  
@@ -626,13 +1398,49 @@ index 3a967e5..ecf6bbf 100644
      gasLevel = find_poison_gas_level(m->pos[0], m->pos[2]);
      m->waterLevel = find_water_level(m->pos[0], m->pos[2]);
  
+diff --git a/src/game/mario.h b/src/game/mario.h
+index 0c573b8..e3eeaf9 100644
+--- a/src/game/mario.h
++++ b/src/game/mario.h
+@@ -6,6 +6,8 @@
+ #include "macros.h"
+ #include "types.h"
+ 
++#include "engine/surface_collision.h"
++
+ s32 is_anim_at_end(struct MarioState *m);
+ s32 is_anim_past_end(struct MarioState *m);
+ s16 set_mario_animation(struct MarioState *m, s32 targetAnimID);
+@@ -29,6 +31,7 @@ void mario_set_forward_vel(struct MarioState *m, f32 speed);
+ s32 mario_get_floor_class(struct MarioState *m);
+ u32 mario_get_terrain_sound_addend(struct MarioState *m);
+ struct Surface *resolve_and_return_wall_collisions(Vec3f pos, f32 offset, f32 radius);
++void resolve_and_return_wall_collisions_simple(Vec3f pos, f32 offset, f32 radius, struct WallCollisionData *collisionData);
+ f32 vec3f_find_ceil(Vec3f pos, f32 height, struct Surface **ceil);
+ s32 mario_facing_downhill(struct MarioState *m, s32 turnYaw);
+ u32 mario_floor_is_slippery(struct MarioState *m);
+@@ -46,6 +49,7 @@ s32 hurt_and_set_mario_action(struct MarioState *m, u32 action, u32 actionArg, s
+ s32 check_common_action_exits(struct MarioState *m);
+ s32 check_common_hold_action_exits(struct MarioState *m);
+ s32 transition_submerged_to_walking(struct MarioState *m);
++s32 transition_submerged_to_airborne(struct MarioState *m);
+ s32 set_water_plunge_action(struct MarioState *m);
+ u32 update_and_return_cap_flags(struct MarioState *m);
+ s32 execute_mario_action(UNUSED struct Object *o);
 diff --git a/src/game/mario_actions_automatic.c b/src/game/mario_actions_automatic.c
-index 58c30bf..9de6026 100644
+index c0c3f93..c2e9565 100644
 --- a/src/game/mario_actions_automatic.c
 +++ b/src/game/mario_actions_automatic.c
-@@ -313,7 +313,7 @@ s32 perform_hanging_step(struct MarioState *m, Vec3f nextPos) {
+@@ -312,9 +312,13 @@ s32 perform_hanging_step(struct MarioState *m, Vec3f nextPos) {
+     f32 floorHeight;
+     f32 ceilOffset;
  
-     m->wall = resolve_and_return_wall_collisions(nextPos, 50.0f, 50.0f);
+-    m->wall = resolve_and_return_wall_collisions(nextPos, 50.0f, 50.0f);
++	struct WallCollisionData wallCollisionData;
++
++	resolve_and_return_wall_collisions_simple(nextPos, 50.0f, 50.0f, &wallCollisionData);
++	m->wall = wallCollisionData.numWalls == 0 ? NULL : wallCollisionData.walls[0];
++
      floorHeight = find_floor(nextPos[0], nextPos[1], nextPos[2], &floor);
 -    ceilHeight = vec3f_find_ceil(nextPos, floorHeight, &ceil);
 +    ceilHeight = vec3f_find_ceil(nextPos, nextPos[1], &ceil);
@@ -640,7 +1448,7 @@ index 58c30bf..9de6026 100644
      if (floor == NULL) {
          return HANG_HIT_CEIL_OR_OOB;
 diff --git a/src/game/mario_actions_submerged.c b/src/game/mario_actions_submerged.c
-index 35ba601..428a536 100644
+index 35ba601..a43c8d5 100644
 --- a/src/game/mario_actions_submerged.c
 +++ b/src/game/mario_actions_submerged.c
 @@ -76,7 +76,7 @@ static u32 perform_water_full_step(struct MarioState *m, Vec3f nextPos) {
@@ -652,12 +1460,48 @@ index 35ba601..428a536 100644
  
      if (floor == NULL) {
          return WATER_STEP_CANCELLED;
+@@ -1494,7 +1494,13 @@ static s32 act_hold_metal_water_fall_land(struct MarioState *m) {
+ static s32 check_common_submerged_cancels(struct MarioState *m) {
+     if (m->pos[1] > m->waterLevel - 80) {
+         if (m->waterLevel - 80 > m->floorHeight) {
+-            m->pos[1] = m->waterLevel - 80;
++            // m->pos[1] = m->waterLevel - 80; //! BUG: Downwarp swimming out of waterfalls
++            if (m->pos[1] - (m->waterLevel - 80) < 50) {
++                m->pos[1] = m->waterLevel - 80; // lock mario to top if the falloff isn't big enough
++            } else {
++                // m->pos[1] = m->waterLevel - 80; //! BUG: Downwarp swimming out of waterfalls
++                return transition_submerged_to_airborne(m);
++            }
+         } else {
+             //! If you press B to throw the shell, there is a ~5 frame window
+             // where your held object is the shell, but you are not in the
 diff --git a/src/game/mario_step.c b/src/game/mario_step.c
-index 836a856..28141cc 100644
+index 836a856..05bde1a 100644
 --- a/src/game/mario_step.c
 +++ b/src/game/mario_step.c
-@@ -279,7 +279,7 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
-     upperWall = resolve_and_return_wall_collisions(nextPos, 60.0f, 50.0f);
+@@ -267,24 +267,27 @@ s32 stationary_ground_step(struct MarioState *m) {
+ }
+ 
+ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
+-    UNUSED struct Surface *lowerWall;
+-    struct Surface *upperWall;
++    struct WallCollisionData lowerWall;
++    struct WallCollisionData upperWall;
+     struct Surface *ceil;
+     struct Surface *floor;
+     f32 ceilHeight;
+     f32 floorHeight;
+     f32 waterLevel;
+ 
+-    lowerWall = resolve_and_return_wall_collisions(nextPos, 30.0f, 24.0f);
+-    upperWall = resolve_and_return_wall_collisions(nextPos, 60.0f, 50.0f);
++    s16 i;
++    s16 wallDYaw;
++    s32 oldWallDYaw;
++    s32 absWallDYaw;
++
++    resolve_and_return_wall_collisions_simple(nextPos, 30.0f, 24.0f, &lowerWall);
++    resolve_and_return_wall_collisions_simple(nextPos, 60.0f, 50.0f, &upperWall);
  
      floorHeight = find_floor(nextPos[0], nextPos[1], nextPos[2], &floor);
 -    ceilHeight = vec3f_find_ceil(nextPos, floorHeight, &ceil);
@@ -665,9 +1509,48 @@ index 836a856..28141cc 100644
  
      waterLevel = find_water_level(nextPos[0], nextPos[2]);
  
-@@ -336,8 +336,13 @@ s32 perform_ground_step(struct MarioState *m) {
+-    m->wall = upperWall;
+-
+     if (floor == NULL) {
+         return GROUND_STEP_HIT_WALL_STOP_QSTEPS;
+     }
+@@ -314,14 +317,26 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
+     m->floor = floor;
+     m->floorHeight = floorHeight;
+ 
+-    if (upperWall != NULL) {
+-        s16 wallDYaw = atan2s(upperWall->normal.z, upperWall->normal.x) - m->faceAngle[1];
++    if (m->wall != NULL) {
++        oldWallDYaw = atan2s(m->wall->normal.z, m->wall->normal.x) - m->faceAngle[1];
++        oldWallDYaw = oldWallDYaw < 0 ? -oldWallDYaw : oldWallDYaw;
++    }
++    else
++        oldWallDYaw = 0;
++
++    for (i = 0; i < upperWall.numWalls; i++) {
++        wallDYaw = atan2s(upperWall.walls[i]->normal.z, upperWall.walls[i]->normal.x) - m->faceAngle[1];
++        absWallDYaw = wallDYaw < 0 ? -wallDYaw : wallDYaw;
++        if (absWallDYaw > oldWallDYaw) {
++            oldWallDYaw = absWallDYaw;
++            m->wall = upperWall.walls[i];
++        }
+ 
+         if (wallDYaw >= 0x2AAA && wallDYaw <= 0x5555) {
+-            return GROUND_STEP_NONE;
++            continue;
+         }
+         if (wallDYaw <= -0x2AAA && wallDYaw >= -0x5555) {
+-            return GROUND_STEP_NONE;
++            continue;
+         }
+ 
+         return GROUND_STEP_HIT_WALL_CONTINUE_QSTEPS;
+@@ -335,9 +350,16 @@ s32 perform_ground_step(struct MarioState *m) {
+     u32 stepResult;
      Vec3f intendedPos;
  
++    m->wall = NULL;
++
      for (i = 0; i < 4; i++) {
 -        intendedPos[0] = m->pos[0] + m->floor->normal.y * (m->vel[0] / 4.0f);
 -        intendedPos[2] = m->pos[2] + m->floor->normal.y * (m->vel[2] / 4.0f);
@@ -681,8 +1564,128 @@ index 836a856..28141cc 100644
          intendedPos[1] = m->pos[1];
  
          stepResult = perform_ground_quarter_step(m, intendedPos);
-@@ -413,7 +418,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
-     lowerWall = resolve_and_return_wall_collisions(nextPos, 30.0f, 50.0f);
+@@ -356,9 +378,8 @@ s32 perform_ground_step(struct MarioState *m) {
+     return stepResult;
+ }
+ 
+-u32 check_ledge_grab(struct MarioState *m, struct Surface *wall, Vec3f intendedPos, Vec3f nextPos) {
+-    struct Surface *ledgeFloor;
+-    Vec3f ledgePos;
++struct Surface *check_ledge_grab(struct MarioState *m, struct Surface *grabbedWall, struct Surface *wall, 
++                                Vec3f intendedPos, Vec3f nextPos, Vec3f ledgePos, struct Surface **ledgeFloor) {
+     f32 displacementX;
+     f32 displacementZ;
+ 
+@@ -366,59 +387,103 @@ u32 check_ledge_grab(struct MarioState *m, struct Surface *wall, Vec3f intendedP
+         return FALSE;
+     }
+ 
++    //Return the already grabbed wall if Mario is moving into it more than the newly tested wall
++    if (grabbedWall != NULL && 
++        grabbedWall->normal.x * m->vel[0] + grabbedWall->normal.z * m->vel[2] < wall->normal.x * m->vel[0] + wall->normal.z * m->vel[2])
++        return grabbedWall;
++
+     displacementX = nextPos[0] - intendedPos[0];
+     displacementZ = nextPos[2] - intendedPos[2];
+ 
+     // Only ledge grab if the wall displaced Mario in the opposite direction of
+     // his velocity.
+     if (displacementX * m->vel[0] + displacementZ * m->vel[2] > 0.0f) {
+-        return FALSE;
++        return grabbedWall;
+     }
+ 
+     //! Since the search for floors starts at y + 160, we will sometimes grab
+     // a higher ledge than expected (glitchy ledge grab)
+     ledgePos[0] = nextPos[0] - wall->normal.x * 60.0f;
+     ledgePos[2] = nextPos[2] - wall->normal.z * 60.0f;
+-    ledgePos[1] = find_floor(ledgePos[0], nextPos[1] + 160.0f, ledgePos[2], &ledgeFloor);
++    ledgePos[1] = find_floor(ledgePos[0], nextPos[1] + 160.0f, ledgePos[2], ledgeFloor);
+ 
+     if (ledgePos[1] - nextPos[1] <= 100.0f) {
+-        return FALSE;
++        return grabbedWall;
+     }
+ 
+-    vec3f_copy(m->pos, ledgePos);
+-    m->floor = ledgeFloor;
+-    m->floorHeight = ledgePos[1];
++    return wall;
++}
++
++s32 bonk_or_hit_lava_wall(struct MarioState *m, struct WallCollisionData *wallData) {
++    s16 i;
++    s16 wallDYaw;
++    s32 oldWallDYaw;
++    s32 absWallDYaw;
++    s32 result;
++    result = AIR_STEP_NONE;
++
++    if (m->wall != NULL) {
++        oldWallDYaw = atan2s(m->wall->normal.z, m->wall->normal.x) - m->faceAngle[1];
++        oldWallDYaw = oldWallDYaw < 0 ? -oldWallDYaw : oldWallDYaw;
++    }
++    else
++        oldWallDYaw = 0;
++
++    for (i = 0; i < wallData->numWalls; i++) {
++        if (wallData->walls[i] != NULL) {
++            wallDYaw = atan2s(wallData->walls[i]->normal.z, wallData->walls[i]->normal.x) - m->faceAngle[1];
++            if (wallData->walls[i]->type == SURFACE_BURNING) {
++                m->wall = wallData->walls[i];
++                return AIR_STEP_HIT_LAVA_WALL;
++            }
++
++            //Update wall reference (bonked wall) only if the new wall has a better facing angle
++            absWallDYaw = wallDYaw < 0 ? -wallDYaw : wallDYaw;
++            if (absWallDYaw > oldWallDYaw) {
++                oldWallDYaw = absWallDYaw;
++                m->wall = wallData->walls[i];
++
++                if (wallDYaw < -0x6000 || wallDYaw > 0x6000) {
++                    m->flags |= MARIO_UNKNOWN_30;
++                    result = AIR_STEP_HIT_WALL;
++                }
++            }
+ 
+-    m->floorAngle = atan2s(ledgeFloor->normal.z, ledgeFloor->normal.x);
+ 
+-    m->faceAngle[0] = 0;
+-    m->faceAngle[1] = atan2s(wall->normal.z, wall->normal.x) + 0x8000;
+-    return TRUE;
++        }
++    }
++    return result;
+ }
+ 
+ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepArg) {
+-    s16 wallDYaw;
++    s16 i;
++    s32 stepResult;
++
+     Vec3f nextPos;
+-    struct Surface *upperWall;
+-    struct Surface *lowerWall;
++    Vec3f ledgePos;
++    struct WallCollisionData upperWall;
++    struct WallCollisionData lowerWall;
+     struct Surface *ceil;
+     struct Surface *floor;
++    struct Surface *grabbedWall;
++    struct Surface *ledgeFloor;
+     f32 ceilHeight;
+     f32 floorHeight;
+     f32 waterLevel;
+ 
++    grabbedWall = NULL;
++    stepResult = AIR_STEP_NONE;
++
+     vec3f_copy(nextPos, intendedPos);
+ 
+-    upperWall = resolve_and_return_wall_collisions(nextPos, 150.0f, 50.0f);
+-    lowerWall = resolve_and_return_wall_collisions(nextPos, 30.0f, 50.0f);
++    resolve_and_return_wall_collisions_simple(nextPos, 150.0f, 50.0f, &upperWall);
++    resolve_and_return_wall_collisions_simple(nextPos, 30.0f, 50.0f, &lowerWall);
  
      floorHeight = find_floor(nextPos[0], nextPos[1], nextPos[2], &floor);
 -    ceilHeight = vec3f_find_ceil(nextPos, floorHeight, &ceil);
@@ -690,15 +1693,152 @@ index 836a856..28141cc 100644
  
      waterLevel = find_water_level(nextPos[0], nextPos[2]);
  
+-    m->wall = NULL;
+-
+     //! The water pseudo floor is not referenced when your intended qstep is
+     // out of bounds, so it won't detect you as landing.
+ 
+@@ -441,15 +506,12 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+     //! This check uses f32, but findFloor uses short (overflow jumps)
+     if (nextPos[1] <= floorHeight) {
+         if (ceilHeight - floorHeight > 160.0f) {
+-            m->pos[0] = nextPos[0];
+-            m->pos[2] = nextPos[2];
+-            m->floor = floor;
+             m->floorHeight = floorHeight;
+         }
+ 
+-        //! When ceilHeight - floorHeight <= 160, the step result says that
+-        // Mario landed, but his movement is cancelled and his referenced floor
+-        // isn't updated (pedro spots)
++        m->pos[0] = nextPos[0];
++        m->pos[2] = nextPos[2];
++        m->floor = floor;
+         m->pos[1] = floorHeight;
+         return AIR_STEP_LANDED;
+     }
+@@ -474,41 +536,43 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+         }
+ 
+         m->pos[1] = nextPos[1];
+-        return AIR_STEP_HIT_WALL;
++        return AIR_STEP_HIT_WALL; //change to 0 if you dont want ceil bonks
+     }
+ 
+     //! When the wall is not completely vertical or there is a slight wall
+     // misalignment, you can activate these conditions in unexpected situations
+-    if ((stepArg & AIR_STEP_CHECK_LEDGE_GRAB) && upperWall == NULL && lowerWall != NULL) {
+-        if (check_ledge_grab(m, lowerWall, intendedPos, nextPos)) {
+-            return AIR_STEP_GRABBED_LEDGE;
++    if ((stepArg & AIR_STEP_CHECK_LEDGE_GRAB) && upperWall.numWalls == 0) {
++        for (i = 0; i < lowerWall.numWalls; i++)
++            if ((grabbedWall = check_ledge_grab(m, grabbedWall, lowerWall.walls[i], intendedPos, nextPos, ledgePos, &ledgeFloor)))
++                stepResult = AIR_STEP_GRABBED_LEDGE;
++        if (stepResult == AIR_STEP_GRABBED_LEDGE)
++        {
++            vec3f_copy(m->pos, ledgePos);
++            m->floor = ledgeFloor;
++            m->floorHeight = ledgePos[1];
++
++            m->floorAngle = atan2s(ledgeFloor->normal.z, ledgeFloor->normal.x);
++
++            m->faceAngle[0] = 0;
++            m->faceAngle[1] = atan2s(grabbedWall->normal.z, grabbedWall->normal.x) + 0x8000;
+         }
+-
+-        vec3f_copy(m->pos, nextPos);
+-        m->floor = floor;
+-        m->floorHeight = floorHeight;
+-        return AIR_STEP_NONE;
++        else {
++            vec3f_copy(m->pos, nextPos);
++            m->floor = floor;
++            m->floorHeight = floorHeight;
++        }
++        return stepResult;
+     }
+ 
+     vec3f_copy(m->pos, nextPos);
+     m->floor = floor;
+     m->floorHeight = floorHeight;
+ 
+-    if (upperWall != NULL || lowerWall != NULL) {
+-        m->wall = upperWall != NULL ? upperWall : lowerWall;
+-        wallDYaw = atan2s(m->wall->normal.z, m->wall->normal.x) - m->faceAngle[1];
+-
+-        if (m->wall->type == SURFACE_BURNING) {
+-            return AIR_STEP_HIT_LAVA_WALL;
+-        }
+-
+-        if (wallDYaw < -0x6000 || wallDYaw > 0x6000) {
+-            m->flags |= MARIO_UNKNOWN_30;
+-            return AIR_STEP_HIT_WALL;
+-        }
+-    }
++    stepResult = bonk_or_hit_lava_wall(m, &upperWall);
++    if (stepResult != AIR_STEP_NONE)
++        return stepResult;
+ 
+-    return AIR_STEP_NONE;
++    return bonk_or_hit_lava_wall(m, &lowerWall);
+ }
+ 
+ void apply_twirl_gravity(struct MarioState *m) {
+@@ -619,7 +683,9 @@ void apply_vertical_wind(struct MarioState *m) {
+ }
+ 
+ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
++    //s16 wallDYaw;
+     Vec3f intendedPos;
++    const f32 numSteps = 4.0f; /* max(4.0f, (s32)(sqrtf(m->vel[0] * m->vel[0] + m->vel[1] * m->vel[1] + m->vel[2] * m->vel[2]) / 50.0f));*/
+     s32 i;
+     s32 quarterStepResult;
+     s32 stepResult = AIR_STEP_NONE;
+@@ -627,16 +693,12 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
+     m->wall = NULL;
+ 
+     for (i = 0; i < 4; i++) {
+-        intendedPos[0] = m->pos[0] + m->vel[0] / 4.0f;
+-        intendedPos[1] = m->pos[1] + m->vel[1] / 4.0f;
+-        intendedPos[2] = m->pos[2] + m->vel[2] / 4.0f;
++        intendedPos[0] = m->pos[0] + m->vel[0] / numSteps;
++        intendedPos[1] = m->pos[1] + m->vel[1] / numSteps;
++        intendedPos[2] = m->pos[2] + m->vel[2] / numSteps;
+ 
+         quarterStepResult = perform_air_quarter_step(m, intendedPos, stepArg);
+ 
+-        //! On one qf, hit OOB/ceil/wall to store the 2 return value, and continue
+-        // getting 0s until your last qf. Graze a wall on your last qf, and it will
+-        // return the stored 2 with a sharply angled reference wall. (some gwks)
+-
+         if (quarterStepResult != AIR_STEP_NONE) {
+             stepResult = quarterStepResult;
+         }
+@@ -662,6 +724,15 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
+     vec3f_copy(m->marioObj->header.gfx.pos, m->pos);
+     vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
+ 
++    /*if (stepResult == AIR_STEP_HIT_WALL && m->wall != NULL) {
++            wallDYaw = atan2s(m->wall->normal.z, m->wall->normal.x) - m->faceAngle[1];
++            if ((stepArg & AIR_STEP_CHECK_BONK) && (wallDYaw < -0x6000 || wallDYaw > 0x6000))
++            {
++                if (m->forwardVel > 16.0f)
++                    mario_bonk_reflection(m, (stepArg & AIR_STEP_BONK_NEGATE_SPEED));
++            }
++    }*/
++
+     return stepResult;
+ }
+ 
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index d80f555..10fd319 100644
+index a1427dd..87b204d 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
 @@ -176,14 +176,19 @@ Gfx *geo_switch_area(s32 callContext, struct GraphNode *node) {
      UNUSED struct Object *sp1C =
          (struct Object *) gCurGraphNodeObject; // TODO: change global type to Object pointer
      struct GraphNodeSwitchCase *switchCase = (struct GraphNodeSwitchCase *) node;
-+    struct Object *roomFocusObj = gIsGameCutsceneActive ? gCutsceneFocus : gMarioObject;
++    struct Object *roomFocusObj = (gCamera->cutscene && gCutsceneFocus) ? gCutsceneFocus : gMarioObject;
  
      if (callContext == GEO_CONTEXT_RENDER) {
          if (gMarioObject == NULL) {
@@ -749,14 +1889,422 @@ index d80f555..10fd319 100644
  }
  
  void cur_obj_move_using_fvel_and_gravity(void) {
-@@ -2428,6 +2415,10 @@ void cur_obj_enable_rendering_if_mario_in_room(void) {
-             marioInRoom = TRUE;
-         } else if (gDoorAdjacentRooms[gMarioCurrentRoom][1] == o->oRoom) {
-             marioInRoom = TRUE;
-+        } else if (gDoorAdjacentRooms[o->oRoom][0] == gMarioCurrentRoom) {
-+            marioInRoom = TRUE;
-+        } else if (gDoorAdjacentRooms[o->oRoom][1] == gMarioCurrentRoom) {
-+            marioInRoom = TRUE;
-         } else {
-             marioInRoom = FALSE;
+diff --git a/src/game/platform_displacement.c b/src/game/platform_displacement.c
+index 9153bc4..d15575e 100644
+--- a/src/game/platform_displacement.c
++++ b/src/game/platform_displacement.c
+@@ -1,7 +1,9 @@
+ #include <PR/ultratypes.h>
++#include "sm64.h"
+ 
+ #include "engine/math_util.h"
+ #include "engine/surface_collision.h"
++#include "game_init.h"
+ #include "level_update.h"
+ #include "object_fields.h"
+ #include "object_helpers.h"
+@@ -84,95 +86,137 @@ void set_mario_pos(f32 x, f32 y, f32 z) {
+     gMarioStates[0].pos[2] = z;
+ }
+ 
++static struct PlatformDisplacementInfo sMarioDisplacementInfo;
++static Vec3f sMarioAmountDisplaced;
++
+ /**
+- * Apply one frame of platform rotation to Mario or an object using the given
+- * platform. If isMario is false, use gCurrentObject.
++ * Upscale or downscale a vector by another vector.
+  */
+-void apply_platform_displacement(u32 isMario, struct Object *platform) {
+-    f32 x;
+-    f32 y;
+-    f32 z;
+-    f32 platformPosX;
+-    f32 platformPosY;
+-    f32 platformPosZ;
+-    Vec3f currentObjectOffset;
+-    Vec3f relativeOffset;
+-    Vec3f newObjectOffset;
+-    Vec3s rotation;
+-    UNUSED s16 unused1;
+-    UNUSED s16 unused2;
+-    UNUSED s16 unused3;
+-    f32 displaceMatrix[4][4];
+-
+-    rotation[0] = platform->oAngleVelPitch;
+-    rotation[1] = platform->oAngleVelYaw;
+-    rotation[2] = platform->oAngleVelRoll;
+-
+-    if (isMario) {
+-        D_8032FEC0 = 0;
+-        get_mario_pos(&x, &y, &z);
++static void scale_vec3f(Vec3f dst, Vec3f src, Vec3f scale, u32 doInverted) {
++    if (doInverted) {
++        dst[0] = src[0] / scale[0];
++        dst[1] = src[1] / scale[1];
++        dst[2] = src[2] / scale[2];
+     } else {
+-        x = gCurrentObject->oPosX;
+-        y = gCurrentObject->oPosY;
+-        z = gCurrentObject->oPosZ;
++        dst[0] = src[0] * scale[0];
++        dst[1] = src[1] * scale[1];
++        dst[2] = src[2] * scale[2];
+     }
++}
+ 
+-    x += platform->oVelX;
+-    z += platform->oVelZ;
++/**
++ * Apply one frame of platform displacement to Mario or an object using the given
++ * platform.
++ */
++void apply_platform_displacement(struct PlatformDisplacementInfo *displaceInfo, Vec3f pos, s16 *yaw, struct Object *platform) {
++    Vec3f platformPos;
++    Vec3f posDifference;
++    Vec3f yawVec;
++    Vec3f scaledPos;
++    // Determine how much Mario turned on his own since last frame
++    s16 yawDifference = *yaw - displaceInfo->prevYaw;
++
++    // Avoid a crash if the platform unloaded its collision while stood on
++    if (platform->header.gfx.throwMatrix == NULL) return;
++
++    vec3f_copy(platformPos, (*platform->header.gfx.throwMatrix)[3]);
++
++    // Determine how far Mario moved on his own since last frame
++    vec3f_copy(posDifference, pos);
++    vec3f_sub(posDifference, displaceInfo->prevPos);
++
++    if ((platform == displaceInfo->prevPlatform) && (gGlobalTimer == displaceInfo->prevTimer + 1)) {
++        // Transform from relative positions to world positions
++        scale_vec3f(scaledPos, displaceInfo->prevTransformedPos, platform->header.gfx.scale, FALSE);
++        linear_mtxf_mul_vec3f(*platform->header.gfx.throwMatrix, pos, scaledPos);
++
++        // Add on how much Mario moved in the previous frame
++        vec3f_add(pos, posDifference);
++
++        // Calculate new yaw
++        linear_mtxf_mul_vec3f(*platform->header.gfx.throwMatrix, yawVec, displaceInfo->prevTransformedYawVec);
++        *yaw = atan2s(yawVec[2], yawVec[0]) + yawDifference;
++    } else {
++        // First frame of standing on the platform, don't calculate a new position
++        vec3f_sub(pos, platformPos);
++    }
+ 
+-    if (rotation[0] != 0 || rotation[1] != 0 || rotation[2] != 0) {
+-        unused1 = rotation[0];
+-        unused2 = rotation[2];
+-        unused3 = platform->oFaceAngleYaw;
++    // Transform from world positions to relative positions for use next frame
++    linear_mtxf_transpose_mul_vec3f(*platform->header.gfx.throwMatrix, scaledPos, pos);
++    scale_vec3f(displaceInfo->prevTransformedPos, scaledPos, platform->header.gfx.scale, TRUE);
++    vec3f_add(pos, platformPos);
+ 
+-        if (isMario) {
+-            gMarioStates[0].faceAngle[1] += rotation[1];
+-        }
++    // If the object is Mario, set inertia
++    if (pos == gMarioState->pos) {
++        vec3f_copy(sMarioAmountDisplaced, pos);
++        vec3f_sub(sMarioAmountDisplaced, displaceInfo->prevPos);
++        vec3f_sub(sMarioAmountDisplaced, posDifference);
+ 
+-        platformPosX = platform->oPosX;
+-        platformPosY = platform->oPosY;
+-        platformPosZ = platform->oPosZ;
++        // Make sure inertia isn't set on the first frame otherwise the previous value isn't cleared
++        if ((platform != displaceInfo->prevPlatform) || (gGlobalTimer != displaceInfo->prevTimer + 1)) {
++            vec3f_set(sMarioAmountDisplaced, 0.f, 0.f, 0.f);
++        }
++    }
+ 
+-        currentObjectOffset[0] = x - platformPosX;
+-        currentObjectOffset[1] = y - platformPosY;
+-        currentObjectOffset[2] = z - platformPosZ;
++    // Update info for next frame
++    // Update position
++    vec3f_copy(displaceInfo->prevPos, pos);
+ 
+-        rotation[0] = platform->oFaceAnglePitch - platform->oAngleVelPitch;
+-        rotation[1] = platform->oFaceAngleYaw - platform->oAngleVelYaw;
+-        rotation[2] = platform->oFaceAngleRoll - platform->oAngleVelRoll;
++    // Set yaw info
++    vec3f_set(yawVec, sins(*yaw), 0, coss(*yaw));
++    linear_mtxf_transpose_mul_vec3f(*platform->header.gfx.throwMatrix, displaceInfo->prevTransformedYawVec, yawVec);
++    displaceInfo->prevYaw = *yaw;
+ 
+-        mtxf_rotate_zxy_and_translate(displaceMatrix, currentObjectOffset, rotation);
+-        linear_mtxf_transpose_mul_vec3f(displaceMatrix, relativeOffset, currentObjectOffset);
++    // Update platform and timer
++    displaceInfo->prevPlatform = platform;
++    displaceInfo->prevTimer = gGlobalTimer;
++}
+ 
+-        rotation[0] = platform->oFaceAnglePitch;
+-        rotation[1] = platform->oFaceAngleYaw;
+-        rotation[2] = platform->oFaceAngleRoll;
++// Doesn't change in the code, set this to FALSE if you don't want inertia
++u8 gDoInertia = TRUE;
+ 
+-        mtxf_rotate_zxy_and_translate(displaceMatrix, currentObjectOffset, rotation);
+-        linear_mtxf_mul_vec3f(displaceMatrix, newObjectOffset, relativeOffset);
++static u8 sShouldApplyInertia = FALSE;
++static u8 sInertiaFirstFrame = FALSE;
+ 
+-        x = platformPosX + newObjectOffset[0];
+-        y = platformPosY + newObjectOffset[1];
+-        z = platformPosZ + newObjectOffset[2];
++/**
++ * Apply inertia based on Mario's last platform.
++ */
++static void apply_mario_inertia(void) {
++    // On the first frame of leaving the ground, boost Mario's y velocity
++    if (sInertiaFirstFrame) {
++        gMarioState->vel[1] += sMarioAmountDisplaced[1];
+     }
+ 
+-    if (isMario) {
+-        set_mario_pos(x, y, z);
+-    } else {
+-        gCurrentObject->oPosX = x;
+-        gCurrentObject->oPosY = y;
+-        gCurrentObject->oPosZ = z;
++    // Apply sideways inertia
++    gMarioState->pos[0] += sMarioAmountDisplaced[0];
++    gMarioState->pos[2] += sMarioAmountDisplaced[2];
++
++    // Drag
++    sMarioAmountDisplaced[0] *= 0.97f;
++    sMarioAmountDisplaced[2] *= 0.97f;
++
++    // Stop applying inertia once Mario has landed, or when ground pounding
++    if (!(gMarioState->action & ACT_FLAG_AIR) || (gMarioState->action == ACT_GROUND_POUND)) {
++        sShouldApplyInertia = FALSE;
+     }
+ }
+ 
+ /**
+- * If Mario's platform is not null, apply platform displacement.
++ * Apply platform displacement or inertia if required.
+  */
+ void apply_mario_platform_displacement(void) {
+-    struct Object *platform = gMarioPlatform;
+-
+-    if (!(gTimeStopState & TIME_STOP_ACTIVE) && gMarioObject != NULL && platform != NULL) {
+-        apply_platform_displacement(TRUE, platform);
++    struct Object *platform;
++
++    platform = gMarioPlatform;
++    if (!(gTimeStopState & TIME_STOP_ACTIVE) && gMarioObject != NULL) {
++        if (platform != NULL) {
++            apply_platform_displacement(&sMarioDisplacementInfo, gMarioState->pos, &gMarioState->faceAngle[1], platform);
++            sShouldApplyInertia = TRUE;
++            sInertiaFirstFrame = TRUE;
++        } else if (sShouldApplyInertia && gDoInertia) {
++            apply_mario_inertia();
++            sInertiaFirstFrame = FALSE;
++        }
+     }
+ }
+ 
+diff --git a/src/game/platform_displacement.h b/src/game/platform_displacement.h
+index 556192b..645f42b 100644
+--- a/src/game/platform_displacement.h
++++ b/src/game/platform_displacement.h
+@@ -5,10 +5,19 @@
+ 
+ #include "types.h"
+ 
++struct PlatformDisplacementInfo {
++	Vec3f prevPos;
++	Vec3f prevTransformedPos;
++	Vec3f prevTransformedYawVec;
++	s16 prevYaw;
++	struct Object *prevPlatform;
++	u32 prevTimer;
++};
++
+ void update_mario_platform(void);
+ void get_mario_pos(f32 *x, f32 *y, f32 *z);
+ void set_mario_pos(f32 x, f32 y, f32 z);
+-void apply_platform_displacement(u32 isMario, struct Object *platform);
++void apply_platform_displacement(struct PlatformDisplacementInfo *displaceInfo, Vec3f pos, s16 *yaw, struct Object *platform);
+ void apply_mario_platform_displacement(void);
+ #ifndef VERSION_JP
+ void clear_mario_platform(void);
+diff --git a/src/game/rendering_graph_node.c b/src/game/rendering_graph_node.c
+index 63866d6..fa3a989 100644
+--- a/src/game/rendering_graph_node.c
++++ b/src/game/rendering_graph_node.c
+@@ -2,6 +2,7 @@
+ 
+ #include "area.h"
+ #include "engine/math_util.h"
++#include "engine/surface_collision.h"
+ #include "game_init.h"
+ #include "gfx_dimensions.h"
+ #include "main.h"
+@@ -249,7 +250,7 @@ static void geo_process_perspective(struct GraphNodePerspective *node) {
+         f32 aspect = (f32) gCurGraphNodeRoot->width / (f32) gCurGraphNodeRoot->height;
+ #endif
+ 
+-        guPerspective(mtx, &perspNorm, node->fov, aspect, node->near, node->far, 1.0f);
++        guPerspective(mtx, &perspNorm, node->fov, aspect, node->near / WORLD_SCALE, node->far / WORLD_SCALE, 1.0f);
+         gSPPerspNormalize(gDisplayListHead++, perspNorm);
+ 
+         gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(mtx), G_MTX_PROJECTION | G_MTX_LOAD | G_MTX_NOPUSH);
+@@ -267,22 +268,13 @@ static void geo_process_perspective(struct GraphNodePerspective *node) {
+  * range of this node.
+  */
+ static void geo_process_level_of_detail(struct GraphNodeLevelOfDetail *node) {
+-#ifdef GBI_FLOATS
+-    Mtx *mtx = gMatStackFixed[gMatStackIndex];
+-    s16 distanceFromCam = (s32) -mtx->m[3][2]; // z-component of the translation column
+-#else
+-    // The fixed point Mtx type is defined as 16 longs, but it's actually 16
+-    // shorts for the integer parts followed by 16 shorts for the fraction parts
+-    Mtx *mtx = gMatStackFixed[gMatStackIndex];
+-    s16 distanceFromCam = -GET_HIGH_S16_OF_32(mtx->m[1][3]); // z-component of the translation column
+-#endif
+-
++	f32 distanceFromCam = -gMatStack[gMatStackIndex][3][2];
+ #ifndef TARGET_N64
+     // We assume modern hardware is powerful enough to draw the most detailed variant
+     distanceFromCam = 0;
+ #endif
+ 
+-    if (node->minDistance <= distanceFromCam && distanceFromCam < node->maxDistance) {
++    if ((f32)node->minDistance <= distanceFromCam && distanceFromCam < (f32)node->maxDistance) {
+         if (node->node.children != 0) {
+             geo_process_node_and_siblings(node->node.children);
          }
+@@ -309,6 +301,17 @@ static void geo_process_switch(struct GraphNodeSwitchCase *node) {
+     }
+ }
+ 
++static void make_roll_matrix(Mtx *mtx, s16 angle) {
++    Mat4 temp;
++
++    mtxf_identity(temp);
++    temp[0][0] = coss(angle);
++    temp[0][1] = sins(angle);
++    temp[1][0] = -temp[0][1];
++    temp[1][1] = temp[0][0];
++    guMtxF2L(temp, mtx);
++}
++
+ /**
+  * Process a camera node.
+  */
+@@ -320,7 +323,7 @@ static void geo_process_camera(struct GraphNodeCamera *node) {
+     if (node->fnNode.func != NULL) {
+         node->fnNode.func(GEO_CONTEXT_RENDER, &node->fnNode.node, gMatStack[gMatStackIndex]);
+     }
+-    mtxf_rotate_xy(rollMtx, node->rollScreen);
++    make_roll_matrix(rollMtx, node->rollScreen);
+ 
+     gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(rollMtx), G_MTX_PROJECTION | G_MTX_MUL | G_MTX_NOPUSH);
+ 
+@@ -709,7 +712,7 @@ static void geo_process_shadow(struct GraphNodeShadow *node) {
+             gMatStackFixed[gMatStackIndex] = mtx;
+             if (gShadowAboveWaterOrLava == TRUE) {
+                 geo_append_display_list((void *) VIRTUAL_TO_PHYSICAL(shadowList), 4);
+-            } else if (gMarioOnIceOrCarpet == 1) {
++            } else if (gMarioOnIceOrCarpet == 1 || gShadowAboveCustomWater == 1) {
+                 geo_append_display_list((void *) VIRTUAL_TO_PHYSICAL(shadowList), 5);
+             } else {
+                 geo_append_display_list((void *) VIRTUAL_TO_PHYSICAL(shadowList), 6);
+diff --git a/src/game/shadow.c b/src/game/shadow.c
+index c0b7b08..135edca 100644
+--- a/src/game/shadow.c
++++ b/src/game/shadow.c
+@@ -106,6 +106,7 @@ shadowRectangle rectangles[2] = {
+ 
+ // See shadow.h for documentation.
+ s8 gShadowAboveWaterOrLava;
++s8 gShadowAboveCustomWater;
+ s8 gMarioOnIceOrCarpet;
+ s8 sMarioOnFlyingCarpet;
+ s16 sSurfaceTypeBelowShadow;
+@@ -181,8 +182,8 @@ u8 dim_shadow_with_distance(u8 solidity, f32 distFromFloor) {
+  * Return the water level below a shadow, or 0 if the water level is below
+  * -10,000.
+  */
+-f32 get_water_level_below_shadow(struct Shadow *s) {
+-    f32 waterLevel = find_water_level(s->parentX, s->parentZ);
++f32 get_water_level_below_shadow(struct Shadow *s, struct Surface **waterFloor) {
++    f32 waterLevel = find_water_level_and_floor(s->parentX, s->parentZ, waterFloor);
+     if (waterLevel < FLOOR_LOWER_LIMIT_SHADOW) {
+         return 0;
+     } else if (s->parentY >= waterLevel && s->floorHeight <= waterLevel) {
+@@ -208,6 +209,7 @@ s8 init_shadow(struct Shadow *s, f32 xPos, f32 yPos, f32 zPos, s16 shadowScale,
+     f32 waterLevel;
+     f32 floorSteepness;
+     struct FloorGeometry *floorGeometry;
++    struct Surface *waterFloor = NULL;
+ 
+     s->parentX = xPos;
+     s->parentY = yPos;
+@@ -215,23 +217,29 @@ s8 init_shadow(struct Shadow *s, f32 xPos, f32 yPos, f32 zPos, s16 shadowScale,
+ 
+     s->floorHeight = find_floor_height_and_data(s->parentX, s->parentY, s->parentZ, &floorGeometry);
+ 
+-    if (gEnvironmentRegions != 0) {
+-        waterLevel = get_water_level_below_shadow(s);
+-    }
+-#if QOL_FIX_SHADOW_WATER_LEVEL
+-    else {
+-        waterLevel = 0;
+-    }
+-#endif
++    waterLevel = get_water_level_below_shadow(s, &waterFloor);
++
+     if (gShadowAboveWaterOrLava) {
+         //! @bug Use of potentially undefined variable `waterLevel`
+         s->floorHeight = waterLevel;
+ 
+         // Assume that the water is flat.
+-        s->floorNormalX = 0;
+-        s->floorNormalY = 1.0;
+-        s->floorNormalZ = 0;
+-        s->floorOriginOffset = -waterLevel;
++        if (waterFloor != NULL) {
++            s->floorNormalX = waterFloor->normal.x;
++            s->floorNormalY = waterFloor->normal.y;
++            s->floorNormalZ = waterFloor->normal.z;
++            s->floorOriginOffset = waterFloor->originOffset;
++            gShadowAboveWaterOrLava = FALSE;
++            gShadowAboveCustomWater = TRUE;
++            s->solidity = 200;
++        } else {
++            gShadowAboveCustomWater = FALSE;
++            // Assume that the water is flat.
++            s->floorNormalX = 0;
++            s->floorNormalY = 1.0;
++            s->floorNormalZ = 0;
++            s->floorOriginOffset = -waterLevel;
++        }
+     } else {
+         // Don't draw a shadow if the floor is lower than expected possible,
+         // or if the y-normal is negative (an unexpected result).
+@@ -865,6 +873,7 @@ Gfx *create_shadow_below_xyz(f32 xPos, f32 yPos, f32 zPos, s16 shadowScale, u8 s
+     find_floor(xPos, yPos, zPos, &pfloor);
+ 
+     gShadowAboveWaterOrLava = FALSE;
++    gShadowAboveCustomWater = FALSE;
+     gMarioOnIceOrCarpet = 0;
+     sMarioOnFlyingCarpet = 0;
+     if (pfloor != NULL) {
+diff --git a/src/game/shadow.h b/src/game/shadow.h
+index 36b3ef0..528659a 100644
+--- a/src/game/shadow.h
++++ b/src/game/shadow.h
+@@ -38,6 +38,7 @@ extern s16 sSurfaceTypeBelowShadow;
+  * Flag for if the current shadow is above water or lava.
+  */
+ extern s8 gShadowAboveWaterOrLava;
++extern s8 gShadowAboveCustomWater;
+ 
+ /**
+  * Flag for if Mario is on ice or a flying carpet.
