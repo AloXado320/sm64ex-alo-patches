@@ -1,0 +1,1139 @@
+diff --git a/bin/segment2.c b/bin/segment2.c
+index 4cbf76c..da4fcd2 100644
+--- a/bin/segment2.c
++++ b/bin/segment2.c
+@@ -197,11 +197,11 @@ ALIGNED8 static const Texture texture_hud_char_coin[] = {
+ };
+ 
+ ALIGNED8 static const Texture texture_hud_char_mario_head[] = {
+-#include "textures/segment2/segment2.05A00.rgba16.inc.c"
++#include "textures/segment2/thwomp_head_custom.rgba16.inc.c"
+ };
+ 
+ ALIGNED8 static const Texture texture_hud_char_star[] = {
+-#include "textures/segment2/segment2.05C00.rgba16.inc.c"
++#include "textures/segment2/segment2.05A00.rgba16.inc.c"
+ };
+ 
+ #if defined(VERSION_JP) || defined(VERSION_SH)
+diff --git a/data/behavior_data.c b/data/behavior_data.c
+index 6a51c0d..da41b2e 100644
+--- a/data/behavior_data.c
++++ b/data/behavior_data.c
+@@ -815,7 +815,7 @@ const BehaviorScript bhvKickableBoard[] = {
+     LOAD_COLLISION_DATA(wf_seg7_collision_kickable_board),
+     SET_HITBOX(/*Radius*/ 100, /*Height*/ 1200),
+     SET_HURTBOX(/*Radius*/ 1, /*Height*/ 1),
+-    SET_FLOAT(oCollisionDistance, 1500),
++    SET_FLOAT(oCollisionDistance, 15000),
+     SET_INT(oIntangibleTimer, 0),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_kickable_board_loop),
+@@ -1170,7 +1170,7 @@ const BehaviorScript bhvThwomp2[] = {
+     ADD_FLOAT(oPosY, 1),
+     SET_HOME(),
+     SCALE(/*Unused*/ 0, /*Field*/ 140),
+-    SET_FLOAT(oDrawingDistance, 4000),
++    SET_FLOAT(oDrawingDistance, 20000),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_grindel_thwomp_loop),
+         CALL_NATIVE(load_object_collision_model),
+@@ -1185,7 +1185,7 @@ const BehaviorScript bhvThwomp[] = {
+     ADD_FLOAT(oPosY, 1),
+     SCALE(/*Unused*/ 0, /*Field*/ 140),
+     SET_HOME(),
+-    SET_FLOAT(oDrawingDistance, 4000),
++    SET_FLOAT(oDrawingDistance, 20000),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_grindel_thwomp_loop),
+         CALL_NATIVE(load_object_collision_model),
+@@ -2506,7 +2506,7 @@ const BehaviorScript bhvPiranhaPlant[] = {
+     SET_INT(oDamageOrCoinValue, 3),
+     SET_INT(oNumLootCoins, 5),
+     SPAWN_CHILD(/*Model*/ MODEL_BUBBLE, /*Behavior*/ bhvPiranhaPlantBubble),
+-    SET_FLOAT(oDrawingDistance, 2000),
++    SET_FLOAT(oDrawingDistance, 20000),
+     SET_HOME(),
+     BEGIN_LOOP(),
+         CALL_NATIVE(bhv_piranha_plant_loop),
+diff --git a/include/text_strings.h.in b/include/text_strings.h.in
+index 11b9689..e5f8e90 100644
+--- a/include/text_strings.h.in
++++ b/include/text_strings.h.in
+@@ -407,7 +407,7 @@
+  * Course Table names for Score Menu Save view
+  */
+ #define TEXT_MENU_BOB _(" 1 BOB-OMB BATTLEFIELD")
+-#define TEXT_MENU_WF _(" 2 WHOMP'S FORTRESS")
++#define TEXT_MENU_WF _(" 2 someone2639")
+ #define TEXT_MENU_JRB _(" 3 JOLLY ROGER BAY")
+ #define TEXT_MENU_CCM _(" 4 COOL, COOL MOUNTAIN")
+ #define TEXT_MENU_BBH _(" 5 BIG BOO'S HAUNT")
+diff --git a/include/types.h b/include/types.h
+index 0824598..35b57ce 100644
+--- a/include/types.h
++++ b/include/types.h
+@@ -344,6 +344,9 @@ struct MarioState
+     /*0xBC*/ f32 peakHeight;
+     /*0xC0*/ f32 quicksandDepth;
+     /*0xC4*/ f32 unkC4;
++    u8 isTeleported;
++    u8 isMovingRight;
++    u16 numSqueeze;
+ };
+ 
+ #endif // _SM64_TYPES_H_
+diff --git a/levels/intro/script.c b/levels/intro/script.c
+index 9adb6dd..ea0b7c8 100644
+--- a/levels/intro/script.c
++++ b/levels/intro/script.c
+@@ -16,6 +16,7 @@
+ #include "actors/common1.h"
+ 
+ #include "make_const_nonconst.h"
++#include "levels/wf/header.h"
+ #include "levels/intro/header.h"
+ 
+ const LevelScript level_intro_splash_screen[] = {
+@@ -58,43 +59,11 @@ const LevelScript level_intro_mario_head_regular[] = {
+     END_AREA(),
+     FREE_LEVEL_POOL(),
+ 
+-    SLEEP(/*frames*/ 2),
+-    BLACKOUT(/*active*/ FALSE),
+-    LOAD_AREA(/*area*/ 1),
+-    SET_MENU_MUSIC(/*seq*/ 0x0002),
+-    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
+-    SLEEP(/*frames*/ 20),
+-    CALL_LOOP(/*arg*/ 1, /*func*/ lvl_intro_update),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
+-    JUMP(script_intro_L4),
++    JUMP(script_intro_L1),
+ };
+ 
+ const LevelScript level_intro_mario_head_dizzy[] = {
+-    INIT_LEVEL(),
+-    BLACKOUT(/*active*/ TRUE),
+-    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-#ifdef GODDARD_MFACE
+-    LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
+-#endif
+-    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
+-    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
+-    ALLOC_LEVEL_POOL(),
+-
+-    AREA(/*index*/ 1, intro_geo_mario_head_dizzy),
+-    END_AREA(),
+-
+-    FREE_LEVEL_POOL(),
+-    SLEEP(/*frames*/ 2),
+-    BLACKOUT(/*active*/ FALSE),
+-    LOAD_AREA(/*area*/ 1),
+-    SET_MENU_MUSIC(/*seq*/ 0x0082),
+-    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
+-    SLEEP(/*frames*/ 20),
+-    CALL_LOOP(/*arg*/ 2, /*func*/ lvl_intro_update),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
+-    JUMP(script_intro_L4),
++    JUMP(script_intro_L1),
+ };
+ 
+ const LevelScript level_intro_entry_4[] = {
+diff --git a/levels/menu/script.c b/levels/menu/script.c
+index e1aeab0..dc21bd5 100644
+--- a/levels/menu/script.c
++++ b/levels/menu/script.c
+@@ -20,40 +20,7 @@
+ 
+ const LevelScript level_main_menu_entry_1[] = {
+     INIT_LEVEL(),
+-    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-    LOAD_MIO0(/*seg*/ 0x07, _menu_segment_7SegmentRomStart, _menu_segment_7SegmentRomEnd),
+-    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
+-    ALLOC_LEVEL_POOL(),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_MARIO_SAVE_BUTTON,      geo_menu_mario_save_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_RED_ERASE_BUTTON,       geo_menu_erase_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_BLUE_COPY_BUTTON,       geo_menu_copy_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_YELLOW_FILE_BUTTON,     geo_menu_file_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_GREEN_SCORE_BUTTON,     geo_menu_score_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_MARIO_SAVE_BUTTON_FADE, geo_menu_mario_save_button_fade),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_MARIO_NEW_BUTTON,       geo_menu_mario_new_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_MARIO_NEW_BUTTON_FADE,  geo_menu_mario_new_button_fade),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_PURPLE_SOUND_BUTTON,    geo_menu_sound_button),
+-    LOAD_MODEL_FROM_GEO(MODEL_MAIN_MENU_GENERIC_BUTTON,         geo_menu_generic_button),
+-
+-    AREA(/*index*/ 1, geo_menu_file_select_strings_and_menu_cursor),
+-        OBJECT(/*model*/ MODEL_NONE,         /*pos*/ 0, 0, -19000, /*angle*/ 0, 0, 0, /*behParam*/ 0x04000000, /*beh*/ bhvMenuButtonManager),
+-        OBJECT(/*model*/ MODEL_MAIN_MENU_YELLOW_FILE_BUTTON, /*pos*/ 0, 0, -19000, /*angle*/ 0, 0, 0, /*behParam*/ 0x04000000, /*beh*/ bhvYellowBackgroundInMenu),
+-        TERRAIN(/*terrainData*/ main_menu_seg7_collision),
+-    END_AREA(),
+-
+-    FREE_LEVEL_POOL(),
+-    LOAD_AREA(/*area*/ 1),
+-    SET_MENU_MUSIC(/*seq*/ 0x0021),
+-    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_COLOR, /*time*/ 16, /*color*/ 0xFF, 0xFF, 0xFF),
+-    CALL(/*arg*/ 0, /*func*/ lvl_init_menu_values_and_cursor_pos),
+-    CALL_LOOP(/*arg*/ 0, /*func*/ lvl_update_obj_and_load_file_selected),
+-    GET_OR_SET(/*op*/ OP_SET, /*var*/ VAR_CURR_SAVE_FILE_NUM),
+-    STOP_MUSIC(/*fadeOutTime*/ 0x00BE),
+-    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_INTO_COLOR, /*time*/ 16, /*color*/ 0xFF, 0xFF, 0xFF),
+-    SLEEP(/*frames*/ 16),
+-    CLEAR_LEVEL(),
+-    SLEEP_BEFORE_EXIT(/*frames*/ 1),
+-    SET_REG(/*value*/ LEVEL_CASTLE_GROUNDS),
++    SET_REG(/*value*/ LEVEL_WF),
+     EXIT_AND_EXECUTE(/*seg*/ 0x15, _scriptsSegmentRomStart, _scriptsSegmentRomEnd, level_main_scripts_entry),
+ };
+ 
+@@ -71,32 +38,5 @@ const LevelScript level_main_menu_entry_2[] = {
+     /*24*/ END_AREA(),
+ 
+     /*25*/ FREE_LEVEL_POOL(),
+-    /*26*/ LOAD_AREA(/*area*/ 2),
+-#ifdef NO_SEGMENTED_MEMORY
+-           // sVisibleStars is set to 0 during FIXED_LOAD above on N64, but not on PC-port.
+-           // lvl_init_act_selector_values_and_stars must be called here otherwise the
+-           // previous value is retained and causes incorrect drawing during the 16 transition
+-           // frames.
+-           CALL(/*arg*/ 0, /*func*/ lvl_init_act_selector_values_and_stars),
+-#endif
+-    /*27*/ TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_COLOR, /*time*/ 16, /*color*/ 0xFF, 0xFF, 0xFF),
+-    /*29*/ SLEEP(/*frames*/ 16),
+-    /*30*/ SET_MENU_MUSIC(/*seq*/ 0x000D),
+-#ifndef NO_SEGMENTED_MEMORY
+-    /*31*/ CALL(/*arg*/ 0, /*func*/ lvl_init_act_selector_values_and_stars),
+-#endif
+-    /*33*/ CALL_LOOP(/*arg*/ 0, /*func*/ lvl_update_obj_and_load_act_button_actions),
+-    /*35*/ GET_OR_SET(/*op*/ OP_SET, /*var*/ VAR_CURR_ACT_NUM),
+-    /*36*/ STOP_MUSIC(/*fadeOutTime*/ 0x00BE),
+-    /*37*/ TRANSITION(/*transType*/ WARP_TRANSITION_FADE_INTO_COLOR, /*time*/ 16, /*color*/ 0xFF, 0xFF, 0xFF),
+-    /*39*/ SLEEP(/*frames*/ 16),
+-    /*40*/ CLEAR_LEVEL(),
+-           // Prevent cut-off "let's a go" on Non-N64
+-#ifdef TARGET_N64 
+-    /*41*/ SLEEP_BEFORE_EXIT(/*frames*/ 1),
+-#else
+-    /*41*/ SLEEP_BEFORE_EXIT(/*frames*/ 5),
+-#endif
+-    // L1:
+-    /*42*/ EXIT(),
++           EXIT(),
+ };
+diff --git a/levels/wf/areas/1/macro.inc.c b/levels/wf/areas/1/macro.inc.c
+index ee3d2c0..4504e9d 100644
+--- a/levels/wf/areas/1/macro.inc.c
++++ b/levels/wf/areas/1/macro.inc.c
+@@ -16,13 +16,13 @@ const MacroObject wf_seg7_macro_objs[] = {
+     MACRO_OBJECT(/*preset*/ macro_hidden_1up_in_pole,          /*yaw*/   0, /*pos*/ -2500,  4560,  -256),
+     MACRO_OBJECT(/*preset*/ macro_hidden_1up_trigger,          /*yaw*/   0, /*pos*/     0,  2650,  2900),
+     MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_hidden_1up,                  /*yaw*/   0, /*pos*/  -250,  2650,  2400, /*behParam*/ 2),
+-    MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 315, /*pos*/  4200,   256,  5160, /*behParam*/ DIALOG_018),
+-    MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/   0, /*pos*/ -2540,  2560,  -900, /*behParam*/ DIALOG_036),
+-    MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/  90, /*pos*/  1600,  2560,  2600, /*behParam*/ DIALOG_042),
+-    MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 270, /*pos*/ -2705,  2560,    59, /*behParam*/ DIALOG_051),
+-    MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 180, /*pos*/  3460,  2304,   -40, /*behParam*/ DIALOG_096),
++    //MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 315, /*pos*/  4200,   256,  5160, /*behParam*/ DIALOG_018),
++    //MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/   0, /*pos*/ -2540,  2560,  -900, /*behParam*/ DIALOG_036),
++    //MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/  90, /*pos*/  1600,  2560,  2600, /*behParam*/ DIALOG_042),
++    //MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 270, /*pos*/ -2705,  2560,    59, /*behParam*/ DIALOG_051),
++    //MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 180, /*pos*/  3460,  2304,   -40, /*behParam*/ DIALOG_096),
+     MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_cannon_closed,               /*yaw*/   0, /*pos*/ -1844,  1026,  3893, /*behParam*/ 0x40),
+-    MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 270, /*pos*/ -2932,   386,  -157, /*behParam*/ DIALOG_078),
++    //MACRO_OBJECT_WITH_BEH_PARAM(/*preset*/ macro_wooden_signpost,             /*yaw*/ 270, /*pos*/ -2932,   386,  -157, /*behParam*/ DIALOG_078),
+     MACRO_OBJECT(/*preset*/ macro_hidden_1up_trigger,          /*yaw*/   0, /*pos*/  -500,  2650,  2900),
+     MACRO_OBJECT(/*preset*/ macro_red_coin,                    /*yaw*/   0, /*pos*/  -250,  2650,  2970),
+     MACRO_OBJECT(/*preset*/ macro_red_coin,                    /*yaw*/   0, /*pos*/  1746,  3620, -3120),
+diff --git a/levels/wf/script.c b/levels/wf/script.c
+index 6697b49..e976004 100644
+--- a/levels/wf/script.c
++++ b/levels/wf/script.c
+@@ -52,8 +52,8 @@ static const LevelScript script_func_local_2[] = {
+ };
+ 
+ static const LevelScript script_func_local_3[] = {
+-    OBJECT(/*model*/ MODEL_THWOMP,            /*pos*/  3462, 1939, -1545, /*angle*/ 0,  180, 0, /*behParam*/ 0x00000000, /*beh*/ bhvThwomp),
+-    OBJECT(/*model*/ MODEL_THWOMP,            /*pos*/  3462, 1075, -3314, /*angle*/ 0,   90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvThwomp2),
++    OBJECT(/*model*/ MODEL_THWOMP,            /*pos*/  3462, 1939, -1545, /*angle*/ 0,   90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvThwomp),
++    //OBJECT(/*model*/ MODEL_THWOMP,            /*pos*/  3462, 1075, -3314, /*angle*/ 0,   90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvThwomp2),
+     OBJECT(/*model*/ MODEL_NONE,              /*pos*/  -856,  922,  3819, /*angle*/ 0,    0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvBetaFishSplashSpawner),
+     OBJECT(/*model*/ MODEL_PIRANHA_PLANT,     /*pos*/  1822, 2560,  -101, /*angle*/ 0,   90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvPiranhaPlant),
+     OBJECT(/*model*/ MODEL_PIRANHA_PLANT,     /*pos*/  4625,  256,  5017, /*angle*/ 0,  -90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvPiranhaPlant),
+diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
+index 7f4f588..5ba4182 100644
+--- a/src/extras/bettercamera.c
++++ b/src/extras/bettercamera.c
+@@ -132,9 +132,9 @@ void puppycam_default_config(void) {
+ //Initial setup. Ran at the beginning of the game and never again.
+ void puppycam_boot(void)
+ {
+-    gPuppyCam.zoomPoints[0] = 600;
+-    gPuppyCam.zoomPoints[1] = 1000;
+-    gPuppyCam.zoomPoints[2] = 1500;
++    gPuppyCam.zoomPoints[0] = 2000;
++    gPuppyCam.zoomPoints[1] = 2000;
++    gPuppyCam.zoomPoints[2] = 2000;
+     gPuppyCam.povHeight = 125;
+     gPuppyCam.stick2[0] = 0;
+     gPuppyCam.stick2[1] = 0;
+@@ -202,9 +202,11 @@ void puppycam_reset_values(void)
+ void puppycam_init(void)
+ {
+ 
+-    if (gMarioState->marioObj)
+-        gPuppyCam.targetObj = gMarioState->marioObj;
+-    gPuppyCam.targetObj2 = NULL;
++    //if (gMarioState->marioObj)
++    //    gPuppyCam.targetObj = gMarioState->marioObj;
++    //gPuppyCam.targetObj2 = NULL;
++    gPuppyCam.targetObj = cur_obj_nearest_object_with_behavior(bhvThwomp);
++    gPuppyCam.targetObj2 = gMarioState->marioObj;
+ 
+     gPuppyCam.intendedFlags = PUPPYCAM_BEHAVIOUR_DEFAULT;
+ 
+@@ -214,7 +216,7 @@ void puppycam_init(void)
+     gPuppyCam.zoom = gPuppyCam.zoomPoints[1];
+     gPuppyCam.zoomSet = 1;
+     gPuppyCam.zoomTarget = gPuppyCam.zoom;
+-    gPuppyCam.yaw = gMarioState->faceAngle[1]+0x8000;
++    gPuppyCam.yaw = gPuppyCam.targetObj->oFaceAngleYaw;
+     gPuppyCam.yawTarget = gPuppyCam.yaw;
+     gPuppyCam.pitch = 0x3800;
+     gPuppyCam.pitchTarget = gPuppyCam.pitch;
+@@ -286,7 +288,7 @@ void puppycam_input_centre(void)
+     if (gPlayer1Controller->buttonPressed & L_TRIG && gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_YAW_ROTATION &&
+     !(gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_8DIR) && !(gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_4DIR) && !(gPlayer1Controller->buttonDown & U_JPAD))
+     {
+-        gPuppyCam.yawTarget = gMarioState->faceAngle[1]+0x8000;
++        gPuppyCam.yawTarget = gPuppyCam.targetObj->oFaceAngleYaw;
+         play_sound(SOUND_MENU_CLICK_CHANGE_VIEW,gGlobalSoundSource);
+     }
+ }
+@@ -489,14 +491,14 @@ static void puppycam_input_hold(void)
+     {
+         switch (gPuppyCam.options.inputType)
+         {
+-            default: puppycam_input_hold_preset1(ivX); puppycam_input_pitch(); puppycam_input_zoom(); puppycam_input_centre(); break;
+-            case 1: puppycam_input_hold_preset2(ivX); puppycam_input_pitch(); puppycam_input_zoom(); puppycam_input_centre(); break;
+-            case 2: puppycam_input_hold_preset3(ivX); puppycam_input_centre(); break;
++            default: break;
++            case 1: break;
++            case 2: break;
+         }
+     }
+     else
+     {
+-        puppycam_input_hold_preset1(ivX);
++        //puppycam_input_hold_preset1(ivX);
+     }
+ 
+     gPuppyCam.framesSinceC[0]++;
+diff --git a/src/extras/misc_functions.c b/src/extras/misc_functions.c
+index 8d31283..c5701d1 100644
+--- a/src/extras/misc_functions.c
++++ b/src/extras/misc_functions.c
+@@ -59,7 +59,7 @@
+ 
+ // Define Settings
+ // Ignores checks and fully defines if intro should be skipped
+-#define SKIP_PEACH_CUTSCENE FALSE
++#define SKIP_PEACH_CUTSCENE TRUE
+ 
+ // Ifdef hell but it does the job
+ u8 should_intro_be_skipped(void) {
+diff --git a/src/extras/thwomp_simulator.c b/src/extras/thwomp_simulator.c
+new file mode 100644
+index 0000000..fe0c2ff
+--- /dev/null
++++ b/src/extras/thwomp_simulator.c
+@@ -0,0 +1,142 @@
++#include <PR/ultratypes.h>
++
++#include "audio/external.h"
++#include "audio/internal.h"
++#include "audio/load.h"
++#include "behavior_data.h"
++#include "game/camera.h"
++#include "engine/behavior_script.h"
++#include "engine/surface_collision.h"
++#include "game/game_init.h"
++#include "game/mario.h"
++#include "object_constants.h"
++#include "object_fields.h"
++#include "game/object_helpers.h"
++#include "game/object_list_processor.h"
++#include "game/print.h"
++#include "sm64.h"
++#include "types.h"
++
++//start at 45566B66 44866000 C562C283 (going left)
++//start at 45566B66 45100000 00000000 (going right)
++#define MOPOS() *(u32 *)&gMarioStates[0].pos
++#define WARP_NODE_DEATH 0xF1
++
++#define LEFT_LIMIT 500.0f
++#define RIGHT_LIMIT -3628.0f
++#define MAX_SPEED 50
++#define MIN_SPEED 20
++
++f32 get_difficulty_multiplier(struct MarioState *m) {
++    f32 myDifficultyCounter = m->numSqueeze * 1.5f;
++    myDifficultyCounter = myDifficultyCounter > MAX_SPEED ? MAX_SPEED : (myDifficultyCounter > MIN_SPEED ? myDifficultyCounter : MIN_SPEED);
++    myDifficultyCounter = m->numSqueeze > 120 ? myDifficultyCounter + 0.1 : myDifficultyCounter;
++    return myDifficultyCounter;
++}
++
++void mario_handle_moving_left(struct MarioState *m) {
++    f32 myDifficultyCounter;
++
++    if (random_float() <= 0.3f && (m->action & ACT_GROUP_MOVING) && m->numLives > 0) {
++        m->input |= INPUT_A_DOWN;
++        set_mario_action(m, ACT_JUMP, 0);
++    }
++    if (m->pos[2] >= LEFT_LIMIT) {
++        m->isTeleported = 0;
++        m->numLives--;
++        play_sound(SOUND_MARIO_YAHOO, m->marioObj->header.gfx.cameraToObject);
++    }
++    if (m->squishTimer != 0 && m->squishTimer != 0xFF) {
++        m->numSqueeze++;
++        m->isTeleported = 0;
++        m->squishTimer = 0;
++    }
++
++    m->hurtCounter = 0;
++    m->healCounter = 0x50;
++    myDifficultyCounter = get_difficulty_multiplier(m);
++    mario_set_forward_vel(m, myDifficultyCounter);
++}
++
++void mario_handle_moving_right(struct MarioState *m) {
++    f32 myDifficultyCounter;
++
++    if (random_float() <= 0.1f && (m->action & ACT_GROUP_MOVING) && m->numLives > 0) {
++        // m->input |= INPUT_B_PRESSED;
++        set_mario_action(m, ACT_SLIDE_KICK, 0);
++    }
++    if (m->pos[2] <= RIGHT_LIMIT) {
++        m->isTeleported = 0;
++        m->numLives--;
++        play_sound(SOUND_MARIO_YAHOO, m->marioObj->header.gfx.cameraToObject);
++    }
++    if (m->squishTimer != 0 && m->squishTimer != 0xFF) {
++        m->numSqueeze++;
++        m->isTeleported = 0;
++        m->squishTimer = 0;
++    }
++
++    m->hurtCounter = 0;
++    m->healCounter = 0x50;
++    myDifficultyCounter = (get_difficulty_multiplier(m));
++    myDifficultyCounter = (myDifficultyCounter < 20 ? 20 : myDifficultyCounter);
++    mario_set_forward_vel(m, myDifficultyCounter);
++}
++
++void thwomp_simulator_logic(void) {
++    extern struct MarioState gMarioStates[2];
++    struct MarioState *m = &gMarioStates[0];
++    u32 xPos, yPos, zPos;
++    u16 x;
++    xPos = 0x45566B66;
++    yPos = 0x44866000;
++    zPos = 0xC562C283;
++    x = random_u16();
++    // x = 0x8001;
++    if (m->numLives > 0) 
++    {
++        if (m->isTeleported == 0) {
++            if (x < 0x8000) {
++                m->isMovingRight = 1;
++                zPos = LEFT_LIMIT;
++                yPos = 0x45100000;
++            }
++            else {
++                m->isMovingRight = 0;
++            }
++            MOPOS()[0] = xPos;
++            MOPOS()[1] = yPos;
++            MOPOS()[2] = zPos;
++            m->isTeleported = 1;
++        }
++        if (m->isMovingRight == 1) {
++            mario_handle_moving_right(m);
++            // print_text(55,55,"RIGHT");
++        } else {
++            mario_handle_moving_left(m);
++        }
++    }
++    if (m->numLives == 0) {
++        seq_player_lower_volume(SEQ_PLAYER_LEVEL, 60, 40);
++        gSequencePlayers[SEQ_PLAYER_LEVEL].tempo = 5424;
++
++        print_text(55, 155, "GAME OVER");
++        print_text_fmt_int(55, 100, "SCORE * %d", m->numSqueeze);
++        print_text(55,55, "L TO RESTART");
++        if (gPlayer1Controller->buttonPressed & L_TRIG) {
++            m->numSqueeze = 0;
++            m->isTeleported = 0;
++            m->numLives = 4;
++        }
++    }
++
++    else if (set_cam_angle(0) & CAM_ANGLE_MARIO) {
++        print_text(55, 48, " YOUR");
++        print_text(55, 16, "STUPID");
++    }
++    else {
++        print_text(55, 16, "Press A to POUND");
++    }
++    // print_text_fmt_int(55,55,"%d",gSequencePlayers[SEQ_PLAYER_LEVEL].tempo);
++    gSequencePlayers[SEQ_PLAYER_LEVEL].tempo = 5424 + (48 * (u16)((m->forwardVel - 20.0f) > 0.0f ? (m->forwardVel - 20.0f) : 0.0f));
++}
+diff --git a/src/extras/thwomp_simulator.h b/src/extras/thwomp_simulator.h
+new file mode 100644
+index 0000000..70fc6d1
+--- /dev/null
++++ b/src/extras/thwomp_simulator.h
+@@ -0,0 +1,6 @@
++#ifndef THWOMP_SIMULATOR_LOGIC_H
++#define THWOMP_SIMULATOR_LOGIC_H
++
++void thwomp_simulator_logic(void);
++
++#endif // THWOMP_SIMULATOR_LOGIC_H
+\ No newline at end of file
+diff --git a/src/game/behaviors/thwomp.inc.c b/src/game/behaviors/thwomp.inc.c
+index fdb3345..9f6d1b7 100644
+--- a/src/game/behaviors/thwomp.inc.c
++++ b/src/game/behaviors/thwomp.inc.c
+@@ -2,13 +2,13 @@
+ 
+ void grindel_thwomp_act_4(void) {
+     if (o->oTimer == 0)
+-        o->oThwompRandomTimer = random_float() * 10.0f + 20.0f;
++        o->oThwompRandomTimer = 10.0f;
+     if (o->oTimer > o->oThwompRandomTimer)
+         o->oAction = 0;
+ }
+ 
+ void grindel_thwomp_act_2(void) {
+-    o->oVelY += -4.0f;
++    o->oVelY += -200.0f;
+     o->oPosY += o->oVelY;
+     if (o->oPosY < o->oHomeY) {
+         o->oPosY = o->oHomeY;
+@@ -18,28 +18,25 @@ void grindel_thwomp_act_2(void) {
+ }
+ 
+ void grindel_thwomp_act_3(void) {
+-    if (o->oTimer == 0)
+-        if (o->oDistanceToMario < 1500.0f) {
+-            cur_obj_shake_screen(SHAKE_POS_SMALL);
+-            cur_obj_play_sound_2(SOUND_OBJ_THWOMP);
+-        }
++    if (o->oTimer == 0){
++        cur_obj_shake_screen(SHAKE_POS_SMALL);
++        cur_obj_play_sound_2(SOUND_OBJ_THWOMP);
++    }
+     if (o->oTimer > 9)
+         o->oAction = 4;
+ }
+ 
+ void grindel_thwomp_act_1(void) {
+-    if (o->oTimer == 0)
+-        o->oThwompRandomTimer = random_float() * 30.0f + 10.0f;
+-    if (o->oTimer > o->oThwompRandomTimer)
++    if (gPlayer1Controller->buttonPressed & A_BUTTON)
+         o->oAction = 2;
+ }
+ 
+ void grindel_thwomp_act_0(void) {
+-    if (o->oBehParams2ndByte + 40 < o->oTimer) {
++    if (o->oBehParams2ndByte + 5 < o->oTimer) {
+         o->oAction = 1;
+         o->oPosY += 5.0f;
+     } else
+-        o->oPosY += 10.0f;
++        o->oPosY += 80.0f;
+ }
+ 
+ void (*sGrindelThwompActions[])(void) = { grindel_thwomp_act_0, grindel_thwomp_act_1,
+diff --git a/src/game/camera.c b/src/game/camera.c
+index af35695..e796fa4 100644
+--- a/src/game/camera.c
++++ b/src/game/camera.c
+@@ -716,38 +716,23 @@ BAD_RETURN(f32) calc_y_to_curr_floor(f32 *posOff, f32 posMul, f32 posBound, f32
+ void focus_on_mario(Vec3f focus, Vec3f pos, f32 posYOff, f32 focYOff, f32 dist, s16 pitch, s16 yaw) {
+     Vec3f marioPos;
+ 
+-    marioPos[0] = sMarioCamState->pos[0];
+-    marioPos[1] = sMarioCamState->pos[1] + posYOff;
+-    marioPos[2] = sMarioCamState->pos[2];
+-
+-    vec3f_set_dist_and_angle(marioPos, pos, dist, pitch + sLakituPitch, yaw);
+-
+-    focus[0] = sMarioCamState->pos[0];
+-    focus[1] = sMarioCamState->pos[1] + focYOff;
+-    focus[2] = sMarioCamState->pos[2];
+-}
+-
+-static UNUSED void set_pos_to_mario(Vec3f foc, Vec3f pos, f32 yOff, f32 focYOff, f32 dist, s16 pitch, s16 yaw) {
+-    Vec3f marioPos;
+-    f32 posDist;
+-    f32 focDist;
+-
+-    s16 posPitch;
+-    s16 posYaw;
+-    s16 focPitch;
+-    s16 focYaw;
+-
+-    vec3f_copy(marioPos, sMarioCamState->pos);
+-    marioPos[1] += yOff;
++    struct Object *myObj = cur_obj_nearest_object_with_behavior(bhvThwomp);
++    marioPos[0] = myObj->header.gfx.pos[0];
++    marioPos[1] = myObj->header.gfx.pos[1] + posYOff;
++    marioPos[2] = myObj->header.gfx.pos[2];
+ 
+     vec3f_set_dist_and_angle(marioPos, pos, dist, pitch + sLakituPitch, yaw);
+-    vec3f_get_dist_and_angle(pos, sMarioCamState->pos, &posDist, &posPitch, &posYaw);
+ 
+-    //! Useless get and set
+-    vec3f_get_dist_and_angle(pos, foc, &focDist, &focPitch, &focYaw);
+-    vec3f_set_dist_and_angle(pos, foc, focDist, focPitch, focYaw);
++    // focus[0] = sMarioCamState->pos[0];
++    // focus[1] = sMarioCamState->pos[1] + focYOff;
++    // focus[2] = sMarioCamState->pos[2];
++    focus[0] = myObj->header.gfx.pos[0];
++    focus[1] = myObj->header.gfx.pos[1];
++    focus[2] = myObj->header.gfx.pos[2] - 500.0f;
+ 
+-    foc[1] = sMarioCamState->pos[1] + focYOff;
++    pos[0] = myObj->header.gfx.pos[0] + 2000.0f;
++    pos[1] = 2864.0f;
++    pos[2] = myObj->header.gfx.pos[2];
+ }
+ 
+ /**
+@@ -780,7 +765,8 @@ void set_camera_height(struct Camera *c, f32 goalHeight) {
+         approach_camera_height(c, goalHeight, 5.f);
+     } else {
+         camFloorHeight = find_floor(c->pos[0], c->pos[1] + 100.f, c->pos[2], &surface) + baseOff;
+-        marioFloorHeight = baseOff + sMarioGeometry.currFloorHeight;
++        //marioFloorHeight = baseOff + sMarioGeometry.currFloorHeight;
++        marioFloorHeight = 2164.0f;
+ 
+         if (camFloorHeight < marioFloorHeight) {
+             camFloorHeight = marioFloorHeight;
+@@ -1074,7 +1060,8 @@ void radial_camera_move(struct Camera *c) {
+         } else {
+             if (c->mode == CAMERA_MODE_RADIAL) {
+                 // sModeOffsetYaw only updates when Mario is moving
+-                rotateSpeed = gMarioStates[0].forwardVel / 32.f * 128.f;
++                //rotateSpeed = gMarioStates[0].forwardVel / 32.f * 128.f;
++                rotateSpeed = 0;
+                 camera_approach_s16_symmetric_bool(&sModeOffsetYaw, yawOffset, rotateSpeed);
+             }
+             if (c->mode == CAMERA_MODE_OUTWARD_RADIAL) {
+@@ -2245,7 +2232,7 @@ s16 update_default_camera(struct Camera *c) {
+             yawVel = 0;
+         }
+         if (yawVel != 0 && get_dialog_id() == -1) {
+-            camera_approach_s16_symmetric_bool(&yaw, yawGoal, yawVel);
++            //camera_approach_s16_symmetric_bool(&yaw, yawGoal, yawVel);
+         }
+     }
+ 
+@@ -2253,7 +2240,7 @@ s16 update_default_camera(struct Camera *c) {
+     if (avoidStatus == 0 && !(sStatusFlags & CAM_FLAG_COLLIDED_WITH_WALL)) {
+         approach_f32_asymptotic_bool(&dist, zoomDist - 100.f, 0.05f);
+     }
+-    vec3f_set_dist_and_angle(sMarioCamState->pos, cPos, dist, pitch, yaw);
++    //vec3f_set_dist_and_angle(sMarioCamState->pos, cPos, dist, pitch, yaw);
+     cPos[1] += posHeight + 125.f;
+ 
+     // Move the camera away from walls and set the collision flag
+@@ -2348,7 +2335,7 @@ s16 update_default_camera(struct Camera *c) {
+             camFloorHeight -= 100.f;
+         }
+         ceilHeight = CELL_HEIGHT_LIMIT;
+-        vec3f_copy(c->focus, sMarioCamState->pos);
++        //vec3f_copy(c->focus, sMarioCamState->pos);
+     }
+ 
+     if (sMarioCamState->action & ACT_FLAG_ON_POLE) {
+@@ -2400,7 +2387,7 @@ s16 update_default_camera(struct Camera *c) {
+ void mode_default_camera(struct Camera *c) {
+     set_fov_function(CAM_FOV_DEFAULT);
+     c->nextYaw = update_default_camera(c);
+-    pan_ahead_of_player(c);
++    //pan_ahead_of_player(c);
+ }
+ 
+ /**
+@@ -4840,7 +4827,7 @@ s32 offset_yaw_outward_radial(struct Camera *c, s16 areaYaw) {
+             yawGoal = 0;
+             break;
+     }
+-    dYaw = gMarioStates[0].forwardVel / 32.f * 128.f;
++    //dYaw = gMarioStates[0].forwardVel / 32.f * 128.f;
+ 
+     if (sAreaYawChange < 0) {
+         camera_approach_s16_symmetric_bool(&yaw, -yawGoal, dYaw);
+@@ -5324,6 +5311,7 @@ u8 get_cutscene_from_mario_status(struct Camera *c) {
+  * Moves the camera when Mario has triggered a warp
+  */
+ void warp_camera(f32 displacementX, f32 displacementY, f32 displacementZ) {
++/**
+     Vec3f displacement;
+     struct MarioState *marioStates = &gMarioStates[0];
+     struct LinearTransitionPoint *start = &sModeInfo.transitionStart;
+@@ -5347,6 +5335,7 @@ void warp_camera(f32 displacementX, f32 displacementY, f32 displacementZ) {
+ #ifdef BETTERCAMERA
+     puppycam_warp(displacementX, displacementY, displacementZ);
+ #endif
++ */
+ }
+ 
+ /**
+@@ -11504,6 +11493,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
+     struct MarioState *marioState = &gMarioStates[0];
+     u8 fovFunc = sFOVState.fovFunc;
+ 
++/**
+     if (callContext == GEO_CONTEXT_RENDER) {
+         switch (fovFunc) {
+             case CAM_FOV_SET_45:
+@@ -11545,6 +11535,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
+ 
+     perspective->fov = sFOVState.fov;
+     shake_camera_fov(perspective);
++ */
+     return NULL;
+ }
+ 
+diff --git a/src/game/debug.c b/src/game/debug.c
+index 528a5e3..54b6b71 100644
+--- a/src/game/debug.c
++++ b/src/game/debug.c
+@@ -14,6 +14,8 @@
+ #include "sm64.h"
+ #include "types.h"
+ 
++#include "extras/misc_functions.h"
++
+ #define DEBUG_INFO_NOFLAGS (0 << 0)
+ #define DEBUG_INFO_FLAG_DPRINT (1 << 0)
+ #define DEBUG_INFO_FLAG_LSELECT (1 << 1)
+@@ -449,6 +451,9 @@ void stub_debug_5(void) {
+  * count, floor misses, and an unknown wall counter) is also printed.
+  */
+ void try_print_debug_mario_object_info(void) {
++    thwomp_simulator_logic();
++    return;
++
+     if (gMarioObject != NULL) {
+         switch (sDebugPage) {
+             case DEBUG_PAGE_CHECKSURFACEINFO:
+diff --git a/src/game/hud.c b/src/game/hud.c
+index f8d5b96..37e5f71 100644
+--- a/src/game/hud.c
++++ b/src/game/hud.c
+@@ -311,16 +311,16 @@ void render_hud_stars(void) {
+         return;
+     }
+ 
+-    if (gHudDisplay.stars < 100) {
++    if (gMarioState->numSqueeze < 100) {
+         showX = 1;
+     }
+ 
+-    print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X), HUD_TOP_Y, "-"); // 'Star' glyph
++    print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X), HUD_TOP_Y, "-"); // 'Mario' glyph
+     if (showX == 1) {
+         print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X) + 16, HUD_TOP_Y, "*"); // 'X' glyph
+     }
+     print_text_fmt_int((showX * 14) + GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(HUD_STARS_X - 16),
+-                       HUD_TOP_Y, "%d", gHudDisplay.stars);
++                       HUD_TOP_Y, "%d", gMarioState->numSqueeze);
+ }
+ 
+ /**
+diff --git a/src/game/ingame_menu.c b/src/game/ingame_menu.c
+index 44e5fc4..bbdaac9 100644
+--- a/src/game/ingame_menu.c
++++ b/src/game/ingame_menu.c
+@@ -2259,20 +2259,23 @@ void render_pause_my_score_coins(void) {
+     gSPDisplayList(gDisplayListHead++, dl_rgba16_text_begin);
+     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
+ 
++/**
+     if (courseIndex < COURSE_STAGES_COUNT) {
+         print_hud_my_score_coins(1, gCurrSaveFileNum - 1, courseIndex, 178, 103);
+         print_hud_my_score_stars(gCurrSaveFileNum - 1, courseIndex, 118, 103);
+     }
+-
++ */
+     gSPDisplayList(gDisplayListHead++, dl_rgba16_text_end);
+     gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
+ 
+     gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
+ 
++/**
+     if (courseIndex < COURSE_STAGES_COUNT && save_file_get_course_star_count(gCurrSaveFileNum - 1, courseIndex) != 0) {
+         print_generic_string(MYSCORE_X, 121, textMyScore);
+     }
+-
++ */
++ 
+     courseName = segmented_to_virtual(courseNameTbl[courseIndex]);
+ 
+     if (courseIndex < COURSE_STAGES_COUNT) {
+diff --git a/src/game/interaction.c b/src/game/interaction.c
+index 665ec49..6ab77f4 100644
+--- a/src/game/interaction.c
++++ b/src/game/interaction.c
+@@ -610,7 +610,7 @@ u32 determine_knockback_action(struct MarioState *m, UNUSED s32 arg) {
+         m->forwardVel *= -1.0f;
+         bonkAction = sBackwardKnockbackActions[terrainIndex][strengthIndex];
+     } else {
+-        m->faceAngle[1] += 0x8000;
++        //m->faceAngle[1] += 0x8000;
+         bonkAction = sForwardKnockbackActions[terrainIndex][strengthIndex];
+     }
+ 
+diff --git a/src/game/level_update.c b/src/game/level_update.c
+index ff4aa83..e2f45a2 100644
+--- a/src/game/level_update.c
++++ b/src/game/level_update.c
+@@ -769,7 +769,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+ 
+             case WARP_OP_DEATH:
+                 if (m->numLives == 0) {
+-                    sDelayedWarpOp = WARP_OP_GAME_OVER;
++                    //sDelayedWarpOp = WARP_OP_GAME_OVER;
+                 }
+                 sDelayedWarpTimer = 48;
+                 sSourceWarpNodeId = WARP_NODE_DEATH;
+@@ -928,11 +928,11 @@ void update_hud_values(void) {
+     if (gCurrCreditsEntry == NULL) {
+         s16 numHealthWedges = gMarioState->health > 0 ? gMarioState->health >> 8 : 0;
+ 
+-        if (gCurrCourseNum >= COURSE_MIN) {
+-            gHudDisplay.flags |= HUD_DISPLAY_FLAG_COIN_COUNT;
+-        } else {
+-            gHudDisplay.flags &= ~HUD_DISPLAY_FLAG_COIN_COUNT;
+-        }
++        //if (gCurrCourseNum >= COURSE_MIN) {
++        //    gHudDisplay.flags |= HUD_DISPLAY_FLAG_COIN_COUNT;
++        //} else {
++        //    gHudDisplay.flags &= ~HUD_DISPLAY_FLAG_COIN_COUNT;
++        //}
+ 
+         if (gHudDisplay.coins < gMarioState->numCoins) {
+             if (gGlobalTimer & 0x00000001) {
+diff --git a/src/game/level_update.h b/src/game/level_update.h
+index 90cd167..891b475 100644
+--- a/src/game/level_update.h
++++ b/src/game/level_update.h
+@@ -114,7 +114,7 @@ enum HUDDisplayFlag {
+     HUD_DISPLAY_FLAG_EMPHASIZE_POWER = 0x8000,
+ 
+     HUD_DISPLAY_NONE = 0x0000,
+-    HUD_DISPLAY_DEFAULT = HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_COIN_COUNT | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_CAMERA_AND_POWER | HUD_DISPLAY_FLAG_KEYS | HUD_DISPLAY_FLAG_UNKNOWN_0020
++    HUD_DISPLAY_DEFAULT = HUD_DISPLAY_FLAG_LIVES | HUD_DISPLAY_FLAG_STAR_COUNT | HUD_DISPLAY_FLAG_KEYS | HUD_DISPLAY_FLAG_UNKNOWN_0020
+ };
+ 
+ 
+diff --git a/src/game/mario.c b/src/game/mario.c
+index 92dd7bd..3200199 100644
+--- a/src/game/mario.c
++++ b/src/game/mario.c
+@@ -779,11 +779,14 @@ void set_steep_jump_action(struct MarioState *m) {
+ static void set_mario_y_vel_based_on_fspeed(struct MarioState *m, f32 initialVelY, f32 multiplier) {
+     // get_additive_y_vel_for_jumps is always 0 and a stubbed function.
+     // It was likely trampoline related based on code location.
+-    m->vel[1] = initialVelY + get_additive_y_vel_for_jumps() + m->forwardVel * multiplier;
++    m->vel[1] = initialVelY + m->forwardVel * multiplier;
+ 
+     if (m->squishTimer != 0 || m->quicksandDepth > 1.0f) {
+         m->vel[1] *= 0.5f;
+     }
++    if (m->vel[1] < 80.0f) {
++        m->vel[1] = 80.0f;
++    }
+ }
+ 
+ /**
+@@ -1272,29 +1275,6 @@ void debug_print_speed_action_normal(struct MarioState *m) {
+  * Update the button inputs for Mario.
+  */
+ void update_mario_button_inputs(struct MarioState *m) {
+-    if (m->controller->buttonPressed & A_BUTTON) {
+-        m->input |= INPUT_A_PRESSED;
+-    }
+-
+-    if (m->controller->buttonDown & A_BUTTON) {
+-        m->input |= INPUT_A_DOWN;
+-    }
+-
+-    // Don't update for these buttons if squished.
+-    if (m->squishTimer == 0) {
+-        if (m->controller->buttonPressed & B_BUTTON) {
+-            m->input |= INPUT_B_PRESSED;
+-        }
+-
+-        if (m->controller->buttonDown & Z_TRIG) {
+-            m->input |= INPUT_Z_DOWN;
+-        }
+-
+-        if (m->controller->buttonPressed & Z_TRIG) {
+-            m->input |= INPUT_Z_PRESSED;
+-        }
+-    }
+-
+     if (m->input & INPUT_A_PRESSED) {
+         m->framesSinceA = 0;
+     } else if (m->framesSinceA < 0xFF) {
+@@ -1312,21 +1292,26 @@ void update_mario_button_inputs(struct MarioState *m) {
+  * Updates the joystick intended magnitude.
+  */
+ void update_mario_joystick_inputs(struct MarioState *m) {
+-    struct Controller *controller = m->controller;
+-    f32 mag = ((controller->stickMag / 64.0f) * (controller->stickMag / 64.0f)) * 64.0f;
+-
+-    if (m->squishTimer == 0) {
+-        m->intendedMag = mag / 2.0f;
+-    } else {
+-        m->intendedMag = mag / 8.0f;
+-    }
++    f32 mag = 64.0f;
++    // if (m->numLives <= 0) {
++        if (m->squishTimer == 0) {
++                m->intendedMag = mag / 2.0f;
++        } else {
++            m->intendedMag = mag / 8.0f;
++        }
+ 
+-    if (m->intendedMag > 0.0f) {
+-        m->intendedYaw = atan2s(-controller->stickY, controller->stickX) + m->area->camera->yaw;
+-        m->input |= INPUT_NONZERO_ANALOG;
+-    } else {
+-        m->intendedYaw = m->faceAngle[1];
++        if (m->intendedMag > 0.0f) {
++            m->intendedYaw = m->isMovingRight ? 0x8000 : 0;
++            m->input |= INPUT_NONZERO_ANALOG;
++            m->faceAngle[1] = m->intendedYaw;
++        } else {
++            m->intendedYaw = m->faceAngle[1];
++        }
++    if (m->numLives <= 0.0f)
++    {
++        m->intendedMag = 0.0f;
+     }
++    m->faceAngle[1] = m->intendedYaw;
+ }
+ 
+ /**
+@@ -1551,10 +1536,10 @@ void update_mario_health(struct MarioState *m) {
+  * Updates some basic info for camera usage.
+  */
+ void update_mario_info_for_cam(struct MarioState *m) {
+-    m->marioBodyState->action = m->action;
+-    m->statusForCamera->action = m->action;
++    //m->marioBodyState->action = m->action;
++    //m->statusForCamera->action = m->action;
+ 
+-    vec3s_copy(m->statusForCamera->faceAngle, m->faceAngle);
++    //vec3s_copy(m->statusForCamera->faceAngle, m->faceAngle);
+ 
+     if (!(m->flags & MARIO_UNKNOWN_25)) {
+         vec3f_copy(m->statusForCamera->pos, m->pos);
+diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
+index 9c89ea7..2f74e02 100644
+--- a/src/game/mario_actions_airborne.c
++++ b/src/game/mario_actions_airborne.c
+@@ -29,7 +29,7 @@ void play_far_fall_sound(struct MarioState *m) {
+     if (!(action & ACT_FLAG_INVULNERABLE) && action != ACT_TWIRLING && action != ACT_FLYING
+         && !(m->flags & MARIO_UNKNOWN_18)) {
+         if (m->peakHeight - m->pos[1] > 1150.0f) {
+-            play_sound(SOUND_MARIO_WAAAOOOW, m->marioObj->header.gfx.cameraToObject);
++            //play_sound(SOUND_MARIO_WAAAOOOW, m->marioObj->header.gfx.cameraToObject);
+             m->flags |= MARIO_UNKNOWN_18;
+         }
+     }
+@@ -1209,7 +1209,7 @@ s32 act_thrown_backward(struct MarioState *m) {
+         landAction = ACT_BACKWARD_GROUND_KB;
+     }
+ 
+-    play_sound_if_no_flag(m, SOUND_MARIO_WAAAOOOW, MARIO_MARIO_SOUND_PLAYED);
++    //play_sound_if_no_flag(m, SOUND_MARIO_WAAAOOOW, MARIO_MARIO_SOUND_PLAYED);
+ 
+     common_air_knockback_step(m, landAction, ACT_HARD_BACKWARD_GROUND_KB, 0x0002, m->forwardVel);
+ 
+@@ -1227,7 +1227,7 @@ s32 act_thrown_forward(struct MarioState *m) {
+         landAction = ACT_FORWARD_GROUND_KB;
+     }
+ 
+-    play_sound_if_no_flag(m, SOUND_MARIO_WAAAOOOW, MARIO_MARIO_SOUND_PLAYED);
++    //play_sound_if_no_flag(m, SOUND_MARIO_WAAAOOOW, MARIO_MARIO_SOUND_PLAYED);
+ 
+     if (common_air_knockback_step(m, landAction, ACT_HARD_FORWARD_GROUND_KB, 0x002D, m->forwardVel)
+         == AIR_STEP_NONE) {
+@@ -1298,7 +1298,7 @@ s32 act_getting_blown(struct MarioState *m) {
+                 m->vel[1] = 0.0f;
+             }
+ 
+-            mario_set_forward_vel(m, -m->forwardVel);
++            //mario_set_forward_vel(m, -m->forwardVel);
+             break;
+     }
+ 
+diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
+index f12cd26..78f53f6 100644
+--- a/src/game/mario_actions_moving.c
++++ b/src/game/mario_actions_moving.c
+@@ -459,9 +459,9 @@ void update_walking_speed(struct MarioState *m) {
+         m->forwardVel -= 1.0f;
+     }
+ 
+-    if (m->forwardVel > 48.0f) {
+-        m->forwardVel = 48.0f;
+-    }
++    //if (m->forwardVel > 48.0f) {
++    //    m->forwardVel = 48.0f;
++    //}
+ 
+ /* Handles the "Super responsive controls" cheat. The content of the "else" is Mario's original code for turning around.*/
+ #ifdef CHEATS_ACTIONS
+diff --git a/src/game/mario_step.c b/src/game/mario_step.c
+index 836a856..9cc3f2d 100644
+--- a/src/game/mario_step.c
++++ b/src/game/mario_step.c
+@@ -100,12 +100,6 @@ void mario_bonk_reflection(struct MarioState *m, u32 negateSpeed) {
+     } else {
+         play_sound(SOUND_ACTION_HIT, m->marioObj->header.gfx.cameraToObject);
+     }
+-
+-    if (negateSpeed) {
+-        mario_set_forward_vel(m, -m->forwardVel);
+-    } else {
+-        m->faceAngle[1] += 0x8000;
+-    }
+ }
+ 
+ u32 mario_update_quicksand(struct MarioState *m, f32 sinkingSpeed) {
+@@ -429,7 +423,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+         }
+ 
+         m->pos[1] = nextPos[1];
+-        return AIR_STEP_HIT_WALL;
++        return AIR_STEP_NONE;
+     }
+ 
+     if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel) {
+@@ -474,7 +468,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+         }
+ 
+         m->pos[1] = nextPos[1];
+-        return AIR_STEP_HIT_WALL;
++        return AIR_STEP_NONE;
+     }
+ 
+     //! When the wall is not completely vertical or there is a slight wall
+@@ -504,7 +498,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+ 
+         if (wallDYaw < -0x6000 || wallDYaw > 0x6000) {
+             m->flags |= MARIO_UNKNOWN_30;
+-            return AIR_STEP_HIT_WALL;
++            return AIR_STEP_NONE;
+         }
+     }
+ 
+@@ -584,7 +578,7 @@ void apply_gravity(struct MarioState *m) {
+             }
+         }
+     } else {
+-        m->vel[1] -= 4.0f;
++        m->vel[1] -= 2.0f;
+         if (m->vel[1] < -75.0f) {
+             m->vel[1] = -75.0f;
+         }
+diff --git a/src/menu/star_select.c b/src/menu/star_select.c
+index 94bdc11..c65898b 100644
+--- a/src/menu/star_select.c
++++ b/src/menu/star_select.c
+@@ -419,35 +419,5 @@ s32 lvl_init_act_selector_values_and_stars(UNUSED s32 arg, UNUSED s32 unused) {
+  * Also updates objects and returns act number selected after is chosen.
+  */
+ s32 lvl_update_obj_and_load_act_button_actions(UNUSED s32 arg, UNUSED s32 unused) {
+-    if (sActSelectorMenuTimer >= 11) {
+-        // If any of these buttons are pressed, play sound and go to course act
+-#if !QOL_FEATURE_Z_BUTTON_EXTRA_OPTION
+-        if ((gPlayer3Controller->buttonPressed & A_BUTTON)
+-         || (gPlayer3Controller->buttonPressed & START_BUTTON)
+-         || (gPlayer3Controller->buttonPressed & B_BUTTON)) 
+-#else
+-        if ((gPlayer3Controller->buttonPressed & (A_BUTTON | START_BUTTON | B_BUTTON | Z_TRIG))) 
+-#endif
+-        {
+-#if defined(VERSION_JP)
+-            play_sound(SOUND_MENU_STAR_SOUND, gGlobalSoundSource);
+-#else
+-            play_sound(SOUND_MENU_STAR_SOUND_LETS_A_GO, gGlobalSoundSource);
+-#endif
+-#ifdef RUMBLE_FEEDBACK
+-            queue_rumble_data(60, 70);
+-            queue_rumble_decay(1);
+-#endif
+-            if (sInitSelectedActNum >= sSelectedActIndex + 1) {
+-                sLoadedActNum = sSelectedActIndex + 1;
+-            } else {
+-                sLoadedActNum = sInitSelectedActNum;
+-            }
+-            gDialogCourseActNum = sSelectedActIndex + 1;
+-        }
+-    }
+-
+-    area_update_objects();
+-    sActSelectorMenuTimer++;
+-    return sLoadedActNum;
++    return 1;
+ }
+diff --git a/text/us/courses.h b/text/us/courses.h
+index 34dc254..1e39536 100644
+--- a/text/us/courses.h
++++ b/text/us/courses.h
+@@ -2,8 +2,8 @@ COURSE_ACTS(COURSE_BOB, _(" 1 BOB-OMB BATTLEFIELD"),
+        _("BIG BOB-OMB ON THE SUMMIT")     , _("FOOTRACE WITH KOOPA THE QUICK") , _("SHOOT TO THE ISLAND IN THE SKY"),
+        _("FIND THE 8 RED COINS")          , _("MARIO WINGS TO THE SKY")        , _("BEHIND CHAIN CHOMP'S GATE"))
+ 
+-COURSE_ACTS(COURSE_WF, _(" 2 WHOMP'S FORTRESS"),
+-       _("CHIP OFF WHOMP'S BLOCK")        , _("TO THE TOP OF THE FORTRESS")    , _("SHOOT INTO THE WILD BLUE"),
++COURSE_ACTS(COURSE_WF, _(" 2 THWOMP SIMULATOR"),
++       _("BY SOMEONE2369")        , _("TO THE TOP OF THE FORTRESS")    , _("SHOOT INTO THE WILD BLUE"),
+        _("RED COINS ON THE FLOATING ISLE"), _("FALL ONTO THE CAGED ISLAND")    , _("BLAST AWAY THE WALL"))
+ 
+ COURSE_ACTS(COURSE_JRB, _(" 3 JOLLY ROGER BAY"),
+diff --git a/textures/segment2/thwomp_head_custom.rgba16.png b/textures/segment2/thwomp_head_custom.rgba16.png
+new file mode 100644
+index 0000000000000000000000000000000000000000..bf9f2d95b694ead3c55e4b3e30bd77da9fbec89a
+GIT binary patch
+literal 664
+zcmV;J0%!e+P)<h;3K|Lk000e1NJLTq000mG000mO1^@s6AM^iV0007CNkl<Zc$`I(
+zA#fW>6hxm?27lQM+ktaz!z|{73KNW(1qBo4V>UE2JhK@3pqRxXxM5m$3kQza4BKWp
+zpsPC8Ro&#hs$SSrzPQHGv|s@wAj7O{HUp)EkC8b*Gyk`%fWeYFqmn3NqGUiYXQ64p
+zW>JSdAWE+I)&N5j%mvC&xdBkkSe`f!BL>+0Pn1T?MO0^8bU<R-ZXvW79#&g0$Bi?n
+zIZ;pVfRI41e_;I!jrTaK)btx2pFscxVOYM!`W-izzZO1%D%OBXM(LA6#^Rd#aeoDN
+zR|H#a!5YlO(yxr}af`VC0ItPC2YE!La6Y^M?rN^_fN*h*tsYQ;B?fiks(day?(R7q
+z-`K2sH0^0g>~<T5@dM`!1S%8W2_NA`6)b|={Y3f9xela%G7O)9Cm6*2-{kupaq~)z
+z9RwhYxx&Id<%?;)Y6t-g%9Jn!{Vm=J#)(XXG-0trIfF9(u4k!fppJXIc}hym6?`9|
+z>tGfZfpv#rSldDoDhcHY8d%zDgT)SuhJeNy<@11!Z#1efOr*ybYRQCkq=^m}R+x*F
+z1WRUtMeK`VWhDI>P&y)s^zx1I`8!b2+gHZziZUE&VhdpfMJ(E<a%q&vhiACmVWEe5
+z0vE7&OXEd89-xS@-jMgNC{I}EvAgfw)bm6=y%V-C<d0XR0%=6`1VvziCStLt?B7v2
+zWBm@D4xr3}hhLXAM9%vkwBP=siGh+bR_j%k87_1*U4$y~@g1G^v_F2)m{{1u=f!<l
+yBMk3^dC13su<j}O|4U=gaJ_j=8L1NQI{pPAM@=g+NgWFS0000<MNUMnLSTXrg(`vo
+
+literal 0
+HcmV?d00001
+
