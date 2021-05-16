@@ -42,7 +42,7 @@ index 0000000..ec68f65
 +
 +#endif // ANTI_PATCHES
 diff --git a/include/config.h b/include/config.h
-index a53af26..80519e4 100644
+index f40e8d0..fc3ea08 100644
 --- a/include/config.h
 +++ b/include/config.h
 @@ -10,6 +10,8 @@
@@ -168,17 +168,17 @@ index 665ec49..8dfc059 100644
          o->oInteractStatus = INT_STATUS_INTERACTED;
          m->interactObj = o;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 9c89ea7..1e1e3b1 100644
+index 0bd96de..cebfcf3 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -67,18 +67,17 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+@@ -67,18 +67,18 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
  
      fallHeight = m->peakHeight - m->pos[1];
  
 -#pragma GCC diagnostic push
 -#pragma GCC diagnostic ignored "-Wtype-limits"
 -
--    //! Never true
+     //! Never true
 -    if (m->actionState == ACT_GROUND_POUND) {
 +#if ANTI_PATCH_GROUNDPOUND_HEIGHT
 +    if (m->action == ACT_GROUND_POUND)
@@ -193,10 +193,10 @@ index 9c89ea7..1e1e3b1 100644
  
 -#pragma GCC diagnostic pop
 -
-     if (m->action != ACT_TWIRLING && m->floor->type != SURFACE_BURNING) {
-         if (m->vel[1] < -55.0f) {
-             if (fallHeight > 3000.0f) {
-@@ -412,12 +411,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
+ 	#ifdef PORT_MOP_OBJS
+ 	if (m->SelFallDmg){
+ 		m->SelFallDmg=0;
+@@ -419,12 +419,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
                      // not able to ledge grab it.
                      if (m->forwardVel >= 38.0f) {
                          m->particleFlags |= PARTICLE_VERTICAL_STAR;
@@ -217,7 +217,7 @@ index 9c89ea7..1e1e3b1 100644
                      }
                  }
              } else {
-@@ -1314,6 +1321,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
+@@ -1321,6 +1329,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
          if (m->input & INPUT_A_PRESSED) {
              m->vel[1] = 52.0f;
              m->faceAngle[1] += 0x8000;
@@ -228,10 +228,10 @@ index 9c89ea7..1e1e3b1 100644
          }
      } else if (m->forwardVel >= 38.0f) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index c00d53f..a75fb32 100644
+index 2f748f7..4050f2b 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
-@@ -1650,6 +1650,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
+@@ -1662,6 +1662,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
      }
  
      if (is_anim_at_end(m)) {

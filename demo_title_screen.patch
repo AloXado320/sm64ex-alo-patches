@@ -19,7 +19,7 @@ index c5940bf..c9769f7 100644
  
  #ifdef NO_SEGMENTED_MEMORY
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index 9adb6dd..2fd4502 100644
+index 15c9851..631ed5c 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
 @@ -9,6 +9,7 @@
@@ -30,72 +30,85 @@ index 9adb6dd..2fd4502 100644
  
  #include "levels/scripts.h"
  #include "levels/menu/header.h"
-@@ -47,54 +48,30 @@ const LevelScript level_intro_mario_head_regular[] = {
+@@ -66,67 +67,36 @@ const LevelScript level_intro_splash_screen[] = {
+     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
+ };
+ 
+-#ifdef GODDARD_MFACE
++
+ const LevelScript level_intro_mario_head_regular[] = {
      INIT_LEVEL(),
      BLACKOUT(/*active*/ TRUE),
++#ifdef GODDARD_MFACE
      FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
--#ifdef GODDARD_MFACE
 -    LOAD_MARIO_HEAD(/*loadHeadID*/ REGULAR_FACE),
--#endif
-+
++#endif
      LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
      LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
  
      ALLOC_LEVEL_POOL(),
 -    AREA(/*index*/ 1, intro_geo_mario_head_regular),
 -    END_AREA(),
-+
      FREE_LEVEL_POOL(),
  
      SLEEP(/*frames*/ 2),
      BLACKOUT(/*active*/ FALSE),
 -    LOAD_AREA(/*area*/ 1),
-+
-+    DEMO_SCRIPT(LVL_DEMO_CLEAR), // we need to do this or else file select will be tainted with inputs
-+    GET_OR_SET(/*op*/ OP_GET, /*var*/ VAR_CURR_DEMO_START_BUTTON),
-+    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 1, script_intro_L1), // was start pressed when demo ended last time?
-+
-     SET_MENU_MUSIC(/*seq*/ 0x0002),
-     TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
-     SLEEP(/*frames*/ 20),
+-    SET_MENU_MUSIC(/*seq*/ 0x0002),
+-    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
+-    SLEEP(/*frames*/ 20),
 -    CALL_LOOP(/*arg*/ 1, /*func*/ lvl_intro_update),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
 -    JUMP(script_intro_L4),
-+    DEMO_SCRIPT(LVL_DEMO_SET_ADVANCE), // advance the demo ID manually with a new command which sets the level as script register
-+    JUMP(script_intro_L4), // go to ingame
- };
- 
- const LevelScript level_intro_mario_head_dizzy[] = {
+-};
+-
+-const LevelScript level_intro_mario_head_dizzy[] = {
 -    INIT_LEVEL(),
 -    BLACKOUT(/*active*/ TRUE),
 -    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
--#ifdef GODDARD_MFACE
 -    LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
--#endif
 -    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
 -    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
 -    ALLOC_LEVEL_POOL(),
--
+ 
 -    AREA(/*index*/ 1, intro_geo_mario_head_dizzy),
 -    END_AREA(),
--
++    DEMO_SCRIPT(LVL_DEMO_CLEAR), // we need to do this or else file select will be tainted with inputs
++    GET_OR_SET(/*op*/ OP_GET, /*var*/ VAR_CURR_DEMO_START_BUTTON),
++    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 1, script_intro_L1), // was start pressed when demo ended last time?
+ 
 -    FREE_LEVEL_POOL(),
 -    SLEEP(/*frames*/ 2),
 -    BLACKOUT(/*active*/ FALSE),
 -    LOAD_AREA(/*area*/ 1),
 -    SET_MENU_MUSIC(/*seq*/ 0x0082),
--    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
--    SLEEP(/*frames*/ 20),
++    SET_MENU_MUSIC(/*seq*/ 0x0002),
+     TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
+     SLEEP(/*frames*/ 20),
 -    CALL_LOOP(/*arg*/ 2, /*func*/ lvl_intro_update),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
 -    JUMP(script_intro_L4),
-+    JUMP(level_intro_mario_head_regular),
+-};
+-#else
+-extern const LevelScript script_intro_L1[];
+-
+-const LevelScript level_intro_mario_head_regular[] = {
+-    JUMP(script_intro_L1),
++    DEMO_SCRIPT(LVL_DEMO_SET_ADVANCE), // advance the demo ID manually with a new command which sets the level as script register
++    JUMP(script_intro_L4), // go to ingame
  };
  
+ const LevelScript level_intro_mario_head_dizzy[] = {
+-    JUMP(script_intro_L1),
++    JUMP(level_intro_mario_head_regular),
+ };
+-#endif
+ 
  const LevelScript level_intro_entry_4[] = {
-@@ -107,6 +84,7 @@ const LevelScript level_intro_entry_4[] = {
+     INIT_LEVEL(),
+@@ -140,6 +110,7 @@ const LevelScript level_intro_entry_4[] = {
  
      AREA(/*index*/ 1, intro_geo_000414),
      END_AREA(),
@@ -265,19 +278,18 @@ index 0000000..8f0efc6
 +
 +#endif // OPTIONS_MENU_H
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 03b3e91..71a639a 100644
+index d2f48f4..aefe74a 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -43,6 +43,8 @@
- #include "extras/bettercamera.h"
+@@ -43,6 +43,7 @@
  #endif
  
+ #include "extras/misc_functions.h"
 +#include "extras/demo_screen.h"
-+
+ 
  #define PLAY_MODE_NORMAL 0
  #define PLAY_MODE_PAUSED 2
- #define PLAY_MODE_CHANGE_AREA 3
-@@ -1001,12 +1003,13 @@ void basic_update(UNUSED s16 *arg) {
+@@ -1002,12 +1003,13 @@ void basic_update(UNUSED s16 *arg) {
  
  s32 play_mode_normal(void) {
      if (gCurrDemoInput != NULL) {

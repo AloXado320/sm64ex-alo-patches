@@ -17,10 +17,10 @@ index 4cbf76c..da4fcd2 100644
  
  #if defined(VERSION_JP) || defined(VERSION_SH)
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index 6a51c0d..da41b2e 100644
+index b9fb381..f4d1e45 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
-@@ -815,7 +815,7 @@ const BehaviorScript bhvKickableBoard[] = {
+@@ -819,7 +819,7 @@ const BehaviorScript bhvKickableBoard[] = {
      LOAD_COLLISION_DATA(wf_seg7_collision_kickable_board),
      SET_HITBOX(/*Radius*/ 100, /*Height*/ 1200),
      SET_HURTBOX(/*Radius*/ 1, /*Height*/ 1),
@@ -29,7 +29,7 @@ index 6a51c0d..da41b2e 100644
      SET_INT(oIntangibleTimer, 0),
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_kickable_board_loop),
-@@ -1170,7 +1170,7 @@ const BehaviorScript bhvThwomp2[] = {
+@@ -1174,7 +1174,7 @@ const BehaviorScript bhvThwomp2[] = {
      ADD_FLOAT(oPosY, 1),
      SET_HOME(),
      SCALE(/*Unused*/ 0, /*Field*/ 140),
@@ -38,7 +38,7 @@ index 6a51c0d..da41b2e 100644
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_grindel_thwomp_loop),
          CALL_NATIVE(load_object_collision_model),
-@@ -1185,7 +1185,7 @@ const BehaviorScript bhvThwomp[] = {
+@@ -1189,7 +1189,7 @@ const BehaviorScript bhvThwomp[] = {
      ADD_FLOAT(oPosY, 1),
      SCALE(/*Unused*/ 0, /*Field*/ 140),
      SET_HOME(),
@@ -47,7 +47,7 @@ index 6a51c0d..da41b2e 100644
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_grindel_thwomp_loop),
          CALL_NATIVE(load_object_collision_model),
-@@ -2506,7 +2506,7 @@ const BehaviorScript bhvPiranhaPlant[] = {
+@@ -2510,7 +2510,7 @@ const BehaviorScript bhvPiranhaPlant[] = {
      SET_INT(oDamageOrCoinValue, 3),
      SET_INT(oNumLootCoins, 5),
      SPAWN_CHILD(/*Model*/ MODEL_BUBBLE, /*Behavior*/ bhvPiranhaPlantBubble),
@@ -57,10 +57,10 @@ index 6a51c0d..da41b2e 100644
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_piranha_plant_loop),
 diff --git a/include/text_strings.h.in b/include/text_strings.h.in
-index 11b9689..e5f8e90 100644
+index 8a49027..2c80d91 100644
 --- a/include/text_strings.h.in
 +++ b/include/text_strings.h.in
-@@ -407,7 +407,7 @@
+@@ -418,7 +418,7 @@
   * Course Table names for Score Menu Save view
   */
  #define TEXT_MENU_BOB _(" 1 BOB-OMB BATTLEFIELD")
@@ -70,13 +70,13 @@ index 11b9689..e5f8e90 100644
  #define TEXT_MENU_CCM _(" 4 COOL, COOL MOUNTAIN")
  #define TEXT_MENU_BBH _(" 5 BIG BOO'S HAUNT")
 diff --git a/include/types.h b/include/types.h
-index 0824598..35b57ce 100644
+index 8277b9f..fb5145c 100644
 --- a/include/types.h
 +++ b/include/types.h
-@@ -344,6 +344,9 @@ struct MarioState
-     /*0xBC*/ f32 peakHeight;
-     /*0xC0*/ f32 quicksandDepth;
-     /*0xC4*/ f32 unkC4;
+@@ -351,6 +351,9 @@ struct MarioState
+     #ifdef PORT_MOP_OBJS
+ 	/*0xd4*/ u8 SelFallDmg; //For certain objects I don't want fall damage ever
+     #endif
 +    u8 isTeleported;
 +    u8 isMovingRight;
 +    u16 numSqueeze;
@@ -84,21 +84,25 @@ index 0824598..35b57ce 100644
  
  #endif // _SM64_TYPES_H_
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index 9adb6dd..ea0b7c8 100644
+index 15c9851..615357a 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
-@@ -16,6 +16,7 @@
- #include "actors/common1.h"
+@@ -68,53 +68,11 @@ const LevelScript level_intro_splash_screen[] = {
  
- #include "make_const_nonconst.h"
-+#include "levels/wf/header.h"
- #include "levels/intro/header.h"
- 
- const LevelScript level_intro_splash_screen[] = {
-@@ -58,43 +59,11 @@ const LevelScript level_intro_mario_head_regular[] = {
-     END_AREA(),
-     FREE_LEVEL_POOL(),
- 
+ #ifdef GODDARD_MFACE
+ const LevelScript level_intro_mario_head_regular[] = {
+-    INIT_LEVEL(),
+-    BLACKOUT(/*active*/ TRUE),
+-    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-    LOAD_MARIO_HEAD(/*loadHeadID*/ REGULAR_FACE),
+-    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
+-    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
+-
+-    ALLOC_LEVEL_POOL(),
+-    AREA(/*index*/ 1, intro_geo_mario_head_regular),
+-    END_AREA(),
+-    FREE_LEVEL_POOL(),
+-
 -    SLEEP(/*frames*/ 2),
 -    BLACKOUT(/*active*/ FALSE),
 -    LOAD_AREA(/*area*/ 1),
@@ -116,9 +120,7 @@ index 9adb6dd..ea0b7c8 100644
 -    INIT_LEVEL(),
 -    BLACKOUT(/*active*/ TRUE),
 -    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
--#ifdef GODDARD_MFACE
 -    LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
--#endif
 -    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
 -    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
 -    ALLOC_LEVEL_POOL(),
@@ -139,17 +141,19 @@ index 9adb6dd..ea0b7c8 100644
 -    JUMP(script_intro_L4),
 +    JUMP(script_intro_L1),
  };
- 
- const LevelScript level_intro_entry_4[] = {
+ #else
+ extern const LevelScript script_intro_L1[];
 diff --git a/levels/menu/script.c b/levels/menu/script.c
-index e1aeab0..dc21bd5 100644
+index 83e6195..06a9f4a 100644
 --- a/levels/menu/script.c
 +++ b/levels/menu/script.c
-@@ -20,40 +20,7 @@
+@@ -20,42 +20,7 @@
  
  const LevelScript level_main_menu_entry_1[] = {
      INIT_LEVEL(),
+-#ifdef GODDARD_MFACE
 -    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
+-#endif    
 -    LOAD_MIO0(/*seg*/ 0x07, _menu_segment_7SegmentRomStart, _menu_segment_7SegmentRomEnd),
 -    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
 -    ALLOC_LEVEL_POOL(),
@@ -187,7 +191,7 @@ index e1aeab0..dc21bd5 100644
      EXIT_AND_EXECUTE(/*seg*/ 0x15, _scriptsSegmentRomStart, _scriptsSegmentRomEnd, level_main_scripts_entry),
  };
  
-@@ -71,32 +38,5 @@ const LevelScript level_main_menu_entry_2[] = {
+@@ -81,34 +46,7 @@ const LevelScript level_main_menu_entry_2[] = {
      /*24*/ END_AREA(),
  
      /*25*/ FREE_LEVEL_POOL(),
@@ -221,6 +225,8 @@ index e1aeab0..dc21bd5 100644
 -    /*42*/ EXIT(),
 +           EXIT(),
  };
+ 
+ #undef JUMP_VAL
 diff --git a/levels/wf/areas/1/macro.inc.c b/levels/wf/areas/1/macro.inc.c
 index ee3d2c0..4504e9d 100644
 --- a/levels/wf/areas/1/macro.inc.c
@@ -330,18 +336,23 @@ index 7f4f588..5ba4182 100644
  
      gPuppyCam.framesSinceC[0]++;
 diff --git a/src/extras/misc_functions.c b/src/extras/misc_functions.c
-index 8d31283..c5701d1 100644
+index 075e796..015e499 100644
 --- a/src/extras/misc_functions.c
 +++ b/src/extras/misc_functions.c
-@@ -59,7 +59,7 @@
+@@ -38,12 +38,5 @@ u8 game_key_combo_triggered(void) {
  
- // Define Settings
- // Ignores checks and fully defines if intro should be skipped
--#define SKIP_PEACH_CUTSCENE FALSE
-+#define SKIP_PEACH_CUTSCENE TRUE
- 
- // Ifdef hell but it does the job
+ // ifdef hell but it does the job
  u8 should_intro_be_skipped(void) {
+-    return save_file_exists(gCurrSaveFileNum - 1) || gSkipIntroKeyCombo == TRUE
+-#ifndef TARGET_N64
+-#ifdef COMMAND_LINE_OPTIONS
+-    || gCLIOpts.SkipIntro == TRUE
+-#endif
+-    || configSkipIntro == TRUE
+-#endif
+-    ;
++    return TRUE;
+ }
 diff --git a/src/extras/thwomp_simulator.c b/src/extras/thwomp_simulator.c
 new file mode 100644
 index 0000000..fe0c2ff
@@ -560,7 +571,7 @@ index fdb3345..9f6d1b7 100644
  
  void (*sGrindelThwompActions[])(void) = { grindel_thwomp_act_0, grindel_thwomp_act_1,
 diff --git a/src/game/camera.c b/src/game/camera.c
-index af35695..e796fa4 100644
+index eaa65b0..d70338b 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -716,38 +716,23 @@ BAD_RETURN(f32) calc_y_to_curr_floor(f32 *posOff, f32 posMul, f32 posBound, f32
@@ -713,24 +724,23 @@ index af35695..e796fa4 100644
  }
  
 diff --git a/src/game/debug.c b/src/game/debug.c
-index 528a5e3..54b6b71 100644
+index b30f8aa..ce33152 100644
 --- a/src/game/debug.c
 +++ b/src/game/debug.c
-@@ -14,6 +14,8 @@
- #include "sm64.h"
- #include "types.h"
+@@ -18,6 +18,8 @@
+ #include "extras/debug_menu.h"
+ #endif
  
-+#include "extras/misc_functions.h"
++#include "extras/thwomp_simulator.h"
 +
  #define DEBUG_INFO_NOFLAGS (0 << 0)
  #define DEBUG_INFO_FLAG_DPRINT (1 << 0)
  #define DEBUG_INFO_FLAG_LSELECT (1 << 1)
-@@ -449,6 +451,9 @@ void stub_debug_5(void) {
+@@ -414,6 +416,8 @@ void stub_debug_5(void) {
   * count, floor misses, and an unknown wall counter) is also printed.
   */
  void try_print_debug_mario_object_info(void) {
 +    thwomp_simulator_logic();
-+    return;
 +
      if (gMarioObject != NULL) {
          switch (sDebugPage) {
@@ -803,10 +813,10 @@ index 665ec49..6ab77f4 100644
      }
  
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index ff4aa83..e2f45a2 100644
+index d2f48f4..5ab217f 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -769,7 +769,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -771,7 +771,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
  
              case WARP_OP_DEATH:
                  if (m->numLives == 0) {
@@ -815,7 +825,7 @@ index ff4aa83..e2f45a2 100644
                  }
                  sDelayedWarpTimer = 48;
                  sSourceWarpNodeId = WARP_NODE_DEATH;
-@@ -928,11 +928,11 @@ void update_hud_values(void) {
+@@ -930,11 +930,11 @@ void update_hud_values(void) {
      if (gCurrCreditsEntry == NULL) {
          s16 numHealthWedges = gMarioState->health > 0 ? gMarioState->health >> 8 : 0;
  
@@ -846,10 +856,10 @@ index 90cd167..891b475 100644
  
  
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 92dd7bd..3200199 100644
+index fb9332c..115bca4 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -779,11 +779,14 @@ void set_steep_jump_action(struct MarioState *m) {
+@@ -783,11 +783,14 @@ void set_steep_jump_action(struct MarioState *m) {
  static void set_mario_y_vel_based_on_fspeed(struct MarioState *m, f32 initialVelY, f32 multiplier) {
      // get_additive_y_vel_for_jumps is always 0 and a stubbed function.
      // It was likely trampoline related based on code location.
@@ -865,7 +875,7 @@ index 92dd7bd..3200199 100644
  }
  
  /**
-@@ -1272,29 +1275,6 @@ void debug_print_speed_action_normal(struct MarioState *m) {
+@@ -1276,29 +1279,6 @@ void debug_print_speed_action_normal(struct MarioState *m) {
   * Update the button inputs for Mario.
   */
  void update_mario_button_inputs(struct MarioState *m) {
@@ -895,7 +905,7 @@ index 92dd7bd..3200199 100644
      if (m->input & INPUT_A_PRESSED) {
          m->framesSinceA = 0;
      } else if (m->framesSinceA < 0xFF) {
-@@ -1312,21 +1292,26 @@ void update_mario_button_inputs(struct MarioState *m) {
+@@ -1316,21 +1296,26 @@ void update_mario_button_inputs(struct MarioState *m) {
   * Updates the joystick intended magnitude.
   */
  void update_mario_joystick_inputs(struct MarioState *m) {
@@ -935,7 +945,7 @@ index 92dd7bd..3200199 100644
  }
  
  /**
-@@ -1551,10 +1536,10 @@ void update_mario_health(struct MarioState *m) {
+@@ -1555,10 +1540,10 @@ void update_mario_health(struct MarioState *m) {
   * Updates some basic info for camera usage.
   */
  void update_mario_info_for_cam(struct MarioState *m) {
@@ -950,7 +960,7 @@ index 92dd7bd..3200199 100644
      if (!(m->flags & MARIO_UNKNOWN_25)) {
          vec3f_copy(m->statusForCamera->pos, m->pos);
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 9c89ea7..2f74e02 100644
+index 0bd96de..ab958c6 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
 @@ -29,7 +29,7 @@ void play_far_fall_sound(struct MarioState *m) {
@@ -962,7 +972,7 @@ index 9c89ea7..2f74e02 100644
              m->flags |= MARIO_UNKNOWN_18;
          }
      }
-@@ -1209,7 +1209,7 @@ s32 act_thrown_backward(struct MarioState *m) {
+@@ -1216,7 +1216,7 @@ s32 act_thrown_backward(struct MarioState *m) {
          landAction = ACT_BACKWARD_GROUND_KB;
      }
  
@@ -971,7 +981,7 @@ index 9c89ea7..2f74e02 100644
  
      common_air_knockback_step(m, landAction, ACT_HARD_BACKWARD_GROUND_KB, 0x0002, m->forwardVel);
  
-@@ -1227,7 +1227,7 @@ s32 act_thrown_forward(struct MarioState *m) {
+@@ -1234,7 +1234,7 @@ s32 act_thrown_forward(struct MarioState *m) {
          landAction = ACT_FORWARD_GROUND_KB;
      }
  
@@ -980,7 +990,7 @@ index 9c89ea7..2f74e02 100644
  
      if (common_air_knockback_step(m, landAction, ACT_HARD_FORWARD_GROUND_KB, 0x002D, m->forwardVel)
          == AIR_STEP_NONE) {
-@@ -1298,7 +1298,7 @@ s32 act_getting_blown(struct MarioState *m) {
+@@ -1305,7 +1305,7 @@ s32 act_getting_blown(struct MarioState *m) {
                  m->vel[1] = 0.0f;
              }
  
