@@ -166,13 +166,14 @@ index 083bf44..8b1dc52 100644
  AMP_CHUCKYA_TEXTURES            := $(foreach dir,$(AMP_DIRS),        $(wildcard actors/$(dir)/*.png))
  BOBOMBS_BUBBLE_TEXTURES         := $(foreach dir,$(KING_BOBOMB_DIRS),$(wildcard actors/$(dir)/*.png))
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index b9fb381..2695ad1 100644
+index b9fb381..9f459df 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
-@@ -2987,6 +2987,20 @@ const BehaviorScript bhvAnimatedTexture[] = {
+@@ -2987,6 +2987,22 @@ const BehaviorScript bhvAnimatedTexture[] = {
      END_LOOP(),
  };
  
++#ifdef RM2C
 +const BehaviorScript RM_Scroll_Texture[] = {
 +    BEGIN(OBJ_LIST_GENACTOR),
 +    BEGIN_LOOP(),
@@ -186,11 +187,12 @@ index b9fb381..2695ad1 100644
 +        CALL_NATIVE(uv_update_scroll),
 +    END_LOOP(),
 +};
++#endif
 +
  const BehaviorScript bhvBooInCastle[] = {
      BEGIN(OBJ_LIST_DEFAULT),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
-@@ -5986,7 +6000,11 @@ const BehaviorScript bhvPenguinRaceFinishLine[] = {
+@@ -5986,7 +6002,11 @@ const BehaviorScript bhvPenguinRaceFinishLine[] = {
      BEGIN(OBJ_LIST_DEFAULT),
      OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
      BEGIN_LOOP(),
@@ -203,15 +205,17 @@ index b9fb381..2695ad1 100644
  };
  
 diff --git a/include/behavior_data.h b/include/behavior_data.h
-index 04765b3..30007a4 100644
+index 04765b3..3dcfd59 100644
 --- a/include/behavior_data.h
 +++ b/include/behavior_data.h
-@@ -3,6 +3,8 @@
+@@ -3,6 +3,10 @@
  
  #include "types.h"
  
++#ifdef RM2C
 +extern const BehaviorScript editor_Scroll_Texture[];
 +extern const BehaviorScript RM_Scroll_Texture[];
++#endif
  extern const BehaviorScript bhvStarDoor[];
  extern const BehaviorScript bhvMrI[];
  extern const BehaviorScript bhvMrIBody[];
@@ -374,7 +378,7 @@ index 7d74f00..2c7043f 100644
      LOAD_MODEL_FROM_GEO(MODEL_BLUE_COIN_SWITCH,        blue_coin_switch_geo),
      LOAD_MODEL_FROM_GEO(MODEL_AMP,                     amp_geo),
 diff --git a/sm64.ld b/sm64.ld
-index c62d266..4ba39f2 100644
+index c62d266..1b53830 100644
 --- a/sm64.ld
 +++ b/sm64.ld
 @@ -51,6 +51,20 @@ OUTPUT_ARCH (mips)
@@ -398,17 +402,19 @@ index c62d266..4ba39f2 100644
  #define STANDARD_OBJECTS(name, segAddr, geoAddr) \
     BEGIN_SEG(name##_mio0, segAddr) \
     { \
-@@ -1093,6 +1107,9 @@ SECTIONS
+@@ -1093,6 +1107,11 @@ SECTIONS
     MIO0_SEG(bidw_skybox, 0x0A000000)
     MIO0_SEG(bits_skybox, 0x0A000000)
  
 +   // Custom Skyboxes from RM2C. In base repo dummy file exists
++#ifdef RM2C
 +   #include "textures/skyboxes/Skybox_Rules.ld"
++#endif
 +
     // Texture bins
     MIO0_SEG(fire, 0x09000000)
     MIO0_SEG(spooky, 0x09000000)
-@@ -1116,6 +1133,11 @@ SECTIONS
+@@ -1116,6 +1135,11 @@ SECTIONS
  #undef STUB_LEVEL
  #undef DEFINE_LEVEL
  
@@ -492,7 +498,7 @@ index f2c09fd..c7b3671 100644
  ALIGNED8 u8 gIdleThreadStack[0x800];
  ALIGNED8 u8 gThread3Stack[0x2000];
 diff --git a/src/game/behavior_actions.c b/src/game/behavior_actions.c
-index 93b849a..a20b2e7 100644
+index 93b849a..7bef8de 100644
 --- a/src/game/behavior_actions.c
 +++ b/src/game/behavior_actions.c
 @@ -72,14 +72,6 @@ struct Struct8032F698 {
@@ -510,11 +516,13 @@ index 93b849a..a20b2e7 100644
  struct Struct8032F754 {
      s32 unk0;
      Vec3f unk1;
-@@ -112,6 +104,7 @@ s16 D_8032F0CC[] = { 6047, 5664, 5292, 4934, 4587, 4254, 3933, 3624, 3329, 3046,
+@@ -112,6 +104,9 @@ s16 D_8032F0CC[] = { 6047, 5664, 5292, 4934, 4587, 4254, 3933, 3624, 3329, 3046,
  #include "behaviors/breakable_wall.inc.c"
  #include "behaviors/kickable_board.inc.c"
  #include "behaviors/tower_door.inc.c"
++#ifdef RM2C
 +#include "behaviors/texscroll.inc.c"
++#endif
  #include "behaviors/rotating_platform.inc.c"
  #include "behaviors/koopa_shell_underwater.inc.c"
  #include "behaviors/warp.inc.c"
@@ -1709,35 +1717,35 @@ index 828e3b5..a9530bb 100644
  /**
   * Update all objects. This includes script execution, object collision detection,
 diff --git a/src/game/skybox.c b/src/game/skybox.c
-index 35d6627..e1cc8a5 100644
+index 35d6627..396da51 100644
 --- a/src/game/skybox.c
 +++ b/src/game/skybox.c
-@@ -87,7 +87,16 @@ extern SkyboxTexture ssl_skybox_ptrlist;
+@@ -87,7 +87,14 @@ extern SkyboxTexture ssl_skybox_ptrlist;
  extern SkyboxTexture water_skybox_ptrlist;
  extern SkyboxTexture wdw_skybox_ptrlist;
  
 -SkyboxTexture *sSkyboxTextures[10] = {
++#ifdef RM2C
 +#define MIO0_SEG(skybox, _2) \
 +extern SkyboxTexture skybox##_ptrlist;
 +#include "textures/skyboxes/Skybox_Rules.ld"
 +#undef MIO0_SEG
++#endif
 +
-+SkyboxTexture *sSkyboxTextures[10
-+  #define MIO0_SEG(skybox, _2) + 1
-+  #include "textures/skyboxes/Skybox_Rules.ld"
-+  #undef MIO0_SEG
-+] = {
++SkyboxTexture *sSkyboxTextures[] = {
      &water_skybox_ptrlist,
      &bitfs_skybox_ptrlist,
      &wdw_skybox_ptrlist,
-@@ -98,6 +107,10 @@ SkyboxTexture *sSkyboxTextures[10] = {
+@@ -98,6 +105,12 @@ SkyboxTexture *sSkyboxTextures[10] = {
      &bidw_skybox_ptrlist,
      &clouds_skybox_ptrlist,
      &bits_skybox_ptrlist,
++#ifdef RM2C
 +	#define MIO0_SEG(skybox, _2) \
 +	&skybox##_ptrlist,
 +	#include "textures/skyboxes/Skybox_Rules.ld"
 +	#undef MIO0_SEG
++#endif 
  };
  
  /**
@@ -1855,12 +1863,11 @@ index 0000000..53c136f
 +#define SHOW_TIME 1
 diff --git a/textures/skyboxes/Skybox_Rules.ld b/textures/skyboxes/Skybox_Rules.ld
 new file mode 100644
-index 0000000..e73e85a
+index 0000000..7b33b71
 --- /dev/null
 +++ b/textures/skyboxes/Skybox_Rules.ld
-@@ -0,0 +1,2 @@
+@@ -0,0 +1 @@
 +// Replace with RM2C Output after exporting skyboxes
-+SkyboxCustomDummy_skybox
 \ No newline at end of file
 diff --git a/tools/assemble_sound.py b/tools/assemble_sound.py
 index 9c6598f..425de23 100644
