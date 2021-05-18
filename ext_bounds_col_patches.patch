@@ -1226,7 +1226,7 @@ index eaa65b0..96ba0b4 100644
  }
  
 diff --git a/src/game/hud.c b/src/game/hud.c
-index f8d5b96..57a49d6 100644
+index f8d5b96..bda19ce 100644
 --- a/src/game/hud.c
 +++ b/src/game/hud.c
 @@ -435,6 +435,19 @@ void render_hud_camera_status(void) {
@@ -1249,16 +1249,17 @@ index f8d5b96..57a49d6 100644
  /**
   * Render HUD strings using hudDisplayFlags with it's render functions,
   * excluding the cannon reticle which detects a camera preset for it.
-@@ -503,5 +516,9 @@ void render_hud(void) {
-         if (hudDisplayFlags & HUD_DISPLAY_FLAG_TIMER) {
-             render_hud_timer();
+@@ -472,6 +485,10 @@ void render_hud(void) {
+             render_hud_cannon_reticle();
          }
-+        
+ 
 +#if SURFACE_POOLS_FULL_MESSAGES
 +        render_hud_surface_text();
 +#endif
-     }
- }
++
+ #ifdef EXT_OPTIONS_MENU
+         if (!configHUD) {
+             return;
 diff --git a/src/game/interaction.c b/src/game/interaction.c
 index 665ec49..d32edfb 100644
 --- a/src/game/interaction.c
