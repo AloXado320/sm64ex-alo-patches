@@ -111,7 +111,7 @@ index 8277b9f..cb4b44b 100644
  
  #endif // _SM64_TYPES_H_
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index 7f4f588..e7122cc 100644
+index d45b68e..409f90d 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
 @@ -268,7 +268,7 @@ void puppycam_input_pitch(void)
@@ -123,15 +123,15 @@ index 7f4f588..e7122cc 100644
      {
          gPuppyCam.zoomSet++;
  
-@@ -396,7 +396,7 @@ static void puppycam_input_hold_preset3(f32 ivX)
-     }
-     else
-     {
--        if (gPlayer1Controller->buttonPressed & R_TRIG)
-+        if (gPlayer1Controller->buttonPressed & R_JPAD)
-         {
-             if (gPuppyCam.yawTarget % 0x2000)
-                 gPuppyCam.yawTarget += 0x2000 - gPuppyCam.yawTarget % 0x2000;
+@@ -284,7 +284,7 @@ void puppycam_input_centre(void)
+ {
+     s32 inputDefault = L_TRIG;
+     if (gPuppyCam.options.inputType == 2)
+-        inputDefault = R_TRIG;
++        inputDefault = R_JPAD;
+     //Handles L button centering.
+     if (gPlayer1Controller->buttonPressed & inputDefault && gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_YAW_ROTATION &&
+     !(gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_8DIR) && !(gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_4DIR) && !(gPlayer1Controller->buttonDown & U_JPAD))
 diff --git a/src/game/behaviors/blue_coin.inc.c b/src/game/behaviors/blue_coin.inc.c
 index e0d5025..7463d86 100644
 --- a/src/game/behaviors/blue_coin.inc.c
@@ -243,7 +243,7 @@ index eaa65b0..e60312c 100644
      } else if (set_cam_angle(0) == CAM_ANGLE_MARIO) {
          status |= CAM_STATUS_MARIO;
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 665ec49..8e50ef5 100644
+index 40a6325..2badd5e 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -209,11 +209,13 @@ u32 determine_interaction(struct MarioState *m, struct Object *o) {
