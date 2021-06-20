@@ -278,18 +278,19 @@ index 0000000..8f0efc6
 +
 +#endif // OPTIONS_MENU_H
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index d2f48f4..aefe74a 100644
+index 61c1b9b..b48a61d 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -43,6 +43,7 @@
+@@ -46,6 +46,8 @@
+ #include "extras/bettercamera.h"
  #endif
  
- #include "extras/misc_functions.h"
 +#include "extras/demo_screen.h"
- 
++
  #define PLAY_MODE_NORMAL 0
  #define PLAY_MODE_PAUSED 2
-@@ -1002,12 +1003,13 @@ void basic_update(UNUSED s16 *arg) {
+ #define PLAY_MODE_CHANGE_AREA 3
+@@ -1012,12 +1014,13 @@ void basic_update(UNUSED s16 *arg) {
  
  s32 play_mode_normal(void) {
      if (gCurrDemoInput != NULL) {

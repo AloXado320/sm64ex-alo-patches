@@ -1,26 +1,24 @@
 diff --git a/include/anti_patches.h b/include/anti_patches.h
 new file mode 100644
-index 0000000..ec68f65
+index 0000000..ddc60ba
 --- /dev/null
 +++ b/include/anti_patches.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,35 @@
 +#ifndef ANTI_PATCHES_H
 +#define ANTI_PATCHES_H
 +
-+// Anti Fun Patch
++// Anti Patch
 +// Mostly a compilation of code provided by a few people
 +// This patch changes most of Mario's physics that are considered remarkable
 +// and also changes some "exploits" used in speedruns
 +#define ANTI_PATCHES TRUE
 +
-+/// Fixes backwards long jump, preveting Mario from getting negative speeds
++/// Fixes backwards long jump, preventing Mario from getting negative speeds
 +#define ANTI_PATCH_BACKWARDS_LONG_JUMP (0 || ANTI_PATCHES)
 +/// Changes how "Blast away the wall" is obtained, fixing it's skip
 +#define ANTI_PATCH_BLAST_AWAY_WALL (0 || ANTI_PATCHES)
 +/// Fixes lakitu skip at the beginning of the game
 +#define ANTI_PATCH_LAKITU_INTRO_SKIP (0 || ANTI_PATCHES)
-+/// Fixes platform rising on Wii (if you plan to inject the rom)
-+#define ANTI_PATCH_RISING_FLATFORM_WII (0 || ANTI_PATCHES)
 +/// Changes Bob-omb behavior, so now after throwing it becomes intangible
 +#define ANTI_PATCH_BOBOMB_INTANGIBLE (0 || ANTI_PATCHES)
 +/// Fixes Mario still alive after getting shot by a cannon even while 0 hp
@@ -33,7 +31,7 @@ index 0000000..ec68f65
 +#define ANTI_PATCH_KICKING_SLOPES (0 || ANTI_PATCHES)
 +/// Fixes shell negative hyperspeed
 +#define ANTI_PATCH_NEGATIVE_SHELL_SPEED (0 || ANTI_PATCHES)
-+/// Reset mario's speed in wallkick
++/// Reset Mario's speed in wallkick
 +#define ANTI_PATCH_SPEED_WALLKICK (0 || ANTI_PATCHES)
 +/// Fix hat in hand glitch
 +#define ANTI_PATCH_HAT_IN_HAND (0 || ANTI_PATCHES)
@@ -134,27 +132,11 @@ index c3e7f44..8d13148 100644
          && gMarioObject->oPosZ > -2000.0f && gMarioObject->oPosZ < -177.0f
          && gMarioObject->oPosZ < -177.0f) // always double check your conditions
      {
-diff --git a/src/game/behaviors/falling_rising_platform.inc.c b/src/game/behaviors/falling_rising_platform.inc.c
-index 4bd7ecd..0b59947 100644
---- a/src/game/behaviors/falling_rising_platform.inc.c
-+++ b/src/game/behaviors/falling_rising_platform.inc.c
-@@ -8,7 +8,11 @@ void bhv_squishable_platform_loop(void) {
- void bhv_bitfs_sinking_platform_loop(void) {
-     o->oPosY -=
-         sins(o->oPlatformTimer)
-+#if ANTI_PATCH_RISING_FLATFORM_WII
-+        * 0.58f;
-+#else
-         * 0.58; //! f32 double conversion error accumulates on Wii VC causing the platform to rise up
-+#endif
-     o->oPlatformTimer += 0x100;
- }
- 
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 665ec49..8dfc059 100644
+index dd5dacd..0be189f 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
-@@ -1061,7 +1061,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -1070,7 +1070,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
  }
  
  u32 interact_cannon_base(struct MarioState *m, UNUSED u32 interactType, struct Object *o) {

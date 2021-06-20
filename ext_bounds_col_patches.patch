@@ -13,10 +13,10 @@ index 669a0ac..29ccb03 100644
  #define SURFACE_SLOW                         0x0009 // Slow down Mario, unused
 diff --git a/src/engine/extended_bounds.h b/src/engine/extended_bounds.h
 new file mode 100644
-index 0000000..d0940e4
+index 0000000..abe5811
 --- /dev/null
 +++ b/src/engine/extended_bounds.h
-@@ -0,0 +1,119 @@
+@@ -0,0 +1,125 @@
 +#ifndef __EXTENDED_BOUNDS_H__
 +#define __EXTENDED_BOUNDS_H__
 +
@@ -98,6 +98,12 @@ index 0000000..d0940e4
 +#define SURFACE_POOLS_FULL_MESSAGES FALSE
 +#endif
 +
++//set vanilla camera course specific functions (Doesn't apply to PuppyCam)
++#define CAMERA_SPECIFIC_FUNCTION_DEFINES FALSE
++
++//sets inertia logic
++#define APPLY_INERTIA_LOGIC TRUE
++
 +#if EXTENDED_BOUNDS_MODE == 0
 +    #undef LEVEL_BOUNDARY_MAX // Undefine the old value to avoid compiler warnings
 +    #undef WORLD_SCALE
@@ -175,7 +181,7 @@ index 3f49817..e01621b 100644
  
  /**
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index db590e1..7ae969f 100644
+index db590e1..de280e3 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -21,15 +21,21 @@
@@ -416,21 +422,7 @@ index db590e1..7ae969f 100644
      return numCols;
  }
  
-@@ -193,13 +252,6 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
- 
-     colData->numWalls = 0;
- 
--    if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
--        return numCollisions;
--    }
--    if (z <= -LEVEL_BOUNDARY_MAX || z >= LEVEL_BOUNDARY_MAX) {
--        return numCollisions;
--    }
--
-     // World (level) consists of a 16x16 grid. Find where the collision is on
-     // the grid (round toward -inf)
-     cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
-@@ -223,15 +275,26 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
+@@ -223,15 +282,26 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
   *                     CEILINGS                   *
   **************************************************/
  
@@ -461,7 +453,7 @@ index db590e1..7ae969f 100644
  
      // Stay in this loop until out of ceilings.
      while (surfaceNode != NULL) {
-@@ -240,8 +303,13 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -240,8 +310,13 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
  
          x1 = surf->vertex1[0];
          z1 = surf->vertex1[2];
@@ -475,7 +467,7 @@ index db590e1..7ae969f 100644
  
          // Checking if point is in bounds of the triangle laterally.
          if ((z1 - z) * (x2 - x1) - (x1 - x) * (z2 - z1) > 0) {
-@@ -251,6 +319,9 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -251,6 +326,9 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
          // Slight optimization by checking these later.
          x3 = surf->vertex3[0];
          z3 = surf->vertex3[2];
@@ -485,7 +477,7 @@ index db590e1..7ae969f 100644
          if ((z2 - z) * (x3 - x2) - (x2 - x) * (z3 - z2) > 0) {
              continue;
          }
-@@ -260,20 +331,19 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -260,20 +338,19 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
  
          // Determine if checking for the camera or not.
          if (gCheckingSurfaceCollisionsForCamera != 0) {
@@ -512,34 +504,34 @@ index db590e1..7ae969f 100644
  
          // If a wall, ignore it. Likely a remnant, should never occur.
          if (ny == 0.0f) {
-@@ -281,63 +351,54 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -281,63 +358,61 @@ static struct Surface *find_ceil_from_list(struct SurfaceNode *surfaceNode, s32
          }
  
          // Find the ceil height at the specific point.
 -        height = -(x * nx + nz * z + oo) / ny;
 +        newHeight = -(x * nx + nz * z + oo) / ny;
++
++        if (newHeight > *pheight) {
++            continue;
++        }
++
++        // Checks for ceiling interaction
++        if (y > newHeight) {
++            continue;
++        }
  
 -        // Checks for ceiling interaction with a 78 unit buffer.
 -        //! (Exposed Ceilings) Because any point above a ceiling counts
 -        //  as interacting with a ceiling, ceilings far below can cause
 -        // "invisible walls" that are really just exposed ceilings.
 -        if (y - (height - -78.0f) > 0.0f) {
-+        if (newHeight > *pheight) {
++        if (y >= surf->upperY) {
              continue;
          }
  
 -        *pheight = height;
 -        ceil = surf;
 -        break;
-+        // Checks for ceiling interaction
-+        if (y > newHeight) {
-+            continue;
-+        }
-+
-+        if (y >= surf->upperY) {
-+            continue;
-+        }
-+
 +        if (ceil == NULL || newHeight < height) {
 +            height = newHeight;
 +            *pheight = height;
@@ -570,15 +562,17 @@ index db590e1..7ae969f 100644
 -    x = (s16) posX;
 -    y = (s16) posY;
 -    z = (s16) posZ;
--    *pceil = NULL;
++
+     *pceil = NULL;
  
 -    if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
--        return height;
--    }
++    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
+         return height;
+     }
 -    if (z <= -LEVEL_BOUNDARY_MAX || z >= LEVEL_BOUNDARY_MAX) {
--        return height;
--    }
-+    *pceil = NULL;
++    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
+         return height;
+     }
  
      // Each level is split into cells to limit load, find the appropriate cell.
 -    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
@@ -598,7 +592,7 @@ index db590e1..7ae969f 100644
  
      if (dynamicHeight < height) {
          ceil = dynamicCeil;
-@@ -370,8 +431,6 @@ f32 unused_obj_find_floor_height(struct Object *obj) {
+@@ -370,8 +445,6 @@ f32 unused_obj_find_floor_height(struct Object *obj) {
   */
  struct FloorGeometry sFloorGeo;
  
@@ -607,7 +601,7 @@ index db590e1..7ae969f 100644
  /**
   * Return the floor height underneath (xPos, yPos, zPos) and populate `floorGeo`
   * with data about the floor's normal vector and origin offset. Also update
-@@ -399,11 +458,11 @@ f32 find_floor_height_and_data(f32 xPos, f32 yPos, f32 zPos, struct FloorGeometr
+@@ -399,11 +472,11 @@ f32 find_floor_height_and_data(f32 xPos, f32 yPos, f32 zPos, struct FloorGeometr
   */
  static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32 x, s32 y, s32 z, f32 *pheight) {
      register struct Surface *surf;
@@ -623,7 +617,7 @@ index db590e1..7ae969f 100644
  
      // Iterate through the list of floors until there are no more floors.
      while (surfaceNode != NULL) {
-@@ -433,12 +492,12 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -433,12 +506,12 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
  
          // Determine if we are checking for the camera or not.
          if (gCheckingSurfaceCollisionsForCamera != 0) {
@@ -638,7 +632,7 @@ index db590e1..7ae969f 100644
              continue;
          }
  
-@@ -453,23 +512,98 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -453,23 +526,98 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
          }
  
          // Find the height of the floor at a given location.
@@ -745,7 +739,7 @@ index db590e1..7ae969f 100644
      return floor;
  }
  
-@@ -485,25 +619,41 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
+@@ -485,25 +633,41 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
  }
  
  /**
@@ -797,7 +791,7 @@ index db590e1..7ae969f 100644
  
      *pfloor = floor;
  
-@@ -522,33 +672,19 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -522,33 +686,26 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
      f32 height = FLOOR_LOWER_LIMIT;
      f32 dynamicHeight = FLOOR_LOWER_LIMIT;
  
@@ -811,12 +805,14 @@ index db590e1..7ae969f 100644
      *pfloor = NULL;
  
 -    if (x <= -LEVEL_BOUNDARY_MAX || x >= LEVEL_BOUNDARY_MAX) {
--        return height;
--    }
++    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
+         return height;
+     }
 -    if (z <= -LEVEL_BOUNDARY_MAX || z >= LEVEL_BOUNDARY_MAX) {
--        return height;
--    }
--
++    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
+         return height;
+     }
+ 
      // Each level is split into cells to limit load, find the appropriate cell.
 -    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
 -    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
@@ -835,7 +831,7 @@ index db590e1..7ae969f 100644
  
      // To prevent the Merry-Go-Round room from loading when Mario passes above the hole that leads
      // there, SURFACE_INTANGIBLE is used. This prevent the wrong room from loading, but can also allow
-@@ -559,7 +695,9 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -559,7 +716,9 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
          //  (happens when there is no floor under the SURFACE_INTANGIBLE floor) but returns the height
          //  of the SURFACE_INTANGIBLE floor instead of the typical -11000 returned for a NULL floor.
          if (floor != NULL && floor->type == SURFACE_INTANGIBLE) {
@@ -846,7 +842,7 @@ index db590e1..7ae969f 100644
          }
      } else {
          // To prevent accidentally leaving the floor tangible, stop checking for it.
-@@ -584,10 +722,82 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -584,10 +743,82 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
      return height;
  }
  
@@ -929,7 +925,7 @@ index db590e1..7ae969f 100644
  /**
   * Finds the height of water at a given location.
   */
-@@ -598,8 +808,15 @@ f32 find_water_level(f32 x, f32 z) {
+@@ -598,8 +829,15 @@ f32 find_water_level(f32 x, f32 z) {
      f32 loX, hiX, loZ, hiZ;
      f32 waterLevel = FLOOR_LOWER_LIMIT;
      s16 *p = gEnvironmentRegions;
@@ -1147,10 +1143,10 @@ index e41a04a..93d401a 100644
  extern SpatialPartitionCell gDynamicSurfacePartition[NUM_CELLS][NUM_CELLS];
  extern struct SurfaceNode *sSurfaceNodePool;
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index 7f4f588..be39143 100644
+index d45b68e..eca5d0d 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
-@@ -659,7 +659,8 @@ s32 ray_surface_intersect(Vec3f orig, Vec3f dir, f32 dir_length, struct Surface
+@@ -663,7 +663,8 @@ s32 ray_surface_intersect(Vec3f orig, Vec3f dir, f32 dir_length, struct Surface
  
      //Ignore certain surface types.
      if (surface->type == SURFACE_INTANGIBLE || surface->type == SURFACE_WALL_MISC
@@ -1199,32 +1195,58 @@ index ebce64f..29136e9 100644
  
      o->header.gfx.throwMatrix = transform;
 diff --git a/src/game/camera.c b/src/game/camera.c
-index eaa65b0..96ba0b4 100644
+index 2370fdd..4258c16 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
-@@ -886,21 +886,7 @@ void pan_ahead_of_player(struct Camera *c) {
+@@ -886,6 +886,7 @@ void pan_ahead_of_player(struct Camera *c) {
      vec3f_add(c->focus, pan);
  }
  
--s16 find_in_bounds_yaw_wdw_bob_thi(Vec3f pos, Vec3f origin, s16 yaw) {
--    switch (gCurrLevelArea) {
--        case AREA_WDW_MAIN:
--            yaw = clamp_positions_and_find_yaw(pos, origin, 4508.f, -3739.f, 4508.f, -3739.f);
--            break;
--        case AREA_BOB:
--            yaw = clamp_positions_and_find_yaw(pos, origin, 8000.f, -8000.f, 7050.f, -8000.f);
--            break;
--        case AREA_THI_HUGE:
--            yaw = clamp_positions_and_find_yaw(pos, origin, 8192.f, -8192.f, 8192.f, -8192.f);
--            break;
--        case AREA_THI_TINY:
--            yaw = clamp_positions_and_find_yaw(pos, origin, 2458.f, -2458.f, 2458.f, -2458.f);
--            break;
--    }
-+s16 find_in_bounds_yaw_wdw_bob_thi(UNUSED Vec3f pos, UNUSED Vec3f origin, s16 yaw) {
++#if CAMERA_SPECIFIC_FUNCTION_DEFINES
+ s16 find_in_bounds_yaw_wdw_bob_thi(Vec3f pos, Vec3f origin, s16 yaw) {
+     switch (gCurrLevelArea) {
+         case AREA_WDW_MAIN:
+@@ -903,6 +904,7 @@ s16 find_in_bounds_yaw_wdw_bob_thi(Vec3f pos, Vec3f origin, s16 yaw) {
+     }
      return yaw;
  }
++#endif
  
+ /**
+  * Rotates the camera around the area's center point.
+@@ -923,7 +925,9 @@ s32 update_radial_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
+     sAreaYaw = camYaw - sModeOffsetYaw;
+     calc_y_to_curr_floor(&posY, 1.f, 200.f, &focusY, 0.9f, 200.f);
+     focus_on_mario(focus, pos, posY + yOff, focusY + yOff, sLakituDist + baseDist, pitch, camYaw);
++#if CAMERA_SPECIFIC_FUNCTION_DEFINES
+     camYaw = find_in_bounds_yaw_wdw_bob_thi(pos, focus, camYaw);
++#endif
+ 
+     return camYaw;
+ }
+@@ -3104,7 +3108,10 @@ void update_camera(struct Camera *c) {
+     c->mode = gLakituState.mode;
+     c->defMode = gLakituState.defMode;
+ 
++#if CAMERA_SPECIFIC_FUNCTION_DEFINES
+     camera_course_processing(c);
++#endif
++
+     stub_camera_3(c);
+     sCButtonsPressed = find_c_buttons_pressed(sCButtonsPressed, gPlayer1Controller->buttonPressed,gPlayer1Controller->buttonDown);
+ 
+@@ -3570,9 +3577,11 @@ void zoom_out_if_paused_and_outside(struct GraphNodeCamera *camera) {
+                 camera->focus[2] = gCamera->areaCenZ;
+                 vec3f_get_dist_and_angle(camera->focus, sMarioCamState->pos, &dist, &pitch, &yaw);
+                 vec3f_set_dist_and_angle(sMarioCamState->pos, camera->pos, 6000.f, 0x1000, yaw);
++                #if CAMERA_SPECIFIC_FUNCTION_DEFINES
+                 if (gCurrLevelNum != LEVEL_THI) {
+                     find_in_bounds_yaw_wdw_bob_thi(camera->pos, camera->focus, 0);
+                 }
++                #endif
+             }
+         } else {
+             sFramesPaused++;
 diff --git a/src/game/hud.c b/src/game/hud.c
 index f8d5b96..bda19ce 100644
 --- a/src/game/hud.c
@@ -1261,10 +1283,10 @@ index f8d5b96..bda19ce 100644
          if (!configHUD) {
              return;
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 665ec49..d32edfb 100644
+index dd5dacd..a8a1257 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
-@@ -1757,12 +1757,14 @@ u32 interact_text(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -1766,12 +1766,14 @@ u32 interact_text(struct MarioState *m, UNUSED u32 interactType, struct Object *
  
  void check_kick_or_punch_wall(struct MarioState *m) {
      if (m->flags & (MARIO_PUNCHING | MARIO_KICKING | MARIO_TRIPPING)) {
@@ -1286,7 +1308,7 @@ index 665ec49..d32edfb 100644
                  if (m->action == ACT_PUNCHING) {
                      m->action = ACT_MOVE_PUNCHING;
 diff --git a/src/game/mario.c b/src/game/mario.c
-index fb9332c..09778f8 100644
+index 0d328d3..1ef0c5e 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
 @@ -537,6 +537,10 @@ u32 mario_get_terrain_sound_addend(struct MarioState *m) {
@@ -1486,7 +1508,7 @@ index 35ba601..a43c8d5 100644
              //! If you press B to throw the shell, there is a ~5 frame window
              // where your held object is the shell, but you are not in the
 diff --git a/src/game/mario_step.c b/src/game/mario_step.c
-index 836a856..05bde1a 100644
+index 97d6b50..1dd57d2 100644
 --- a/src/game/mario_step.c
 +++ b/src/game/mario_step.c
 @@ -267,24 +267,27 @@ s32 stationary_ground_step(struct MarioState *m) {
@@ -1794,7 +1816,7 @@ index 836a856..05bde1a 100644
  }
  
  void apply_twirl_gravity(struct MarioState *m) {
-@@ -619,7 +683,9 @@ void apply_vertical_wind(struct MarioState *m) {
+@@ -623,7 +687,9 @@ void apply_vertical_wind(struct MarioState *m) {
  }
  
  s32 perform_air_step(struct MarioState *m, u32 stepArg) {
@@ -1804,7 +1826,7 @@ index 836a856..05bde1a 100644
      s32 i;
      s32 quarterStepResult;
      s32 stepResult = AIR_STEP_NONE;
-@@ -627,16 +693,12 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
+@@ -631,16 +697,12 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
      m->wall = NULL;
  
      for (i = 0; i < 4; i++) {
@@ -1824,7 +1846,7 @@ index 836a856..05bde1a 100644
          if (quarterStepResult != AIR_STEP_NONE) {
              stepResult = quarterStepResult;
          }
-@@ -662,6 +724,15 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
+@@ -666,6 +728,15 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
      vec3f_copy(m->marioObj->header.gfx.pos, m->pos);
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
  
@@ -1900,7 +1922,7 @@ index a1427dd..87b204d 100644
  
  void cur_obj_move_using_fvel_and_gravity(void) {
 diff --git a/src/game/platform_displacement.c b/src/game/platform_displacement.c
-index 9153bc4..d15575e 100644
+index 9153bc4..1019389 100644
 --- a/src/game/platform_displacement.c
 +++ b/src/game/platform_displacement.c
 @@ -1,7 +1,9 @@
@@ -1913,17 +1935,33 @@ index 9153bc4..d15575e 100644
  #include "level_update.h"
  #include "object_fields.h"
  #include "object_helpers.h"
-@@ -84,95 +86,137 @@ void set_mario_pos(f32 x, f32 y, f32 z) {
+@@ -84,95 +86,134 @@ void set_mario_pos(f32 x, f32 y, f32 z) {
      gMarioStates[0].pos[2] = z;
  }
  
 +static struct PlatformDisplacementInfo sMarioDisplacementInfo;
 +static Vec3f sMarioAmountDisplaced;
 +
++/**
++ * Upscale or downscale a vector by another vector.
++ */
++static void scale_vec3f(Vec3f dst, Vec3f src, Vec3f scale, u32 doInverted) {
++    if (doInverted) {
++        dst[0] = src[0] / scale[0];
++        dst[1] = src[1] / scale[1];
++        dst[2] = src[2] / scale[2];
++    } else {
++        dst[0] = src[0] * scale[0];
++        dst[1] = src[1] * scale[1];
++        dst[2] = src[2] * scale[2];
++    }
++}
++
  /**
 - * Apply one frame of platform rotation to Mario or an object using the given
 - * platform. If isMario is false, use gCurrentObject.
-+ * Upscale or downscale a vector by another vector.
++ * Apply one frame of platform displacement to Mario or an object using the given
++ * platform.
   */
 -void apply_platform_displacement(u32 isMario, struct Object *platform) {
 -    f32 x;
@@ -1948,27 +1986,6 @@ index 9153bc4..d15575e 100644
 -    if (isMario) {
 -        D_8032FEC0 = 0;
 -        get_mario_pos(&x, &y, &z);
-+static void scale_vec3f(Vec3f dst, Vec3f src, Vec3f scale, u32 doInverted) {
-+    if (doInverted) {
-+        dst[0] = src[0] / scale[0];
-+        dst[1] = src[1] / scale[1];
-+        dst[2] = src[2] / scale[2];
-     } else {
--        x = gCurrentObject->oPosX;
--        y = gCurrentObject->oPosY;
--        z = gCurrentObject->oPosZ;
-+        dst[0] = src[0] * scale[0];
-+        dst[1] = src[1] * scale[1];
-+        dst[2] = src[2] * scale[2];
-     }
-+}
- 
--    x += platform->oVelX;
--    z += platform->oVelZ;
-+/**
-+ * Apply one frame of platform displacement to Mario or an object using the given
-+ * platform.
-+ */
 +void apply_platform_displacement(struct PlatformDisplacementInfo *displaceInfo, Vec3f pos, s16 *yaw, struct Object *platform) {
 +    Vec3f platformPos;
 +    Vec3f posDifference;
@@ -1997,74 +2014,70 @@ index 9153bc4..d15575e 100644
 +        // Calculate new yaw
 +        linear_mtxf_mul_vec3f(*platform->header.gfx.throwMatrix, yawVec, displaceInfo->prevTransformedYawVec);
 +        *yaw = atan2s(yawVec[2], yawVec[0]) + yawDifference;
-+    } else {
+     } else {
+-        x = gCurrentObject->oPosX;
+-        y = gCurrentObject->oPosY;
+-        z = gCurrentObject->oPosZ;
 +        // First frame of standing on the platform, don't calculate a new position
 +        vec3f_sub(pos, platformPos);
-+    }
+     }
  
--    if (rotation[0] != 0 || rotation[1] != 0 || rotation[2] != 0) {
--        unused1 = rotation[0];
--        unused2 = rotation[2];
--        unused3 = platform->oFaceAngleYaw;
+-    x += platform->oVelX;
+-    z += platform->oVelZ;
 +    // Transform from world positions to relative positions for use next frame
 +    linear_mtxf_transpose_mul_vec3f(*platform->header.gfx.throwMatrix, scaledPos, pos);
 +    scale_vec3f(displaceInfo->prevTransformedPos, scaledPos, platform->header.gfx.scale, TRUE);
 +    vec3f_add(pos, platformPos);
  
--        if (isMario) {
--            gMarioStates[0].faceAngle[1] += rotation[1];
--        }
+-    if (rotation[0] != 0 || rotation[1] != 0 || rotation[2] != 0) {
+-        unused1 = rotation[0];
+-        unused2 = rotation[2];
+-        unused3 = platform->oFaceAngleYaw;
 +    // If the object is Mario, set inertia
 +    if (pos == gMarioState->pos) {
 +        vec3f_copy(sMarioAmountDisplaced, pos);
 +        vec3f_sub(sMarioAmountDisplaced, displaceInfo->prevPos);
 +        vec3f_sub(sMarioAmountDisplaced, posDifference);
  
--        platformPosX = platform->oPosX;
--        platformPosY = platform->oPosY;
--        platformPosZ = platform->oPosZ;
+-        if (isMario) {
+-            gMarioStates[0].faceAngle[1] += rotation[1];
 +        // Make sure inertia isn't set on the first frame otherwise the previous value isn't cleared
 +        if ((platform != displaceInfo->prevPlatform) || (gGlobalTimer != displaceInfo->prevTimer + 1)) {
 +            vec3f_set(sMarioAmountDisplaced, 0.f, 0.f, 0.f);
-+        }
+         }
 +    }
  
--        currentObjectOffset[0] = x - platformPosX;
--        currentObjectOffset[1] = y - platformPosY;
--        currentObjectOffset[2] = z - platformPosZ;
+-        platformPosX = platform->oPosX;
+-        platformPosY = platform->oPosY;
+-        platformPosZ = platform->oPosZ;
 +    // Update info for next frame
 +    // Update position
 +    vec3f_copy(displaceInfo->prevPos, pos);
  
--        rotation[0] = platform->oFaceAnglePitch - platform->oAngleVelPitch;
--        rotation[1] = platform->oFaceAngleYaw - platform->oAngleVelYaw;
--        rotation[2] = platform->oFaceAngleRoll - platform->oAngleVelRoll;
+-        currentObjectOffset[0] = x - platformPosX;
+-        currentObjectOffset[1] = y - platformPosY;
+-        currentObjectOffset[2] = z - platformPosZ;
 +    // Set yaw info
 +    vec3f_set(yawVec, sins(*yaw), 0, coss(*yaw));
 +    linear_mtxf_transpose_mul_vec3f(*platform->header.gfx.throwMatrix, displaceInfo->prevTransformedYawVec, yawVec);
 +    displaceInfo->prevYaw = *yaw;
  
--        mtxf_rotate_zxy_and_translate(displaceMatrix, currentObjectOffset, rotation);
--        linear_mtxf_transpose_mul_vec3f(displaceMatrix, relativeOffset, currentObjectOffset);
+-        rotation[0] = platform->oFaceAnglePitch - platform->oAngleVelPitch;
+-        rotation[1] = platform->oFaceAngleYaw - platform->oAngleVelYaw;
+-        rotation[2] = platform->oFaceAngleRoll - platform->oAngleVelRoll;
 +    // Update platform and timer
 +    displaceInfo->prevPlatform = platform;
 +    displaceInfo->prevTimer = gGlobalTimer;
 +}
  
--        rotation[0] = platform->oFaceAnglePitch;
--        rotation[1] = platform->oFaceAngleYaw;
--        rotation[2] = platform->oFaceAngleRoll;
-+// Doesn't change in the code, set this to FALSE if you don't want inertia
-+u8 gDoInertia = TRUE;
- 
 -        mtxf_rotate_zxy_and_translate(displaceMatrix, currentObjectOffset, rotation);
--        linear_mtxf_mul_vec3f(displaceMatrix, newObjectOffset, relativeOffset);
+-        linear_mtxf_transpose_mul_vec3f(displaceMatrix, relativeOffset, currentObjectOffset);
 +static u8 sShouldApplyInertia = FALSE;
 +static u8 sInertiaFirstFrame = FALSE;
  
--        x = platformPosX + newObjectOffset[0];
--        y = platformPosY + newObjectOffset[1];
--        z = platformPosZ + newObjectOffset[2];
+-        rotation[0] = platform->oFaceAnglePitch;
+-        rotation[1] = platform->oFaceAngleYaw;
+-        rotation[2] = platform->oFaceAngleRoll;
 +/**
 + * Apply inertia based on Mario's last platform.
 + */
@@ -2072,7 +2085,21 @@ index 9153bc4..d15575e 100644
 +    // On the first frame of leaving the ground, boost Mario's y velocity
 +    if (sInertiaFirstFrame) {
 +        gMarioState->vel[1] += sMarioAmountDisplaced[1];
-     }
++    }
+ 
+-        mtxf_rotate_zxy_and_translate(displaceMatrix, currentObjectOffset, rotation);
+-        linear_mtxf_mul_vec3f(displaceMatrix, newObjectOffset, relativeOffset);
++    // Apply sideways inertia
++    gMarioState->pos[0] += sMarioAmountDisplaced[0];
++    gMarioState->pos[2] += sMarioAmountDisplaced[2];
+ 
+-        x = platformPosX + newObjectOffset[0];
+-        y = platformPosY + newObjectOffset[1];
+-        z = platformPosZ + newObjectOffset[2];
+-    }
++    // Drag
++    sMarioAmountDisplaced[0] *= 0.97f;
++    sMarioAmountDisplaced[2] *= 0.97f;
  
 -    if (isMario) {
 -        set_mario_pos(x, y, z);
@@ -2080,14 +2107,6 @@ index 9153bc4..d15575e 100644
 -        gCurrentObject->oPosX = x;
 -        gCurrentObject->oPosY = y;
 -        gCurrentObject->oPosZ = z;
-+    // Apply sideways inertia
-+    gMarioState->pos[0] += sMarioAmountDisplaced[0];
-+    gMarioState->pos[2] += sMarioAmountDisplaced[2];
-+
-+    // Drag
-+    sMarioAmountDisplaced[0] *= 0.97f;
-+    sMarioAmountDisplaced[2] *= 0.97f;
-+
 +    // Stop applying inertia once Mario has landed, or when ground pounding
 +    if (!(gMarioState->action & ACT_FLAG_AIR) || (gMarioState->action == ACT_GROUND_POUND)) {
 +        sShouldApplyInertia = FALSE;
@@ -2111,7 +2130,7 @@ index 9153bc4..d15575e 100644
 +            apply_platform_displacement(&sMarioDisplacementInfo, gMarioState->pos, &gMarioState->faceAngle[1], platform);
 +            sShouldApplyInertia = TRUE;
 +            sInertiaFirstFrame = TRUE;
-+        } else if (sShouldApplyInertia && gDoInertia) {
++        } else if (sShouldApplyInertia && APPLY_INERTIA_LOGIC) {
 +            apply_mario_inertia();
 +            sInertiaFirstFrame = FALSE;
 +        }
