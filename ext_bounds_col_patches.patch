@@ -13,10 +13,10 @@ index 669a0ac..29ccb03 100644
  #define SURFACE_SLOW                         0x0009 // Slow down Mario, unused
 diff --git a/src/engine/extended_bounds.h b/src/engine/extended_bounds.h
 new file mode 100644
-index 0000000..abe5811
+index 0000000..cab8a1c
 --- /dev/null
 +++ b/src/engine/extended_bounds.h
-@@ -0,0 +1,125 @@
+@@ -0,0 +1,135 @@
 +#ifndef __EXTENDED_BOUNDS_H__
 +#define __EXTENDED_BOUNDS_H__
 +
@@ -66,43 +66,53 @@ index 0000000..abe5811
 +// On non-N64 targets, surface sizes are allocated using SYSTEM_MALLOC
 +// If SYSTEM_MALLOC is not defined on PC Port, then fhese fixed pools are used instead
 +
-+//the maximum amount of collision surfaces (static and dynamic combined)
-+//8200 should work fine for a 2x extended stage, the vanilla value is 2300
++//  The maximum amount of collision surfaces (static and dynamic combined)
++//  8200 should work fine for a 2x extended stage, the vanilla value is 2300
 +#define SURFACE_POOL_SIZE 4000
 +
-+//make this approximately (amount of collision cells) + (SURFACE_POOL_SIZE * 3)
-+//22000 should work fine for a 2x extended stage, the vanilla value is 7000
++//  Make this approximately (amount of collision cells) + (SURFACE_POOL_SIZE * 3)
++//  22000 should work fine for a 2x extended stage, the vanilla value is 7000
 +#define SURFACE_NODE_POOL_SIZE 12000
 +
-+//cell and height limits
++// Cell and height limits
++// Default cell/floor limit is 20000/-11000 respectively
 +#define CELL_HEIGHT_LIMIT           20000
 +#define FLOOR_LOWER_LIMIT           -11000
 +#define FLOOR_LOWER_LIMIT_MISC      (FLOOR_LOWER_LIMIT + 1000)
 +#define FLOOR_LOWER_LIMIT_SHADOW    FLOOR_LOWER_LIMIT_MISC
 +
-+//sanity checks if pool gets past the size
++// Sanity checks if pool gets past the size
 +#define NOT_ENOUGH_ROOM_FOR_SURFACES (1 << 0)
 +#define NOT_ENOUGH_ROOM_FOR_NODES    (1 << 1)
 +
-+//don't touch the stuff past this point unless you know what you're doing!
-+
-+//default value to check if the user set a proper extended bounds mode
-+#define LEVEL_BOUNDARY_MAX 0x0000
-+
-+//Scales the world down by this factor, increasing how far you can render on
-+//console (and PC) in exchange for a slight loss in precision.
-+#define WORLD_SCALE 1.f
-+
-+//show ingame text info if any surface pool is full (N64 and Non-sys malloc only)
++// Show ingame text info if any surface pool is full (N64 and Non-sys malloc only)
 +#ifndef SYSTEM_MALLOC
 +#define SURFACE_POOLS_FULL_MESSAGES FALSE
 +#endif
 +
-+//set vanilla camera course specific functions (Doesn't apply to PuppyCam)
++// Set vanilla camera course specific functions (Doesn't apply to PuppyCam)
 +#define CAMERA_SPECIFIC_FUNCTION_DEFINES FALSE
 +
-+//sets inertia logic
++// Sets inertia logic
 +#define APPLY_INERTIA_LOGIC TRUE
++
++// Misc Tweaks
++
++// Allows Mario to ledgegrab sloped floors
++#define EXT_BOUNDS_NO_FALSE_LEDGEGRABS TRUE
++
++// Allows Mario to jump kick on steep surfaces that are set to be non slippery, 
++// instead of being forced to dive
++#define EXT_BOUNDS_JUMP_KICK_FIX TRUE
++
++/* Don't touch the stuff past this point unless you know what you're doing! */
++
++// Default value to check if the user set a proper extended bounds mode
++#define LEVEL_BOUNDARY_MAX 0x0000
++
++// Scales the world down by this factor, increasing how far you can render on
++// console (and PC) in exchange for a slight loss in precision.
++#define WORLD_SCALE 1.f
 +
 +#if EXTENDED_BOUNDS_MODE == 0
 +    #undef LEVEL_BOUNDARY_MAX // Undefine the old value to avoid compiler warnings
@@ -181,7 +191,7 @@ index 3f49817..e01621b 100644
  
  /**
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index db590e1..de280e3 100644
+index db590e1..f7de75a 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -21,15 +21,21 @@
@@ -739,7 +749,7 @@ index db590e1..de280e3 100644
      return floor;
  }
  
-@@ -485,25 +633,41 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
+@@ -485,25 +633,54 @@ f32 find_floor_height(f32 x, f32 y, f32 z) {
  }
  
  /**
@@ -758,6 +768,12 @@ index db590e1..de280e3 100644
 -    s16 x = (s16) xPos;
 -    s16 y = (s16) yPos;
 -    s16 z = (s16) zPos;
++    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
++        return height;
++    }
++    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
++        return height;
++    }
  
      // Each level is split into cells to limit load, find the appropriate cell.
 -    s16 cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
@@ -781,6 +797,13 @@ index db590e1..de280e3 100644
 +    struct Surface *floor;
 +    f32 floorHeight = FLOOR_LOWER_LIMIT;
 +
++    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
++        return height;
++    }
++    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
++        return height;
++    }
++
 +    // Each level is split into cells to limit load, find the appropriate cell.
 +    s16 cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
 +    s16 cellZ = (((s32)zPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
@@ -791,7 +814,7 @@ index db590e1..de280e3 100644
  
      *pfloor = floor;
  
-@@ -522,33 +686,26 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -522,33 +699,26 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
      f32 height = FLOOR_LOWER_LIMIT;
      f32 dynamicHeight = FLOOR_LOWER_LIMIT;
  
@@ -831,7 +854,7 @@ index db590e1..de280e3 100644
  
      // To prevent the Merry-Go-Round room from loading when Mario passes above the hole that leads
      // there, SURFACE_INTANGIBLE is used. This prevent the wrong room from loading, but can also allow
-@@ -559,7 +716,9 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -559,7 +729,9 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
          //  (happens when there is no floor under the SURFACE_INTANGIBLE floor) but returns the height
          //  of the SURFACE_INTANGIBLE floor instead of the typical -11000 returned for a NULL floor.
          if (floor != NULL && floor->type == SURFACE_INTANGIBLE) {
@@ -842,7 +865,7 @@ index db590e1..de280e3 100644
          }
      } else {
          // To prevent accidentally leaving the floor tangible, stop checking for it.
-@@ -584,10 +743,82 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -584,10 +756,89 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
      return height;
  }
  
@@ -856,6 +879,13 @@ index db590e1..de280e3 100644
 +    struct SurfaceNode *surfaceList;
 +
 +    f32 height = FLOOR_LOWER_LIMIT;
++
++    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
++        return height;
++    }
++    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
++        return height;
++    }
 +
 +    // Each level is split into cells to limit load, find the appropriate cell.
 +    cellX = (((s32)xPos + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
@@ -925,7 +955,7 @@ index db590e1..de280e3 100644
  /**
   * Finds the height of water at a given location.
   */
-@@ -598,8 +829,15 @@ f32 find_water_level(f32 x, f32 z) {
+@@ -598,8 +849,15 @@ f32 find_water_level(f32 x, f32 z) {
      f32 loX, hiX, loZ, hiZ;
      f32 waterLevel = FLOOR_LOWER_LIMIT;
      s16 *p = gEnvironmentRegions;
@@ -1308,7 +1338,7 @@ index dd5dacd..a8a1257 100644
                  if (m->action == ACT_PUNCHING) {
                      m->action = ACT_MOVE_PUNCHING;
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 0d328d3..1ef0c5e 100644
+index 0d328d3..7cfa94f 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
 @@ -537,6 +537,10 @@ u32 mario_get_terrain_sound_addend(struct MarioState *m) {
@@ -1377,7 +1407,19 @@ index 0d328d3..1ef0c5e 100644
  }
  
  /**
-@@ -1187,6 +1216,24 @@ s32 transition_submerged_to_walking(struct MarioState *m) {
+@@ -659,6 +688,11 @@ s32 mario_floor_is_steep(struct MarioState *m) {
+     f32 normY;
+     s32 result = FALSE;
+ 
++#if EXT_BOUNDS_JUMP_KICK_FIX
++    if (m->floor->type == SURFACE_NOT_SLIPPERY)
++        return FALSE;
++#endif
++
+     // Interestingly, this function does not check for the
+     // slide terrain type. This means that steep behavior persists for
+     // non-slippery and slippery surfaces.
+@@ -1187,6 +1221,24 @@ s32 transition_submerged_to_walking(struct MarioState *m) {
      }
  }
  
@@ -1402,7 +1444,7 @@ index 0d328d3..1ef0c5e 100644
  /**
   * This is the transition function typically for entering a submerged action for a
   * non-submerged action. This also applies the water surface camera preset.
-@@ -1195,7 +1242,8 @@ s32 set_water_plunge_action(struct MarioState *m) {
+@@ -1195,7 +1247,8 @@ s32 set_water_plunge_action(struct MarioState *m) {
      m->forwardVel = m->forwardVel / 4.0f;
      m->vel[1] = m->vel[1] / 2.0f;
  
@@ -1412,7 +1454,7 @@ index 0d328d3..1ef0c5e 100644
  
      m->faceAngle[2] = 0;
  
-@@ -1341,7 +1389,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
+@@ -1341,7 +1394,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
      f32 ceilToFloorDist;
  
      f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 60.0f, 50.0f);
@@ -1421,7 +1463,7 @@ index 0d328d3..1ef0c5e 100644
  
      m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
  
-@@ -1354,7 +1402,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
+@@ -1354,7 +1407,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
          m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
      }
  
@@ -1460,7 +1502,7 @@ index 0c573b8..e3eeaf9 100644
  u32 update_and_return_cap_flags(struct MarioState *m);
  s32 execute_mario_action(UNUSED struct Object *o);
 diff --git a/src/game/mario_actions_automatic.c b/src/game/mario_actions_automatic.c
-index c0c3f93..c2e9565 100644
+index c0c3f93..f7ec4df 100644
 --- a/src/game/mario_actions_automatic.c
 +++ b/src/game/mario_actions_automatic.c
 @@ -312,9 +312,13 @@ s32 perform_hanging_step(struct MarioState *m, Vec3f nextPos) {
@@ -1479,6 +1521,18 @@ index c0c3f93..c2e9565 100644
  
      if (floor == NULL) {
          return HANG_HIT_CEIL_OR_OOB;
+@@ -591,9 +595,11 @@ s32 act_ledge_grab(struct MarioState *m) {
+         m->actionTimer++;
+     }
+ 
++#if !EXT_BOUNDS_NO_FALSE_LEDGEGRABS
+     if (m->floor->normal.y < 0.9063078f) {
+         return let_go_of_ledge(m);
+     }
++#endif
+ 
+     if (m->input & (INPUT_Z_PRESSED | INPUT_OFF_FLOOR)) {
+         return let_go_of_ledge(m);
 diff --git a/src/game/mario_actions_submerged.c b/src/game/mario_actions_submerged.c
 index 35ba601..a43c8d5 100644
 --- a/src/game/mario_actions_submerged.c

@@ -257,7 +257,7 @@ index 4e77ddf..0484579 100644
  
  DECLARE_SEGMENT(water_skybox_mio0)
 diff --git a/include/sm64.h b/include/sm64.h
-index 7e570fa..4beaf70 100644
+index fd35927..158b1cd 100644
 --- a/include/sm64.h
 +++ b/include/sm64.h
 @@ -14,6 +14,14 @@
@@ -684,7 +684,7 @@ index 344e896..2d16831 100644
              break;
  
 diff --git a/src/game/behaviors/king_bobomb.inc.c b/src/game/behaviors/king_bobomb.inc.c
-index 4b57edc..0b55952 100644
+index ca220d5..1014bd5 100644
 --- a/src/game/behaviors/king_bobomb.inc.c
 +++ b/src/game/behaviors/king_bobomb.inc.c
 @@ -30,7 +30,7 @@ void king_bobomb_act_0(void) {
@@ -1139,7 +1139,7 @@ index 7c8a15c..f82b306 100644
          }
  
 diff --git a/src/game/camera.c b/src/game/camera.c
-index eaa65b0..fc25812 100644
+index 2370fdd..6e66f70 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -459,7 +459,6 @@ s32 update_boss_fight_camera(struct Camera *c, Vec3f, Vec3f);
@@ -1232,7 +1232,7 @@ index eaa65b0..fc25812 100644
          }
      }
  
-@@ -3037,7 +3068,7 @@ void update_camera(struct Camera *c) {
+@@ -3063,7 +3094,7 @@ void update_camera(struct Camera *c) {
  #endif
      ) {
          // Only process R_TRIG if 'fixed' is not selected in the menu
@@ -1241,7 +1241,7 @@ index eaa65b0..fc25812 100644
              if (gPlayer1Controller->buttonPressed & R_TRIG) {
                  if (set_cam_angle(0) == CAM_ANGLE_LAKITU) {
                      set_cam_angle(CAM_ANGLE_MARIO);
-@@ -3078,7 +3109,7 @@ void update_camera(struct Camera *c) {
+@@ -3104,7 +3135,7 @@ void update_camera(struct Camera *c) {
      c->mode = gLakituState.mode;
      c->defMode = gLakituState.defMode;
  
@@ -1250,7 +1250,7 @@ index eaa65b0..fc25812 100644
      stub_camera_3(c);
      sCButtonsPressed = find_c_buttons_pressed(sCButtonsPressed, gPlayer1Controller->buttonPressed,gPlayer1Controller->buttonDown);
  
-@@ -3143,6 +3174,10 @@ void update_camera(struct Camera *c) {
+@@ -3169,6 +3200,10 @@ void update_camera(struct Camera *c) {
                      mode_8_directions_camera(c);
                      break;
  
@@ -1421,7 +1421,7 @@ index f8d5b96..8694214 100644
          }
      }
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 665ec49..6cba687 100644
+index dd5dacd..7a31a64 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -749,8 +749,8 @@ u32 interact_coin(struct MarioState *m, UNUSED u32 interactType, struct Object *
@@ -1435,7 +1435,7 @@ index 665ec49..6cba687 100644
          bhv_spawn_star_no_level_exit(6);
      }
  #ifdef RUMBLE_FEEDBACK
-@@ -1597,17 +1597,17 @@ u32 interact_cap(struct MarioState *m, UNUSED u32 interactType, struct Object *o
+@@ -1606,17 +1606,17 @@ u32 interact_cap(struct MarioState *m, UNUSED u32 interactType, struct Object *o
  
          switch (capFlag) {
              case MARIO_VANISH_CAP:
@@ -1456,7 +1456,7 @@ index 665ec49..6cba687 100644
                  capMusic = SEQUENCE_ARGS(4, SEQ_EVENT_POWERUP);
                  break;
          }
-@@ -1858,9 +1858,13 @@ void pss_end_slide(struct MarioState *m) {
+@@ -1867,9 +1867,13 @@ void pss_end_slide(struct MarioState *m) {
      //! This flag isn't set on death or level entry, allowing double star spawn
      if (sPssSlideStarted) {
          u16 slideTime = level_control_timer(TIMER_CONTROL_STOP);
@@ -1472,10 +1472,10 @@ index 665ec49..6cba687 100644
          sPssSlideStarted = FALSE;
      }
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index d2f48f4..ca96fb7 100644
+index 61c1b9b..65d7772 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -324,17 +324,17 @@ void set_mario_initial_cap_powerup(struct MarioState *m) {
+@@ -328,17 +328,17 @@ void set_mario_initial_cap_powerup(struct MarioState *m) {
      switch (capCourseIndex) {
          case COURSE_COTMC - COURSE_CAP_COURSES:
              m->flags |= MARIO_METAL_CAP | MARIO_CAP_ON_HEAD;
@@ -1496,7 +1496,7 @@ index d2f48f4..ca96fb7 100644
              break;
      }
  }
-@@ -770,7 +770,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -780,7 +780,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
                  break;
  
              case WARP_OP_DEATH:
@@ -1505,7 +1505,7 @@ index d2f48f4..ca96fb7 100644
                      sDelayedWarpOp = WARP_OP_GAME_OVER;
                  }
                  sDelayedWarpTimer = 48;
-@@ -782,7 +782,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -792,7 +792,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
              case WARP_OP_WARP_FLOOR:
                  sSourceWarpNodeId = WARP_NODE_WARP_FLOOR;
                  if (area_get_warp_node(sSourceWarpNodeId) == NULL) {
@@ -1514,7 +1514,7 @@ index d2f48f4..ca96fb7 100644
                          sDelayedWarpOp = WARP_OP_GAME_OVER;
                      } else {
                          sSourceWarpNodeId = WARP_NODE_DEATH;
-@@ -1065,7 +1065,7 @@ s32 play_mode_paused(void) {
+@@ -1075,7 +1075,7 @@ s32 play_mode_paused(void) {
          if (gDebugLevelSelect) {
              fade_into_special_warp(-9, 1);
          } else {
@@ -1523,7 +1523,7 @@ index d2f48f4..ca96fb7 100644
              fade_into_special_warp(0, 0);
              gSavedCourseNum = COURSE_NONE;
          }
-@@ -1075,7 +1075,7 @@ s32 play_mode_paused(void) {
+@@ -1085,7 +1085,7 @@ s32 play_mode_paused(void) {
  #ifndef TARGET_N64
      else if (gPauseScreenMode == 3) {
          // We should only be getting "int 3" to here
@@ -1533,10 +1533,10 @@ index d2f48f4..ca96fb7 100644
          game_exit();
      }
 diff --git a/src/game/mario.c b/src/game/mario.c
-index fb9332c..4925e46 100644
+index 0d328d3..333fe2b 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -1935,7 +1935,7 @@ void init_mario_from_save_file(void) {
+@@ -1939,7 +1939,7 @@ void init_mario_from_save_file(void) {
          save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1);
      gMarioState->numKeys = 0;
  
@@ -1546,7 +1546,7 @@ index fb9332c..4925e46 100644
  
      gMarioState->prevNumStarsForDialog = gMarioState->numStars;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 0bd96de..98c19c1 100644
+index 0bd96de..2aa08f7 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
 @@ -86,7 +86,7 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
@@ -1558,6 +1558,19 @@ index 0bd96de..98c19c1 100644
          if (m->vel[1] < -55.0f) {
              if (fallHeight > 3000.0f) {
                  m->hurtCounter += (m->flags & MARIO_CAP_ON_HEAD) ? 16 : 24;
+@@ -2118,8 +2118,10 @@ s32 mario_execute_airborne_action(struct MarioState *m) {
+     if (check_common_airborne_cancels(m)) {
+         return TRUE;
+     }
+-
+-    play_far_fall_sound(m);
++    
++    if (FALL_DAMAGE) {
++        play_far_fall_sound(m);
++    }
+ 
+     /* clang-format off */
+     switch (m->action) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
 index 2f748f7..fef5fc3 100644
 --- a/src/game/mario_actions_cutscene.c
@@ -1598,7 +1611,7 @@ index 2f748f7..fef5fc3 100644
              // look up for dialog
              set_mario_action(m, ACT_READING_AUTOMATIC_DIALOG, dialogID);
 diff --git a/src/game/mario_misc.c b/src/game/mario_misc.c
-index 57a2d08..b964d69 100644
+index 8dd04a4..243abb4 100644
 --- a/src/game/mario_misc.c
 +++ b/src/game/mario_misc.c
 @@ -31,18 +31,6 @@
@@ -1697,10 +1710,10 @@ index 74c97b2..899b3ae 100644
  void obj_spit_fire(s16 relativePosX, s16 relativePosY, s16 relativePosZ, f32 scale, s32 model,
                     f32 startSpeed, f32 endSpeed, s16 movePitch);
 diff --git a/src/game/object_list_processor.c b/src/game/object_list_processor.c
-index 828e3b5..a9530bb 100644
+index b24f7a9..acd4dab 100644
 --- a/src/game/object_list_processor.c
 +++ b/src/game/object_list_processor.c
-@@ -612,6 +612,7 @@ void unload_deactivated_objects(void) {
+@@ -614,6 +614,7 @@ void unload_deactivated_objects(void) {
  /**
   * Unused profiling function.
   */
@@ -1708,7 +1721,7 @@ index 828e3b5..a9530bb 100644
  static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
      u16 time;
      f64 cycles;
-@@ -628,6 +629,7 @@ static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
+@@ -630,6 +631,7 @@ static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
  
      return time;
  }
@@ -1751,7 +1764,7 @@ index 35d6627..396da51 100644
  /**
 diff --git a/src/game/tweaks.inc.c b/src/game/tweaks.inc.c
 new file mode 100644
-index 0000000..53c136f
+index 0000000..273fca9
 --- /dev/null
 +++ b/src/game/tweaks.inc.c
 @@ -0,0 +1,106 @@
@@ -1767,8 +1780,8 @@ index 0000000..53c136f
 +#define FALL_DAMAGE 1
 +#define REDS_REQ 8
 +//whether coins are 3d or not. Changes bhv scripts and pause menu reds rendering
-+#define USE3DCOINS 0
-+#define INCLUDE_MOP 0
++//#define USE3DCOINS 0
++//#define INCLUDE_MOP 0
 +//an array
 +#define STAR_MILESTONES  1, 3, 8, 30, 50, 70
 +#define SHOW_STAR_MILESTONES 1
