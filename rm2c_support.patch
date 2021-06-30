@@ -723,7 +723,7 @@ index ca220d5..1014bd5 100644
          o->oAction = 8;
      }
 diff --git a/src/game/behaviors/klepto.inc.c b/src/game/behaviors/klepto.inc.c
-index b14bd90..6e29c77 100644
+index b758677..f15bfdd 100644
 --- a/src/game/behaviors/klepto.inc.c
 +++ b/src/game/behaviors/klepto.inc.c
 @@ -375,7 +375,11 @@ void bhv_klepto_update(void) {
@@ -1139,7 +1139,7 @@ index 7c8a15c..f82b306 100644
          }
  
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 2370fdd..6e66f70 100644
+index 2370fdd..de1e4fe 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -459,7 +459,6 @@ s32 update_boss_fight_camera(struct Camera *c, Vec3f, Vec3f);
@@ -1241,15 +1241,6 @@ index 2370fdd..6e66f70 100644
              if (gPlayer1Controller->buttonPressed & R_TRIG) {
                  if (set_cam_angle(0) == CAM_ANGLE_LAKITU) {
                      set_cam_angle(CAM_ANGLE_MARIO);
-@@ -3104,7 +3135,7 @@ void update_camera(struct Camera *c) {
-     c->mode = gLakituState.mode;
-     c->defMode = gLakituState.defMode;
- 
--    camera_course_processing(c);
-+    //camera_course_processing(c);
-     stub_camera_3(c);
-     sCButtonsPressed = find_c_buttons_pressed(sCButtonsPressed, gPlayer1Controller->buttonPressed,gPlayer1Controller->buttonDown);
- 
 @@ -3169,6 +3200,10 @@ void update_camera(struct Camera *c) {
                      mode_8_directions_camera(c);
                      break;
@@ -1764,7 +1755,7 @@ index 35d6627..396da51 100644
  /**
 diff --git a/src/game/tweaks.inc.c b/src/game/tweaks.inc.c
 new file mode 100644
-index 0000000..273fca9
+index 0000000..f04be99
 --- /dev/null
 +++ b/src/game/tweaks.inc.c
 @@ -0,0 +1,106 @@
@@ -1843,10 +1834,10 @@ index 0000000..273fca9
 +
 +// X dimension - num, or 320-78 = 242
 +
-+#define HUD_STARS_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(94)
++#define HUD_STARS_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(78)
 +#define HUD_STARS_Y 209
 +
-+#define HUD_STARS_CROSS_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(78)
++#define HUD_STARS_CROSS_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(62)
 +#define HUD_STARS_CROSS_Y 209
 +
 +#define HUD_STARS_NUM_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(62)
@@ -1860,7 +1851,7 @@ index 0000000..273fca9
 +#define HUD_TIME_MIN_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(91)
 +#define HUD_TIME_MIN_A_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(81)
 +#define HUD_TIME_SEC_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(71)
-+#define HUD_TIME_SEC_AA_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(461)
++#define HUD_TIME_SEC_AA_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(46)
 +#define HUD_TIME_FSEC_X GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(37)
 +#define HUD_TIME_A_Y 32
 +

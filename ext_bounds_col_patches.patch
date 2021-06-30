@@ -191,7 +191,7 @@ index 3f49817..e01621b 100644
  
  /**
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index db590e1..f7de75a 100644
+index db590e1..2e82a9c 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -21,15 +21,21 @@
@@ -432,6 +432,28 @@ index db590e1..f7de75a 100644
      return numCols;
  }
  
+@@ -188,8 +247,8 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
+     struct SurfaceNode *node;
+     s16 cellX, cellZ;
+     s32 numCollisions = 0;
+-    s16 x = colData->x;
+-    s16 z = colData->z;
++    s32 x = colData->x;
++    s32 z = colData->z;
+ 
+     colData->numWalls = 0;
+ 
+@@ -202,8 +261,8 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
+ 
+     // World (level) consists of a 16x16 grid. Find where the collision is on
+     // the grid (round toward -inf)
+-    cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+-    cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellX = (((s32)x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
++    cellZ = (((s32)z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
+ 
+     // Check for surfaces belonging to objects.
+     node = gDynamicSurfacePartition[cellZ][cellX][SPATIAL_PARTITION_WALLS].next;
 @@ -223,15 +282,26 @@ s32 find_wall_collisions(struct WallCollisionData *colData) {
   *                     CEILINGS                   *
   **************************************************/
@@ -524,24 +546,24 @@ index db590e1..f7de75a 100644
 +        if (newHeight > *pheight) {
 +            continue;
 +        }
-+
-+        // Checks for ceiling interaction
-+        if (y > newHeight) {
-+            continue;
-+        }
  
 -        // Checks for ceiling interaction with a 78 unit buffer.
 -        //! (Exposed Ceilings) Because any point above a ceiling counts
 -        //  as interacting with a ceiling, ceilings far below can cause
 -        // "invisible walls" that are really just exposed ceilings.
 -        if (y - (height - -78.0f) > 0.0f) {
-+        if (y >= surf->upperY) {
++        // Checks for ceiling interaction
++        if (y > newHeight) {
              continue;
          }
  
 -        *pheight = height;
 -        ceil = surf;
 -        break;
++        if (y >= surf->upperY) {
++            continue;
++        }
++
 +        if (ceil == NULL || newHeight < height) {
 +            height = newHeight;
 +            *pheight = height;
@@ -769,10 +791,10 @@ index db590e1..f7de75a 100644
 -    s16 y = (s16) yPos;
 -    s16 z = (s16) zPos;
 +    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
-+        return height;
++        return floorHeight;
 +    }
 +    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
-+        return height;
++        return floorHeight;
 +    }
  
      // Each level is split into cells to limit load, find the appropriate cell.
@@ -798,10 +820,10 @@ index db590e1..f7de75a 100644
 +    f32 floorHeight = FLOOR_LOWER_LIMIT;
 +
 +    if (xPos <= -LEVEL_BOUNDARY_MAX || xPos >= LEVEL_BOUNDARY_MAX) {
-+        return height;
++        return floorHeight;
 +    }
 +    if (zPos <= -LEVEL_BOUNDARY_MAX || zPos >= LEVEL_BOUNDARY_MAX) {
-+        return height;
++        return floorHeight;
 +    }
 +
 +    // Each level is split into cells to limit load, find the appropriate cell.
