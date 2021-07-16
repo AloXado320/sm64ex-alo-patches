@@ -1,54 +1,54 @@
-diff --git a/include/anti_patches.h b/include/anti_patches.h
+diff --git a/include/extreme_fixes.h b/include/extreme_fixes.h
 new file mode 100644
 index 0000000..ddc60ba
 --- /dev/null
-+++ b/include/anti_patches.h
++++ b/include/extreme_fixes.h
 @@ -0,0 +1,35 @@
-+#ifndef ANTI_PATCHES_H
-+#define ANTI_PATCHES_H
++#ifndef EXTREME_FIXES_H
++#define EXTREME_FIXES_H
 +
-+// Anti Patch
++// Extreme Fixes
 +// Mostly a compilation of code provided by a few people
 +// This patch changes most of Mario's physics that are considered remarkable
 +// and also changes some "exploits" used in speedruns
-+#define ANTI_PATCHES TRUE
++#define EXTREME_FIXES TRUE
 +
 +/// Fixes backwards long jump, preventing Mario from getting negative speeds
-+#define ANTI_PATCH_BACKWARDS_LONG_JUMP (0 || ANTI_PATCHES)
++#define EXTREME_FIX_BACKWARDS_LONG_JUMP (0 || EXTREME_FIXES)
 +/// Changes how "Blast away the wall" is obtained, fixing it's skip
-+#define ANTI_PATCH_BLAST_AWAY_WALL (0 || ANTI_PATCHES)
++#define EXTREME_FIX_BLAST_AWAY_WALL (0 || EXTREME_FIXES)
 +/// Fixes lakitu skip at the beginning of the game
-+#define ANTI_PATCH_LAKITU_INTRO_SKIP (0 || ANTI_PATCHES)
++#define EXTREME_FIX_LAKITU_INTRO_SKIP (0 || EXTREME_FIXES)
 +/// Changes Bob-omb behavior, so now after throwing it becomes intangible
-+#define ANTI_PATCH_BOBOMB_INTANGIBLE (0 || ANTI_PATCHES)
++#define EXTREME_FIX_BOBOMB_INTANGIBLE (0 || EXTREME_FIXES)
 +/// Fixes Mario still alive after getting shot by a cannon even while 0 hp
-+#define ANTI_PATCH_ZOMBIE_MARIO_CANNON (0 || ANTI_PATCHES)
++#define EXTREME_FIX_ZOMBIE_MARIO_CANNON (0 || EXTREME_FIXES)
 +/// Fixes hands-free holding glitch, more info in it's code comment
-+#define ANTI_PATCH_HANDS_FREE_HOLDING (0 || ANTI_PATCHES)
++#define EXTREME_FIX_HANDS_FREE_HOLDING (0 || EXTREME_FIXES)
 +/// Fixes triple jump on slopes
-+#define ANTI_PATCH_TRIPLE_JUMP_SLOPES (0 || ANTI_PATCHES)
++#define EXTREME_FIX_TRIPLE_JUMP_SLOPES (0 || EXTREME_FIXES)
 +/// Fixes kick while holding jump on slopes
-+#define ANTI_PATCH_KICKING_SLOPES (0 || ANTI_PATCHES)
++#define EXTREME_FIX_KICKING_SLOPES (0 || EXTREME_FIXES)
 +/// Fixes shell negative hyperspeed
-+#define ANTI_PATCH_NEGATIVE_SHELL_SPEED (0 || ANTI_PATCHES)
++#define EXTREME_FIX_NEGATIVE_SHELL_SPEED (0 || EXTREME_FIXES)
 +/// Reset Mario's speed in wallkick
-+#define ANTI_PATCH_SPEED_WALLKICK (0 || ANTI_PATCHES)
++#define EXTREME_FIX_SPEED_WALLKICK (0 || EXTREME_FIXES)
 +/// Fix hat in hand glitch
-+#define ANTI_PATCH_HAT_IN_HAND (0 || ANTI_PATCHES)
++#define EXTREME_FIX_HAT_IN_HAND (0 || EXTREME_FIXES)
 +/// Fix groundpound height damage
-+#define ANTI_PATCH_GROUNDPOUND_HEIGHT (0 || ANTI_PATCHES)
++#define EXTREME_FIX_GROUNDPOUND_HEIGHT (0 || EXTREME_FIXES)
 +
-+#endif // ANTI_PATCHES
++#endif // EXTREME_FIXES
 diff --git a/include/config.h b/include/config.h
-index f40e8d0..fc3ea08 100644
+index ae9fe90..6916725 100644
 --- a/include/config.h
 +++ b/include/config.h
 @@ -10,6 +10,8 @@
  
  // Qol Defines
  #include "qol_defines.h"
-+// Anti Patches
-+#include "anti_patches.h"
++// Extreme Fixes
++#include "extreme_fixes.h"
  
  // Bug Fixes
  // --| Post-JP Version Nintendo Bug Fixes
@@ -60,7 +60,7 @@ index 6697b49..b129500 100644
      OBJECT(/*model*/ MODEL_WF_SLIDING_PLATFORM,         /*pos*/  3328, 1075,  -767, /*angle*/ 0,  90, 0, /*behParam*/ 0x00010000, /*beh*/ bhvWfSlidingPlatform),
      OBJECT(/*model*/ MODEL_WF_SLIDING_PLATFORM,         /*pos*/  3328, 1075, -2815, /*angle*/ 0,  90, 0, /*behParam*/ 0x00030000, /*beh*/ bhvWfSlidingPlatform),
      OBJECT(/*model*/ MODEL_WF_TUMBLING_BRIDGE,          /*pos*/  1792, 2496,  1600, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvWfTumblingBridge),
-+#if ANTI_PATCH_BLAST_AWAY_WALL
++#if EXTREME_FIX_BLAST_AWAY_WALL
 +    OBJECT(/*model*/ MODEL_WF_BREAKABLE_WALL_RIGHT,     /*pos*/   512, 2176,  2944, /*angle*/ 0,   0, 0, /*behParam*/ 0x05000000, /*beh*/ bhvWfBreakableWallRight),
 +#else
      OBJECT(/*model*/ MODEL_WF_BREAKABLE_WALL_RIGHT,     /*pos*/   512, 2176,  2944, /*angle*/ 0,   0, 0, /*behParam*/ 0x00000000, /*beh*/ bhvWfBreakableWallRight),
@@ -72,21 +72,21 @@ index 6697b49..b129500 100644
      OBJECT_WITH_ACTS(/*model*/ MODEL_STAR,  /*pos*/ -2500, 1500, -750, /*angle*/ 0, 0, 0, /*behParam*/ 0x02000000, /*beh*/ bhvStar,                 /*acts*/ ALL_ACTS),
      OBJECT_WITH_ACTS(/*model*/ MODEL_NONE,  /*pos*/  4600,  550, 2500, /*angle*/ 0, 0, 0, /*behParam*/ 0x03000000, /*beh*/ bhvHiddenRedCoinStar, /*acts*/ ALL_ACTS),
      OBJECT_WITH_ACTS(/*model*/ MODEL_STAR,  /*pos*/  2880, 4300,  190, /*angle*/ 0, 0, 0, /*behParam*/ 0x04000000, /*beh*/ bhvStar,                 /*acts*/ ALL_ACTS),
-+#if !ANTI_PATCH_BLAST_AWAY_WALL
++#if !EXTREME_FIX_BLAST_AWAY_WALL
      OBJECT_WITH_ACTS(/*model*/ MODEL_STAR,  /*pos*/   590, 2450, 2650, /*angle*/ 0, 0, 0, /*behParam*/ 0x05000000, /*beh*/ bhvStar,                 /*acts*/ ALL_ACTS),
 +#endif
      RETURN(),
  };
  
 diff --git a/src/game/behaviors/bobomb.inc.c b/src/game/behaviors/bobomb.inc.c
-index 2e3a314..9fdafbe 100644
+index 1f6124e..5db85de 100644
 --- a/src/game/behaviors/bobomb.inc.c
 +++ b/src/game/behaviors/bobomb.inc.c
 @@ -29,6 +29,9 @@ void bobomb_spawn_coin(void) {
  
  void bobomb_act_explode(void) {
      struct Object *explosion;
-+#if ANTI_PATCH_BOBOMB_INTANGIBLE
++#if EXTREME_FIX_BOBOMB_INTANGIBLE
 +    cur_obj_become_intangible();
 +#endif
      if (o->oTimer < 5)
@@ -96,7 +96,7 @@ index 2e3a314..9fdafbe 100644
  void bobomb_act_launched(void) {
      s16 collisionFlags = 0;
      collisionFlags = object_step();
-+#if ANTI_PATCH_BOBOMB_INTANGIBLE
++#if EXTREME_FIX_BOBOMB_INTANGIBLE
 +    cur_obj_become_intangible();
 +#endif
      if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) == OBJ_COL_FLAG_GROUNDED)
@@ -110,21 +110,21 @@ index e3195f7..b4aa980 100644
  #if QOL_FEATURE_BETTER_WF_BREAKEABLE_WALL
                  play_sound(SOUND_MARIO_HAHA, gMarioState->marioObj->header.gfx.cameraToObject);
  #endif
-+                #if ANTI_PATCH_BLAST_AWAY_WALL   
++                #if EXTREME_FIX_BLAST_AWAY_WALL   
 +                spawn_default_star(o->oPosX, o->oPosY, o->oPosZ);
 +                #endif
              }
  
  #if QOL_FEATURE_BETTER_WF_BREAKEABLE_WALL
 diff --git a/src/game/behaviors/camera_lakitu.inc.c b/src/game/behaviors/camera_lakitu.inc.c
-index c3e7f44..8d13148 100644
+index 2b66cff..9769d17 100644
 --- a/src/game/behaviors/camera_lakitu.inc.c
 +++ b/src/game/behaviors/camera_lakitu.inc.c
 @@ -28,7 +28,11 @@ void bhv_camera_lakitu_init(void) {
  static void camera_lakitu_intro_act_trigger_cutscene(void) {
      //! These bounds are slightly smaller than the actual bridge bounds, allowing
      //  the RTA speedrunning method of lakitu skip
-+#if ANTI_PATCH_LAKITU_INTRO_SKIP
++#if EXTREME_FIX_LAKITU_INTRO_SKIP
 +    if (gMarioObject->oPosX > -555.0f && gMarioObject->oPosX < 555.0f && gMarioObject->oPosY > 800.0f
 +#else
      if (gMarioObject->oPosX > -544.0f && gMarioObject->oPosX < 545.0f && gMarioObject->oPosY > 800.0f
@@ -133,7 +133,7 @@ index c3e7f44..8d13148 100644
          && gMarioObject->oPosZ < -177.0f) // always double check your conditions
      {
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index dd5dacd..0be189f 100644
+index 44f0302..0e09458 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -1070,7 +1070,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
@@ -142,7 +142,7 @@ index dd5dacd..0be189f 100644
  u32 interact_cannon_base(struct MarioState *m, UNUSED u32 interactType, struct Object *o) {
 -    if (m->action != ACT_IN_CANNON) {
 +    if (m->action != ACT_IN_CANNON
-+#if ANTI_PATCH_ZOMBIE_MARIO_CANNON
++#if EXTREME_FIX_ZOMBIE_MARIO_CANNON
 +    && m->health >= 0x100
 +#endif
 +    ) {
@@ -150,19 +150,23 @@ index dd5dacd..0be189f 100644
          o->oInteractStatus = INT_STATUS_INTERACTED;
          m->interactObj = o;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 0bd96de..cebfcf3 100644
+index 7757b13..cebfcf3 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -67,18 +67,18 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+@@ -67,22 +67,18 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
  
      fallHeight = m->peakHeight - m->pos[1];
  
 -#pragma GCC diagnostic push
+-#if defined(__clang__)
+-#pragma GCC diagnostic ignored "-Wtautological-constant-out-of-range-compare"
+-#elif defined(__GNUC__)
 -#pragma GCC diagnostic ignored "-Wtype-limits"
+-#endif
 -
      //! Never true
 -    if (m->actionState == ACT_GROUND_POUND) {
-+#if ANTI_PATCH_GROUNDPOUND_HEIGHT
++#if EXTREME_FIX_GROUNDPOUND_HEIGHT
 +    if (m->action == ACT_GROUND_POUND)
 +#else
 +    if (m->actionState == ACT_GROUND_POUND)
@@ -178,11 +182,11 @@ index 0bd96de..cebfcf3 100644
  	#ifdef PORT_MOP_OBJS
  	if (m->SelFallDmg){
  		m->SelFallDmg=0;
-@@ -419,12 +419,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
+@@ -423,12 +419,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
                      // not able to ledge grab it.
                      if (m->forwardVel >= 38.0f) {
                          m->particleFlags |= PARTICLE_VERTICAL_STAR;
-+                        #if ANTI_PATCH_HANDS_FREE_HOLDING
++                        #if EXTREME_FIX_HANDS_FREE_HOLDING
 +                        drop_and_set_mario_action(m, ACT_BACKWARD_AIR_KB, 0);
 +                        #else
                          set_mario_action(m, ACT_BACKWARD_AIR_KB, 0);
@@ -191,7 +195,7 @@ index 0bd96de..cebfcf3 100644
                          if (m->forwardVel > 8.0f) {
                              mario_set_forward_vel(m, -8.0f);
                          }
-+                        #if ANTI_PATCH_HANDS_FREE_HOLDING
++                        #if EXTREME_FIX_HANDS_FREE_HOLDING
 +                        drop_and_set_mario_action(m, ACT_SOFT_BONK, 0);
 +                        #else
                          return set_mario_action(m, ACT_SOFT_BONK, 0);
@@ -199,25 +203,25 @@ index 0bd96de..cebfcf3 100644
                      }
                  }
              } else {
-@@ -1321,6 +1329,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
+@@ -1325,6 +1329,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
          if (m->input & INPUT_A_PRESSED) {
              m->vel[1] = 52.0f;
              m->faceAngle[1] += 0x8000;
-+            #if ANTI_PATCH_SPEED_WALLKICK
++            #if EXTREME_FIX_SPEED_WALLKICK
 +            m->forwardVel = 0.0f;
 +            #endif
              return set_mario_action(m, ACT_WALL_KICK_AIR, 0);
          }
      } else if (m->forwardVel >= 38.0f) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index 2f748f7..4050f2b 100644
+index 1d43550..f31bd12 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
-@@ -1662,6 +1662,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
+@@ -1652,6 +1652,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
      }
  
      if (is_anim_at_end(m)) {
-+#if ANTI_PATCH_HAT_IN_HAND
++#if EXTREME_FIX_HAT_IN_HAND
 +        if (m->flags & MARIO_CAP_IN_HAND) {
 +            m->flags &= ~MARIO_CAP_IN_HAND;
 +            m->flags |= MARIO_CAP_ON_HEAD;
@@ -227,7 +231,7 @@ index 2f748f7..4050f2b 100644
          disable_time_stop();
      }
 diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
-index f12cd26..46f474c 100644
+index 06ceda3..f4b7cea 100644
 --- a/src/game/mario_actions_moving.c
 +++ b/src/game/mario_actions_moving.c
 @@ -151,7 +151,11 @@ void slide_bonk(struct MarioState *m, u32 fastAction, u32 slowAction) {
@@ -236,7 +240,7 @@ index f12cd26..46f474c 100644
          return set_mario_action(m, ACT_FLYING_TRIPLE_JUMP, 0);
 -    } else if (m->forwardVel > 20.0f) {
 +    } else if (m->forwardVel > 20.0f
-+#if ANTI_PATCH_TRIPLE_JUMP_SLOPES
++#if EXTREME_FIX_TRIPLE_JUMP_SLOPES
 +    && !mario_floor_is_slope(m)
 +#endif
 +    ) {
@@ -247,7 +251,7 @@ index f12cd26..46f474c 100644
          m->forwardVel = 64.0f;
      }
  
-+#if ANTI_PATCH_NEGATIVE_SHELL_SPEED
++#if EXTREME_FIX_NEGATIVE_SHELL_SPEED
 +    if (m->forwardVel < 0.0f) {
 +        m->forwardVel = 0.0f;
 +    }
@@ -262,7 +266,7 @@ index f12cd26..46f474c 100644
  
 -    if (m->actionState == 0 && (m->input & INPUT_A_DOWN)) {
 +    if (m->actionState == 0 && (m->input & INPUT_A_DOWN)
-+#if ANTI_PATCH_KICKING_SLOPES
++#if EXTREME_FIX_KICKING_SLOPES
 +    && !mario_floor_is_slope(m)
 +#endif
 +    ) {
@@ -274,7 +278,7 @@ index f12cd26..46f474c 100644
  
  s32 act_long_jump_land(struct MarioState *m) {
 -#ifdef VERSION_SH
-+#if ANTI_PATCH_BACKWARDS_LONG_JUMP
++#if EXTREME_FIX_BACKWARDS_LONG_JUMP
      // BLJ (Backwards Long Jump) speed build up fix, crushing SimpleFlips's dreams since July 1997
      if (m->forwardVel < 0.0f) {
          m->forwardVel = 0.0f;
