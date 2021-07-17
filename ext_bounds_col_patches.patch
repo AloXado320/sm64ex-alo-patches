@@ -153,10 +153,10 @@ index 0000000..cab8a1c
 +
 +#endif // __EXTENDED_BOUNDS_H__
 diff --git a/src/engine/math_util.c b/src/engine/math_util.c
-index 3f49817..e01621b 100644
+index d6978a3..023d4a4 100644
 --- a/src/engine/math_util.c
 +++ b/src/engine/math_util.c
-@@ -611,23 +611,17 @@ void mtxf_mul_vec3s(Mat4 mtx, Vec3s b) {
+@@ -618,23 +618,17 @@ void mtxf_mul_vec3s(Mat4 mtx, Vec3s b) {
   * and no crashes occur.
   */
  void mtxf_to_mtx(Mtx *dest, Mat4 src) {
@@ -191,7 +191,7 @@ index 3f49817..e01621b 100644
  
  /**
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index 14b7461..24c7d00 100644
+index a3323a3..24c7d00 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -22,15 +22,21 @@
@@ -628,7 +628,7 @@ index 14b7461..24c7d00 100644
   */
  struct FloorGeometry sFloorGeo;
  
--static u8 unused8038BE50[0x40];
+-UNUSED static u8 unused8038BE50[0x40];
 -
  /**
   * Return the floor height underneath (xPos, yPos, zPos) and populate `floorGeo`
@@ -1050,7 +1050,7 @@ index b47fc78..79e6b20 100644
  f32 find_poison_gas_level(f32 x, f32 z);
  void debug_surface_list_info(f32 xPos, f32 zPos);
 diff --git a/src/engine/surface_load.c b/src/engine/surface_load.c
-index 219e8b2..d840c43 100644
+index 225305d..9747f4a 100644
 --- a/src/engine/surface_load.c
 +++ b/src/engine/surface_load.c
 @@ -17,8 +17,6 @@
@@ -1201,10 +1201,10 @@ index e41a04a..93d401a 100644
  extern SpatialPartitionCell gDynamicSurfacePartition[NUM_CELLS][NUM_CELLS];
  extern struct SurfaceNode *sSurfaceNodePool;
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index 0709555..ee3a505 100644
+index c83e9d4..e6bff4b 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
-@@ -670,7 +670,8 @@ s32 ray_surface_intersect(Vec3f orig, Vec3f dir, f32 dir_length, struct Surface
+@@ -671,7 +671,8 @@ s32 ray_surface_intersect(Vec3f orig, Vec3f dir, f32 dir_length, struct Surface
  
      //Ignore certain surface types.
      if (surface->type == SURFACE_INTANGIBLE || surface->type == SURFACE_WALL_MISC
@@ -1215,30 +1215,27 @@ index 0709555..ee3a505 100644
  
      // Get surface normal and some other stuff
 diff --git a/src/game/behaviors/bowser.inc.c b/src/game/behaviors/bowser.inc.c
-index 97cba2a..c7dd67a 100644
+index 4c29cce..098233b 100644
 --- a/src/game/behaviors/bowser.inc.c
 +++ b/src/game/behaviors/bowser.inc.c
-@@ -972,6 +972,8 @@ s32 bowser_check_fallen_off_stage(void) // bowser off stage?
-     return 0;
+@@ -1480,6 +1480,8 @@ s32 bowser_check_fallen_off_stage(void) {
+     return FALSE;
  }
  
 +struct PlatformDisplacementInfo sBowserDisplacementInfo;
 +
- void (*sBowserActions[])(void) = { bowser_act_default,  bowser_act_thrown_dropped,  bowser_act_jump_onto_stage,  bowser_act_dance,
-                                    bowser_act_dead,  bowser_act_text_wait,  bowser_act_intro_walk,  bowser_act_charge_mario,
-                                    bowser_act_spit_fire_into_sky,  bowser_act_spit_fire_onto_floor,  bowser_act_hit_edge, bowser_act_turn_from_edge,
-@@ -1032,8 +1034,9 @@ void bowser_free_update(void) {
-     struct Surface *floor;
-     struct Object *platform;
-     UNUSED f32 floorHeight;
--    if ((platform = o->platform) != NULL)
+ /**
+  * Set Bowser's actions
+  */
+@@ -1559,7 +1561,7 @@ void bowser_free_update(void) {
+ 
+     // Platform displacement check (for BITFS)
+     if ((platform = o->platform) != NULL) {
 -        apply_platform_displacement(FALSE, platform);
-+    if ((platform = o->platform) != NULL) {
 +        apply_platform_displacement(&sBowserDisplacementInfo, &o->oPosX, (s16 *) &o->oFaceAngleYaw, platform);
-+    }
-     o->oBowserUnk10E = 0;
-     cur_obj_update_floor_and_walls();
-     cur_obj_call_action_function(sBowserActions);
+     }
+     // Reset grabbed status
+     o->oBowserGrabbedStatus = BOWSER_GRAB_STATUS_NONE;
 diff --git a/src/game/behaviors/tilting_inverted_pyramid.inc.c b/src/game/behaviors/tilting_inverted_pyramid.inc.c
 index ebce64f..29136e9 100644
 --- a/src/game/behaviors/tilting_inverted_pyramid.inc.c
@@ -1253,10 +1250,10 @@ index ebce64f..29136e9 100644
  
      o->header.gfx.throwMatrix = transform;
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 83d3a67..36c1a57 100644
+index e088517..c543e42 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
-@@ -892,6 +892,7 @@ void pan_ahead_of_player(struct Camera *c) {
+@@ -896,6 +896,7 @@ void pan_ahead_of_player(struct Camera *c) {
      vec3f_add(c->focus, pan);
  }
  
@@ -1264,7 +1261,7 @@ index 83d3a67..36c1a57 100644
  s16 find_in_bounds_yaw_wdw_bob_thi(Vec3f pos, Vec3f origin, s16 yaw) {
      switch (gCurrLevelArea) {
          case AREA_WDW_MAIN:
-@@ -909,6 +910,7 @@ s16 find_in_bounds_yaw_wdw_bob_thi(Vec3f pos, Vec3f origin, s16 yaw) {
+@@ -913,6 +914,7 @@ s16 find_in_bounds_yaw_wdw_bob_thi(Vec3f pos, Vec3f origin, s16 yaw) {
      }
      return yaw;
  }
@@ -1272,7 +1269,7 @@ index 83d3a67..36c1a57 100644
  
  /**
   * Rotates the camera around the area's center point.
-@@ -929,7 +931,9 @@ s32 update_radial_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
+@@ -933,7 +935,9 @@ s32 update_radial_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
      sAreaYaw = camYaw - sModeOffsetYaw;
      calc_y_to_curr_floor(&posY, 1.f, 200.f, &focusY, 0.9f, 200.f);
      focus_on_mario(focus, pos, posY + yOff, focusY + yOff, sLakituDist + baseDist, pitch, camYaw);
@@ -1282,7 +1279,7 @@ index 83d3a67..36c1a57 100644
  
      return camYaw;
  }
-@@ -3110,7 +3114,10 @@ void update_camera(struct Camera *c) {
+@@ -3120,7 +3124,10 @@ void update_camera(struct Camera *c) {
      c->mode = gLakituState.mode;
      c->defMode = gLakituState.defMode;
  
@@ -1293,7 +1290,7 @@ index 83d3a67..36c1a57 100644
      stub_camera_3(c);
      sCButtonsPressed = find_c_buttons_pressed(sCButtonsPressed, gPlayer1Controller->buttonPressed,gPlayer1Controller->buttonDown);
  
-@@ -3583,9 +3590,11 @@ void zoom_out_if_paused_and_outside(struct GraphNodeCamera *camera) {
+@@ -3599,9 +3606,11 @@ void zoom_out_if_paused_and_outside(struct GraphNodeCamera *camera) {
                  camera->focus[2] = gCamera->areaCenZ;
                  vec3f_get_dist_and_angle(camera->focus, sMarioCamState->pos, &dist, &pitch, &yaw);
                  vec3f_set_dist_and_angle(sMarioCamState->pos, camera->pos, 6000.f, 0x1000, yaw);
@@ -1306,7 +1303,7 @@ index 83d3a67..36c1a57 100644
          } else {
              sFramesPaused++;
 diff --git a/src/game/hud.c b/src/game/hud.c
-index a173963..4c999ab 100644
+index db36db7..8dea812 100644
 --- a/src/game/hud.c
 +++ b/src/game/hud.c
 @@ -466,6 +466,19 @@ void render_hud_camera_status(void) {
@@ -1341,10 +1338,10 @@ index a173963..4c999ab 100644
          if (!configHUD) {
              return;
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index dd5dacd..a8a1257 100644
+index 44f0302..30be8af 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
-@@ -1766,12 +1766,14 @@ u32 interact_text(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -1767,12 +1767,14 @@ u32 interact_text(struct MarioState *m, UNUSED u32 interactType, struct Object *
  
  void check_kick_or_punch_wall(struct MarioState *m) {
      if (m->flags & (MARIO_PUNCHING | MARIO_KICKING | MARIO_TRIPPING)) {
@@ -1366,7 +1363,7 @@ index dd5dacd..a8a1257 100644
                  if (m->action == ACT_PUNCHING) {
                      m->action = ACT_MOVE_PUNCHING;
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 8d49753..7c8ce90 100644
+index c54d12b..d0a8e6a 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
 @@ -537,6 +537,10 @@ u32 mario_get_terrain_sound_addend(struct MarioState *m) {
@@ -1530,7 +1527,7 @@ index 0c573b8..e3eeaf9 100644
  u32 update_and_return_cap_flags(struct MarioState *m);
  s32 execute_mario_action(UNUSED struct Object *o);
 diff --git a/src/game/mario_actions_automatic.c b/src/game/mario_actions_automatic.c
-index c0c3f93..f7ec4df 100644
+index d8f447c..aade427 100644
 --- a/src/game/mario_actions_automatic.c
 +++ b/src/game/mario_actions_automatic.c
 @@ -312,9 +312,13 @@ s32 perform_hanging_step(struct MarioState *m, Vec3f nextPos) {
@@ -1562,7 +1559,7 @@ index c0c3f93..f7ec4df 100644
      if (m->input & (INPUT_Z_PRESSED | INPUT_OFF_FLOOR)) {
          return let_go_of_ledge(m);
 diff --git a/src/game/mario_actions_submerged.c b/src/game/mario_actions_submerged.c
-index 35ba601..a43c8d5 100644
+index ec68a65..557c890 100644
 --- a/src/game/mario_actions_submerged.c
 +++ b/src/game/mario_actions_submerged.c
 @@ -76,7 +76,7 @@ static u32 perform_water_full_step(struct MarioState *m, Vec3f nextPos) {
@@ -1574,7 +1571,7 @@ index 35ba601..a43c8d5 100644
  
      if (floor == NULL) {
          return WATER_STEP_CANCELLED;
-@@ -1494,7 +1494,13 @@ static s32 act_hold_metal_water_fall_land(struct MarioState *m) {
+@@ -1497,7 +1497,13 @@ static s32 act_hold_metal_water_fall_land(struct MarioState *m) {
  static s32 check_common_submerged_cancels(struct MarioState *m) {
      if (m->pos[1] > m->waterLevel - 80) {
          if (m->waterLevel - 80 > m->floorHeight) {
@@ -1945,7 +1942,7 @@ index 7ba5008..c8ac881 100644
  }
  
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index 2c7abdd..cd6096f 100644
+index e396ad3..4c601b1 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
 @@ -176,14 +176,19 @@ Gfx *geo_switch_area(s32 callContext, struct GraphNode *node) {
@@ -1969,7 +1966,7 @@ index 2c7abdd..cd6096f 100644
  
              if (sp20) {
                  gMarioCurrentRoom = sp20->room;
-@@ -1836,29 +1841,11 @@ void cur_obj_move_standard(s16 steepSlopeAngleDegrees) {
+@@ -1838,29 +1843,11 @@ void cur_obj_move_standard(s16 steepSlopeAngleDegrees) {
      }
  }
  
@@ -2343,7 +2340,7 @@ index cf3ee1e..7c50070 100644
              } else {
                  geo_append_display_list((void *) VIRTUAL_TO_PHYSICAL(shadowList), 6);
 diff --git a/src/game/shadow.c b/src/game/shadow.c
-index c0b7b08..135edca 100644
+index dd278bd..23ed3e9 100644
 --- a/src/game/shadow.c
 +++ b/src/game/shadow.c
 @@ -106,6 +106,7 @@ shadowRectangle rectangles[2] = {
