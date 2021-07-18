@@ -19,18 +19,18 @@ index c5940bf..c9769f7 100644
  
  #ifdef NO_SEGMENTED_MEMORY
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index 15c9851..631ed5c 100644
+index 795a480..68f4403 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
 @@ -9,6 +9,7 @@
  #include "game/area.h"
  #include "game/level_update.h"
- #include "menu/level_select_menu.h"
+ #include "menu/title_screen.h"
 +#include "extras/demo_screen.h"
  
  #include "levels/scripts.h"
  #include "levels/menu/header.h"
-@@ -66,67 +67,36 @@ const LevelScript level_intro_splash_screen[] = {
+@@ -66,65 +67,36 @@ const LevelScript level_intro_splash_screen[] = {
      EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
  };
  
@@ -54,10 +54,10 @@ index 15c9851..631ed5c 100644
      SLEEP(/*frames*/ 2),
      BLACKOUT(/*active*/ FALSE),
 -    LOAD_AREA(/*area*/ 1),
--    SET_MENU_MUSIC(/*seq*/ 0x0002),
+-    SET_MENU_MUSIC(/*seq*/ SEQ_MENU_TITLE_SCREEN),
 -    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
 -    SLEEP(/*frames*/ 20),
--    CALL_LOOP(/*arg*/ 1, /*func*/ lvl_intro_update),
+-    CALL_LOOP(/*arg*/ LVL_INTRO_REGULAR, /*func*/ lvl_intro_update),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
 -    JUMP(script_intro_L4),
@@ -82,33 +82,31 @@ index 15c9851..631ed5c 100644
 -    SLEEP(/*frames*/ 2),
 -    BLACKOUT(/*active*/ FALSE),
 -    LOAD_AREA(/*area*/ 1),
--    SET_MENU_MUSIC(/*seq*/ 0x0082),
-+    SET_MENU_MUSIC(/*seq*/ 0x0002),
+-    SET_MENU_MUSIC(/*seq*/ SEQ_MENU_GAME_OVER),
++    SET_MENU_MUSIC(/*seq*/ SEQ_MENU_TITLE_SCREEN),
      TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
      SLEEP(/*frames*/ 20),
--    CALL_LOOP(/*arg*/ 2, /*func*/ lvl_intro_update),
+-    CALL_LOOP(/*arg*/ LVL_INTRO_GAME_OVER, /*func*/ lvl_intro_update),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
 -    JUMP(script_intro_L4),
 -};
 -#else
--extern const LevelScript script_intro_L1[];
--
 -const LevelScript level_intro_mario_head_regular[] = {
--    JUMP(script_intro_L1),
+-    EXIT_AND_EXECUTE(/*seg*/ 0x14, _menuSegmentRomStart, _menuSegmentRomEnd, level_main_menu_entry_1),
 +    DEMO_SCRIPT(LVL_DEMO_SET_ADVANCE), // advance the demo ID manually with a new command which sets the level as script register
 +    JUMP(script_intro_L4), // go to ingame
  };
  
  const LevelScript level_intro_mario_head_dizzy[] = {
--    JUMP(script_intro_L1),
-+    JUMP(level_intro_mario_head_regular),
+-    EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_splash_screen),
++    EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
  };
 -#endif
  
  const LevelScript level_intro_entry_4[] = {
      INIT_LEVEL(),
-@@ -140,6 +110,7 @@ const LevelScript level_intro_entry_4[] = {
+@@ -138,6 +110,7 @@ const LevelScript level_intro_entry_4[] = {
  
      AREA(/*index*/ 1, intro_geo_000414),
      END_AREA(),
@@ -117,7 +115,7 @@ index 15c9851..631ed5c 100644
      FREE_LEVEL_POOL(),
      LOAD_AREA(/*area*/ 1),
 diff --git a/src/engine/level_script.c b/src/engine/level_script.c
-index 54395ed..d2c6dea 100644
+index 74c41bf..d7f5bcc 100644
 --- a/src/engine/level_script.c
 +++ b/src/engine/level_script.c
 @@ -32,6 +32,8 @@
@@ -197,7 +195,7 @@ index 54395ed..d2c6dea 100644
  struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
 diff --git a/src/extras/demo_screen.c b/src/extras/demo_screen.c
 new file mode 100644
-index 0000000..288a7c2
+index 0000000..2545f89
 --- /dev/null
 +++ b/src/extras/demo_screen.c
 @@ -0,0 +1,46 @@
@@ -232,17 +230,17 @@ index 0000000..288a7c2
 +	gCurrDemoInput = NULL;
 +	gDemoPressedStart = FALSE;
 +    // start the mario demo animation for the demo list.
-+    load_patchable_table(&gDemo, gDemoInputListIDForIntro);
++    load_patchable_table(&gDemoInputsBuf, gDemoInputListIDForIntro);
 +
 +    // if the next demo sequence ID is the count limit, reset it back to
 +    // the first sequence.
 +
-+    if((++gDemoInputListIDForIntro) == gDemo.animDmaTable->count)
++    if((++gDemoInputListIDForIntro) == gDemoInputsBuf.dmaTable->count)
 +        gDemoInputListIDForIntro = 0;
 +
 +    // add 1 (+4) to the pointer to skip the demoID.
-+    gCurrDemoInput = ((struct DemoInput *) gDemo.targetAnim) + 1;
-+    timer = (s8)((struct DemoInput *) gDemo.targetAnim)->timer;
++    gCurrDemoInput = ((struct DemoInput *) gDemoInputsBuf.bufTarget) + 1;
++    timer = (s8)((struct DemoInput *) gDemoInputsBuf.bufTarget)->timer;
 +    gCurrSaveFileNum = 1;
 +    gCurrActNum = 6;
 +    return timer;
@@ -278,7 +276,7 @@ index 0000000..8f0efc6
 +
 +#endif // OPTIONS_MENU_H
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 61c1b9b..b48a61d 100644
+index a1ecb75..01ecaf2 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
 @@ -46,6 +46,8 @@
