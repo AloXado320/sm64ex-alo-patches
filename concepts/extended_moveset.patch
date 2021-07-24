@@ -959,7 +959,7 @@ index d8f447c..2d84fa5 100644
          if (m->marioObj->oInteractStatus & INT_STATUS_MARIO_KNOCKBACK_DMG) {
              m->hurtCounter += (m->flags & MARIO_CAP_ON_HEAD) ? 12 : 18;
 diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
-index 06ceda3..5ecfc77 100644
+index 06ceda3..8e0e96a 100644
 --- a/src/game/mario_actions_moving.c
 +++ b/src/game/mario_actions_moving.c
 @@ -154,7 +154,12 @@ s32 set_triple_jump_action(struct MarioState *m, UNUSED u32 action, UNUSED u32 a
@@ -1156,7 +1156,7 @@ index 06ceda3..5ecfc77 100644
      cancel = common_slide_action_with_jump(m, ACT_CROUCHING, ACT_JUMP, ACT_FREEFALL,
                                             MARIO_ANIM_START_CROUCHING);
      return cancel;
-@@ -1535,9 +1591,82 @@ s32 act_slide_kick_slide(struct MarioState *m) {
+@@ -1535,6 +1591,79 @@ s32 act_slide_kick_slide(struct MarioState *m) {
      return FALSE;
  }
  
@@ -1235,10 +1235,15 @@ index 06ceda3..5ecfc77 100644
 +
  s32 stomach_slide_action(struct MarioState *m, u32 stopAction, u32 airAction, s32 animation) {
      if (m->actionTimer == 5) {
--        if (!(m->input & INPUT_ABOVE_SLIDE) && (m->input & (INPUT_A_PRESSED | INPUT_B_PRESSED))) {
-+        if (!(m->input & INPUT_ABOVE_SLIDE) && (m->input & INPUT_A_PRESSED)) {
+         if (!(m->input & INPUT_ABOVE_SLIDE) && (m->input & (INPUT_A_PRESSED | INPUT_B_PRESSED))) {
+@@ -1573,7 +1702,7 @@ s32 act_hold_stomach_slide(struct MarioState *m) {
+ }
+ 
+ s32 act_dive_slide(struct MarioState *m) {
+-    if (!(m->input & INPUT_ABOVE_SLIDE) && (m->input & (INPUT_A_PRESSED | INPUT_B_PRESSED))) {
++    if (!(m->input & INPUT_ABOVE_SLIDE) && (m->input & INPUT_A_PRESSED)) {
  #ifdef RUMBLE_FEEDBACK
-             queue_rumble_data(5, 80);
+         queue_rumble_data(5, 80);
  #endif
 @@ -1583,6 +1712,17 @@ s32 act_dive_slide(struct MarioState *m) {
  
