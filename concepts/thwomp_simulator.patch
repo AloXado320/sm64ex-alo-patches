@@ -70,10 +70,10 @@ index 8a49027..2c80d91 100644
  #define TEXT_MENU_CCM _(" 4 COOL, COOL MOUNTAIN")
  #define TEXT_MENU_BBH _(" 5 BIG BOO'S HAUNT")
 diff --git a/include/types.h b/include/types.h
-index 64c2b4d..aee0e0e 100644
+index 28d9891..4d9628c 100644
 --- a/include/types.h
 +++ b/include/types.h
-@@ -359,6 +359,9 @@ struct MarioState
+@@ -357,6 +357,9 @@ struct MarioState
      #ifdef PORT_MOP_OBJS
  	/*0xd4*/ u8 SelFallDmg; //For certain objects I don't want fall damage ever
      #endif
@@ -267,7 +267,7 @@ index 6697b49..e976004 100644
      OBJECT(/*model*/ MODEL_PIRANHA_PLANT,     /*pos*/  1822, 2560,  -101, /*angle*/ 0,   90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvPiranhaPlant),
      OBJECT(/*model*/ MODEL_PIRANHA_PLANT,     /*pos*/  4625,  256,  5017, /*angle*/ 0,  -90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvPiranhaPlant),
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index c83e9d4..4811893 100644
+index 99823c5..9b26da2 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
 @@ -133,9 +133,9 @@ void puppycam_default_config(void) {
@@ -332,9 +332,9 @@ index c83e9d4..4811893 100644
      {
 -        puppycam_input_hold_preset1(ivX);
 +        //puppycam_input_hold_preset1(ivX);
-     }
- 
-     
+         puppycam_input_pitch();
+         puppycam_input_zoom();
+         puppycam_input_centre();
 diff --git a/src/extras/thwomp_simulator.c b/src/extras/thwomp_simulator.c
 new file mode 100644
 index 0000000..fe0c2ff
@@ -553,7 +553,7 @@ index fdb3345..9f6d1b7 100644
  
  void (*sGrindelThwompActions[])(void) = { grindel_thwomp_act_0, grindel_thwomp_act_1,
 diff --git a/src/game/camera.c b/src/game/camera.c
-index e088517..06bfa37 100644
+index 007c7a8..68686af 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -726,38 +726,23 @@ BAD_RETURN(f32) calc_y_to_curr_floor(f32 *posOff, f32 posMul, f32 posBound, f32
@@ -664,7 +664,7 @@ index e088517..06bfa37 100644
  }
  
  /**
-@@ -4895,7 +4882,7 @@ s32 offset_yaw_outward_radial(struct Camera *c, s16 areaYaw) {
+@@ -4899,7 +4886,7 @@ s32 offset_yaw_outward_radial(struct Camera *c, s16 areaYaw) {
              yawGoal = 0;
              break;
      }
@@ -673,7 +673,7 @@ index e088517..06bfa37 100644
  
      if (sAreaYawChange < 0) {
          camera_approach_s16_symmetric_bool(&yaw, -yawGoal, dYaw);
-@@ -5382,6 +5369,7 @@ u8 get_cutscene_from_mario_status(struct Camera *c) {
+@@ -5386,6 +5373,7 @@ u8 get_cutscene_from_mario_status(struct Camera *c) {
   * Moves the camera when Mario has triggered a warp
   */
  void warp_camera(f32 displacementX, f32 displacementY, f32 displacementZ) {
@@ -681,7 +681,7 @@ index e088517..06bfa37 100644
      Vec3f displacement;
      struct MarioState *marioStates = &gMarioStates[0];
      struct LinearTransitionPoint *start = &sModeInfo.transitionStart;
-@@ -5405,6 +5393,7 @@ void warp_camera(f32 displacementX, f32 displacementY, f32 displacementZ) {
+@@ -5409,6 +5397,7 @@ void warp_camera(f32 displacementX, f32 displacementY, f32 displacementZ) {
  #ifdef BETTERCAMERA
      puppycam_warp(displacementX, displacementY, displacementZ);
  #endif
@@ -689,7 +689,7 @@ index e088517..06bfa37 100644
  }
  
  /**
-@@ -11580,6 +11569,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
+@@ -11584,6 +11573,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
      struct MarioState *marioState = &gMarioStates[0];
      u8 fovFunc = sFOVState.fovFunc;
  
@@ -697,7 +697,7 @@ index e088517..06bfa37 100644
      if (callContext == GEO_CONTEXT_RENDER) {
          switch (fovFunc) {
              case CAM_FOV_SET_45:
-@@ -11621,6 +11611,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
+@@ -11625,6 +11615,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
  
      perspective->fov = sFOVState.fov;
      shake_camera_fov(perspective);
@@ -795,7 +795,7 @@ index 44f0302..6cace24 100644
      }
  
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index a1ecb75..8731982 100644
+index 3acc337..2547c09 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
 @@ -781,7 +781,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
@@ -824,7 +824,7 @@ index a1ecb75..8731982 100644
  
          if (gHudDisplay.coins < gMarioState->numCoins) {
              if (gGlobalTimer & 0x00000001) {
-@@ -1181,14 +1181,7 @@ s16 gSkipIntroKeyCombo = FALSE;
+@@ -1178,14 +1178,7 @@ s16 gSkipIntroKeyCombo = FALSE;
  // ex-alo change
  // Checks for peach intro skip
  u8 should_intro_be_skipped(void) {

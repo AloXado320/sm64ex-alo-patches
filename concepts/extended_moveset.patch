@@ -76,7 +76,7 @@ index 75de983..ca1a12e 100644
  #define ACT_SWIMMING_END               0x300024D1 // (0x0D1 | ACT_FLAG_MOVING | ACT_FLAG_SWIMMING | ACT_FLAG_SWIMMING_OR_FLYING | ACT_FLAG_WATER_OR_TEXT)
  #define ACT_FLUTTER_KICK               0x300024D2 // (0x0D2 | ACT_FLAG_MOVING | ACT_FLAG_SWIMMING | ACT_FLAG_SWIMMING_OR_FLYING | ACT_FLAG_WATER_OR_TEXT)
 diff --git a/include/types.h b/include/types.h
-index 64c2b4d..1fa1a50 100644
+index 28d9891..0430788 100644
 --- a/include/types.h
 +++ b/include/types.h
 @@ -18,6 +18,7 @@
@@ -96,7 +96,7 @@ index 64c2b4d..1fa1a50 100644
  };
  
  typedef f32 Vec2f[2];
-@@ -357,8 +360,12 @@ struct MarioState
+@@ -355,8 +358,12 @@ struct MarioState
      /*0xC0*/ f32 quicksandDepth;
      /*0xC4*/ f32 unkC4;
      #ifdef PORT_MOP_OBJS
@@ -111,7 +111,7 @@ index 64c2b4d..1fa1a50 100644
  
  #endif // _SM64_TYPES_H_
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index c83e9d4..b6247fd 100644
+index 99823c5..b00e8c7 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
 @@ -275,7 +275,7 @@ void puppycam_input_zoom(void)
@@ -176,7 +176,7 @@ index 727020d..2ddec32 100644
                      cur_obj_spawn_particles(&sThiTopPuffs);
                      spawn_triangle_break_particles(20, MODEL_DIRT_ANIMATION, 0.3f, 3);
 diff --git a/src/game/camera.c b/src/game/camera.c
-index e088517..ac2a5c3 100644
+index 007c7a8..1b82399 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -1795,7 +1795,7 @@ s32 update_behind_mario_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
@@ -237,11 +237,11 @@ index e088517..ac2a5c3 100644
      s16 status = CAM_STATUS_NONE;
  
      if (c->cutscene != 0
--        || ((gPlayer1Controller->buttonDown & R_TRIG) && cam_select_alt_mode(0) == CAM_SELECTION_FIXED)) {
-+        || ((gPlayer1Controller->buttonDown & R_JPAD) && cam_select_alt_mode(0) == CAM_SELECTION_FIXED)) {
-         status |= CAM_STATUS_FIXED;
-     } else if (set_cam_angle(0) == CAM_ANGLE_MARIO) {
-         status |= CAM_STATUS_MARIO;
+-        || ((gPlayer1Controller->buttonDown & R_TRIG) && cam_select_alt_mode(0) == CAM_SELECTION_FIXED
++        || ((gPlayer1Controller->buttonDown & R_JPAD) && cam_select_alt_mode(0) == CAM_SELECTION_FIXED
+ #ifdef BETTERCAMERA
+     && !gPuppyCam.enabled
+ #endif
 diff --git a/src/game/interaction.c b/src/game/interaction.c
 index 44f0302..0fc4545 100644
 --- a/src/game/interaction.c
