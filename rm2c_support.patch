@@ -1,18 +1,17 @@
 diff --git a/Makefile b/Makefile
-index bb74121..0ce78fe 100644
+index 9b15874..5451aaa 100644
 --- a/Makefile
 +++ b/Makefile
-@@ -27,6 +27,9 @@ NON_MATCHING ?= 1
- # Compiler to use in N64 (ido or gcc)
+@@ -27,6 +27,8 @@ DEFINES :=
  COMPILER_N64 ?= gcc
+ $(eval $(call validate-option,COMPILER_N64,ido gcc))
  
 +# Accept RM2C level folder output
 +RM2C ?= 0
-+
+ # Build debug version
+ DEBUG ?= 0
  # Build for original N64 (no pc code)
- TARGET_N64 = 0
- # Build and optimize for Raspberry Pi(s)
-@@ -99,6 +102,16 @@ AUDIO_API ?= SDL2
+@@ -103,6 +105,16 @@ AUDIO_API ?= SDL2
  # WII_U (forced if the target is Wii U), 3DS (forced if the target is 3DS), SWITCH (forced if the target is SWITCH)
  CONTROLLER_API ?= SDL2
  
@@ -29,73 +28,65 @@ index bb74121..0ce78fe 100644
  ifeq ($(TARGET_WII_U),1)
    RENDER_API := WHB
    WINDOW_API := WHB
-@@ -516,7 +529,7 @@ endif
+@@ -552,7 +564,7 @@ endif
  include Makefile.split
  
  # Source code files
 -LEVEL_C_FILES := $(wildcard levels/*/leveldata.c) $(wildcard levels/*/script.c) $(wildcard levels/*/geo.c)
 +LEVEL_C_FILES := $(wildcard levels/*/leveldata.c) $(wildcard levels/*/script.c) $(wildcard levels/*/geo.c) $(wildcard levels/*/custom.geo.c) $(wildcard levels/*/custom.script.c) $(wildcard levels/*/custom.leveldata.c)
- C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)) $(LEVEL_C_FILES)
+ C_FILES       := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c)) $(LEVEL_C_FILES)
+ CXX_FILES     := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.cpp))
+ S_FILES       := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.s))
+@@ -706,6 +718,12 @@ endif # !TARGET_PORT_CONSOLE
  
- ifeq ($(TARGET_N64),1)
-@@ -659,6 +672,11 @@ endif
- 
- endif
+ endif # !TARGET_N64
  
 +# Add RM2C to flags, add var for internal name
 +ifeq ($(RM2C),1)
 +  CUSTOM_C_DEFINES += -DRM2C
++  RM2C_C_FLAGS = -fno-toplevel-reorder
 +endif
 +
  # Check for Debug option
  ifeq ($(DEBUG),1)
    CUSTOM_C_DEFINES += -DDEBUG
-@@ -775,7 +793,7 @@ ifeq ($(COMPILER_N64),gcc)
- endif
- 
- N64_CFLAGS := -nostdinc -I include/libc -DTARGET_N64 -D_LANGUAGE_C
--CC_CFLAGS := -fno-builtin
-+CC_CFLAGS := -fno-builtin -fno-toplevel-reorder
- 
- INCLUDE_CFLAGS := -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I .
- 
-@@ -793,7 +811,7 @@ LDFLAGS := -T undefined_syms.txt -T $(BUILD_DIR)/$(LD_SCRIPT) -Map $(BUILD_DIR)/
- ENDIAN_BITWIDTH := $(BUILD_DIR)/endian-and-bitwidth
- 
+@@ -884,7 +902,7 @@ LDFLAGS := -T undefined_syms.txt -T $(BUILD_DIR)/$(LD_SCRIPT) -Map $(BUILD_DIR)/
+ # -mdivide-breaks:  Uses IDO compiler like behavior for dividing by zero (Old emus such as Project64 1.6)
+ # -fno-jump-tables: Disables jump function tables (Wii/Wii U virtual console)
  ifeq ($(COMPILER_N64),gcc)
--  CFLAGS := -march=vr4300 -mfix4300 -mabi=32 -mno-shared -G 0 $(COMMON_CFLAGS) -mhard-float -mdivide-breaks -fno-stack-protector -fno-common -fno-zero-initialized-in-bss -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I . -fno-PIC -mno-abicalls -fno-strict-aliasing -fno-inline-functions -ffreestanding -fwrapv -Wall -Wextra
-+  CFLAGS := -march=vr4300 -mfix4300 -mabi=32 -mno-shared -G 0 $(COMMON_CFLAGS) -mhard-float -mdivide-breaks -fno-stack-protector -fno-common -fno-zero-initialized-in-bss -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I . -fno-PIC -mno-abicalls -fno-strict-aliasing -fno-inline-functions -ffreestanding -fwrapv -Wall -Wextra -fno-toplevel-reorder
+-  CFLAGS := -march=vr4300 -mfix4300 -mabi=32 -mno-shared -G 0 $(COMMON_CFLAGS) -mhard-float -mdivide-breaks -fno-stack-protector -fno-common -fno-zero-initialized-in-bss -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I . -fno-PIC -mno-abicalls -fno-strict-aliasing -fno-inline-functions -fno-jump-tables -ffreestanding -fwrapv -Wall -Wextra
++  CFLAGS := -march=vr4300 -mfix4300 -mabi=32 -mno-shared -G 0 $(COMMON_CFLAGS) -mhard-float -mdivide-breaks -fno-stack-protector -fno-common -fno-zero-initialized-in-bss -I include -I $(BUILD_DIR) -I $(BUILD_DIR)/include -I src -I . -fno-PIC -mno-abicalls -fno-strict-aliasing -fno-inline-functions -fno-jump-tables -ffreestanding -fwrapv -Wall -Wextra $(RM2C_C_FLAGS)
  endif
  
  CC_CHECK += $(CUSTOM_C_DEFINES)
-@@ -971,22 +989,22 @@ endif
+@@ -1056,22 +1074,22 @@ endif
  
  ifeq ($(WINDOWS_BUILD),1)
-   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS)
--  CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv
-+  CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv -fno-toplevel-reorder
+   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -Wall -Wextra -Wno-format-security
+-  CFLAGS := $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -fwrapv
++  CFLAGS := $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -fwrapv $(RM2C_C_FLAGS)
  
  else ifeq ($(TARGET_WEB),1)
-   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -s USE_SDL=2
--  CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv -s USE_SDL=2
-+  CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv -s USE_SDL=2 -fno-toplevel-reorder
+   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -Wall -Wextra -Wno-format-security -s USE_SDL=2
+-  CFLAGS := $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -fwrapv -s USE_SDL=2
++  CFLAGS := $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -fwrapv -s USE_SDL=2 $(RM2C_C_FLAGS)
  
  # Linux / Other builds below
  else
-   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS)
--  CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv
-+  CFLAGS := $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -fwrapv -fno-toplevel-reorder
+   CC_CHECK := $(CC) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -Wall -Wextra -Wno-format-security
+-  CFLAGS := $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -fwrapv
++  CFLAGS := $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -fwrapv $(RM2C_C_FLAGS)
  
  endif
  
  ifeq ($(TARGET_WII_U),1)
    CC_CHECK += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE)
 -  CFLAGS += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE)
-+  CFLAGS += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE) -fno-toplevel-reorder
++  CFLAGS += -ffunction-sections $(MACHDEP) -ffast-math -D__WIIU__ -D__WUT__ $(INCLUDE) $(RM2C_C_FLAGS)
  endif
  
  ifeq ($(TARGET_N3DS),1)
-@@ -994,7 +1012,7 @@ ifeq ($(TARGET_N3DS),1)
+@@ -1079,7 +1097,7 @@ ifeq ($(TARGET_N3DS),1)
    LIBDIRS  := $(CTRULIB)
    export LIBPATHS  :=  $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
    CC_CHECK += -mtp=soft -DARM11 -DosGetTime=n64_osGetTime -D_3DS -march=armv6k -mtune=mpcore -mfloat-abi=hard -mword-relocations -fomit-frame-pointer -ffast-math $(foreach dir,$(LIBDIRS),-I$(dir)/include)
@@ -104,16 +95,16 @@ index bb74121..0ce78fe 100644
    
    ifeq ($(DISABLE_N3DS_AUDIO),1)
      CFLAGS += -DDISABLE_N3DS_AUDIO
-@@ -1006,7 +1024,7 @@ endif
+@@ -1091,7 +1109,7 @@ endif
  
  ifeq ($(TARGET_SWITCH),1)
-   CC_CHECK := $(CC) $(NXARCH) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(INCLUDE_CFLAGS) -Wall -Wextra -Wno-format-security $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -D__SWITCH__=1
--  CFLAGS := $(NXARCH) $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -ftls-model=local-exec -fPIE -fwrapv -D__SWITCH__=1
-+  CFLAGS := $(NXARCH) $(OPT_FLAGS) $(INCLUDE_CFLAGS) $(BACKEND_CFLAGS) $(VERSION_CFLAGS) $(GRUCODE_CFLAGS) -fno-strict-aliasing -ftls-model=local-exec -fPIE -fwrapv -D__SWITCH__=1 -fno-toplevel-reorder
+   CC_CHECK := $(CC) $(NXARCH) -fsyntax-only -fsigned-char $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -Wall -Wextra -Wno-format-security -D__SWITCH__=1
+-  CFLAGS := $(NXARCH) $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -ftls-model=local-exec -fPIC -fwrapv -D__SWITCH__=1
++  CFLAGS := $(NXARCH) $(OPT_FLAGS) $(BACKEND_CFLAGS) $(DEF_INC_CFLAGS) -fno-strict-aliasing -ftls-model=local-exec -fPIC -fwrapv -D__SWITCH__=1 $(RM2C_C_FLAGS)
  endif
  
  CC_CHECK += $(CUSTOM_C_DEFINES)
-@@ -1080,6 +1098,7 @@ MIO0TOOL = $(TOOLS_DIR)/mio0$(EXT_PREFIX)
+@@ -1178,6 +1196,7 @@ MIO0TOOL = $(TOOLS_DIR)/mio0$(EXT_PREFIX)
  N64CKSUM = $(TOOLS_DIR)/n64cksum$(EXT_PREFIX)
  N64GRAPHICS = $(TOOLS_DIR)/n64graphics$(EXT_PREFIX)
  N64GRAPHICS_CI = $(TOOLS_DIR)/n64graphics_ci$(EXT_PREFIX)
@@ -121,7 +112,7 @@ index bb74121..0ce78fe 100644
  TEXTCONV = $(TOOLS_DIR)/textconv$(EXT_PREFIX)
  AIFF_EXTRACT_CODEBOOK = $(TOOLS_DIR)/aiff_extract_codebook$(EXT_PREFIX)
  VADPCM_ENC = $(TOOLS_DIR)/vadpcm_enc$(EXT_PREFIX)
-@@ -1352,14 +1371,14 @@ endif
+@@ -1451,14 +1470,14 @@ endif
  ifeq ($(EXTERNAL_DATA),0)
  
  # Color Index CI8
@@ -142,7 +133,7 @@ index bb74121..0ce78fe 100644
  
  endif
  
-@@ -1375,7 +1394,7 @@ $(BUILD_DIR)/%.elf: $(BUILD_DIR)/%.o
+@@ -1474,7 +1493,7 @@ $(BUILD_DIR)/%.elf: $(BUILD_DIR)/%.o
  # Override for level.elf, which otherwise matches the above pattern
  .SECONDEXPANSION:
  $(BUILD_DIR)/levels/%/leveldata.elf: $(BUILD_DIR)/levels/%/leveldata.o $(BUILD_DIR)/bin/$$(TEXTURE_BIN).elf
@@ -152,11 +143,11 @@ index bb74121..0ce78fe 100644
  
  $(BUILD_DIR)/%.bin: $(BUILD_DIR)/%.elf
 diff --git a/Makefile.split b/Makefile.split
-index 083bf44..8b1dc52 100644
+index 0df73d0..b74ea58 100644
 --- a/Makefile.split
 +++ b/Makefile.split
 @@ -87,6 +87,9 @@ ifeq ($(PORT_MOP_OBJS),1)
-   MOP_DIRS       := Noteblock_MOP FlipBlock_MOP Checkpoint_Flag_MOP Flipswap_Platform_MOP Flipswap_Platform_Border_MOP Flipswitch_Panel_MOP Green_Switchboard_MOP Green_Switchboard_Gears_MOP Moving_Rotating_Block_MOP SandBlock_MOP Shrink_Platform_MOP Shrink_Platform_Border_MOP Spring_MOP Switchblock_MOP Switchblock_Switch_MOP
+   MOP_DIRS       := Blargg_MOP Checkpoint_Flag_MOP FlipBlock_MOP Flipswap_Platform_MOP Flipswap_Platform_Border_MOP Flipswitch_Panel_MOP Green_Switchboard_MOP Green_Switchboard_Gears_MOP Moving_Rotating_Block_MOP Noteblock_MOP SandBlock_MOP Shrink_Platform_MOP Shrink_Platform_Border_MOP Spring_MOP Switchblock_MOP Switchblock_Switch_MOP 
  endif
  
 +#custom leveldata rules
@@ -166,10 +157,10 @@ index 083bf44..8b1dc52 100644
  AMP_CHUCKYA_TEXTURES            := $(foreach dir,$(AMP_DIRS),        $(wildcard actors/$(dir)/*.png))
  BOBOMBS_BUBBLE_TEXTURES         := $(foreach dir,$(KING_BOBOMB_DIRS),$(wildcard actors/$(dir)/*.png))
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index b9fb381..9f459df 100644
+index 17d3adb..f1f3814 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
-@@ -2987,6 +2987,22 @@ const BehaviorScript bhvAnimatedTexture[] = {
+@@ -2988,6 +2988,22 @@ const BehaviorScript bhvAnimatedTexture[] = {
      END_LOOP(),
  };
  
@@ -192,7 +183,7 @@ index b9fb381..9f459df 100644
  const BehaviorScript bhvBooInCastle[] = {
      BEGIN(OBJ_LIST_DEFAULT),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
-@@ -5986,7 +6002,11 @@ const BehaviorScript bhvPenguinRaceFinishLine[] = {
+@@ -5987,7 +6003,11 @@ const BehaviorScript bhvPenguinRaceFinishLine[] = {
      BEGIN(OBJ_LIST_DEFAULT),
      OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
      BEGIN_LOOP(),
@@ -205,7 +196,7 @@ index b9fb381..9f459df 100644
  };
  
 diff --git a/include/behavior_data.h b/include/behavior_data.h
-index 04765b3..3dcfd59 100644
+index 55b4070..5a34813 100644
 --- a/include/behavior_data.h
 +++ b/include/behavior_data.h
 @@ -3,6 +3,10 @@
@@ -257,7 +248,7 @@ index 4e77ddf..0484579 100644
  
  DECLARE_SEGMENT(water_skybox_mio0)
 diff --git a/include/sm64.h b/include/sm64.h
-index fd35927..158b1cd 100644
+index 75de983..cbe1127 100644
 --- a/include/sm64.h
 +++ b/include/sm64.h
 @@ -14,6 +14,14 @@
@@ -283,7 +274,7 @@ index 0000000..451d68b
 @@ -0,0 +1 @@
 +// Replace with RM2C Output after exporting a level
 diff --git a/levels/menu/script.c b/levels/menu/script.c
-index 83e6195..b7cfd73 100644
+index 890fc64..1b6444e 100644
 --- a/levels/menu/script.c
 +++ b/levels/menu/script.c
 @@ -55,7 +55,7 @@ const LevelScript level_main_menu_entry_1[] = {
@@ -296,7 +287,7 @@ index 83e6195..b7cfd73 100644
  };
  
 diff --git a/levels/scripts.c b/levels/scripts.c
-index 7d74f00..2c7043f 100644
+index 26930ab..40b43ed 100644
 --- a/levels/scripts.c
 +++ b/levels/scripts.c
 @@ -40,6 +40,9 @@
@@ -319,7 +310,7 @@ index 7d74f00..2c7043f 100644
  
  #include "level_defines.h"
  
-@@ -165,17 +169,44 @@ static const LevelScript script_L5[] = {
+@@ -166,17 +170,44 @@ static const LevelScript script_L5[] = {
  
  // Include the level jumptable.
  
@@ -368,7 +359,7 @@ index 7d74f00..2c7043f 100644
  #define DEFINE_LEVEL(_0, _1, _2, folder, _4, _5, _6, _7, _8, _9, _10) \
  static const LevelScript script_exec_ ## folder [] = { \
      EXECUTE(0x1A, _ ## folder ## SegmentRomStart, _ ## folder ## SegmentRomEnd, level_ ## folder ## _entry), \
-@@ -186,6 +217,8 @@ static const LevelScript script_exec_ ## folder [] = { \
+@@ -187,6 +218,8 @@ static const LevelScript script_exec_ ## folder [] = { \
  #undef STUB_LEVEL
  #undef DEFINE_LEVEL
  
@@ -376,9 +367,9 @@ index 7d74f00..2c7043f 100644
 +
  const LevelScript script_func_global_1[] = {
      LOAD_MODEL_FROM_GEO(MODEL_BLUE_COIN_SWITCH,        blue_coin_switch_geo),
-     LOAD_MODEL_FROM_GEO(MODEL_AMP,                     amp_geo),
+     LOAD_MODEL_FROM_GEO(MODEL_AMP,                     dAmpGeo),
 diff --git a/sm64.ld b/sm64.ld
-index c62d266..1b53830 100644
+index bd1560c..6cdc489 100644
 --- a/sm64.ld
 +++ b/sm64.ld
 @@ -51,6 +51,20 @@ OUTPUT_ARCH (mips)
@@ -402,7 +393,7 @@ index c62d266..1b53830 100644
  #define STANDARD_OBJECTS(name, segAddr, geoAddr) \
     BEGIN_SEG(name##_mio0, segAddr) \
     { \
-@@ -1093,6 +1107,11 @@ SECTIONS
+@@ -1125,6 +1139,11 @@ SECTIONS
     MIO0_SEG(bidw_skybox, 0x0A000000)
     MIO0_SEG(bits_skybox, 0x0A000000)
  
@@ -414,7 +405,7 @@ index c62d266..1b53830 100644
     // Texture bins
     MIO0_SEG(fire, 0x09000000)
     MIO0_SEG(spooky, 0x09000000)
-@@ -1116,6 +1135,11 @@ SECTIONS
+@@ -1148,6 +1167,11 @@ SECTIONS
  #undef STUB_LEVEL
  #undef DEFINE_LEVEL
  
@@ -427,7 +418,7 @@ index c62d266..1b53830 100644
     BEGIN_SEG(assets, __romPos)
     {
 diff --git a/src/audio/data.c b/src/audio/data.c
-index 7a11433..23122c8 100644
+index 06727c0..71bdd0f 100644
 --- a/src/audio/data.c
 +++ b/src/audio/data.c
 @@ -60,7 +60,7 @@ struct AudioSessionSettings gAudioSessionPresets[18] = {
@@ -455,10 +446,10 @@ index ee8b30b..c12d61a 100644
  
  #ifdef VERSION_SH
 diff --git a/src/audio/external.c b/src/audio/external.c
-index 93f6096..53bcb95 100644
+index 0053464..8d3ecbe 100644
 --- a/src/audio/external.c
 +++ b/src/audio/external.c
-@@ -2090,10 +2090,6 @@ static u8 begin_background_music_fade(u16 fadeDuration) {
+@@ -2114,10 +2114,6 @@ static u8 begin_background_music_fade(u16 fadeDuration) {
          if (targetVolume != 0xff) {
              seq_player_fade_to_target_volume(SEQ_PLAYER_LEVEL, fadeDuration, targetVolume);
          } else {
@@ -470,25 +461,25 @@ index 93f6096..53bcb95 100644
          }
      }
 diff --git a/src/audio/load.c b/src/audio/load.c
-index 382efe3..898df9b 100644
+index 7d91de0..77eb0f8 100644
 --- a/src/audio/load.c
 +++ b/src/audio/load.c
-@@ -2002,8 +2002,8 @@ void audio_init() {
+@@ -1086,8 +1086,8 @@ void audio_init() {
  
-     // Load bank sets for each sequence (assets/bank_sets.s)
+     // Load bank sets for each sequence
      data = LOAD_DATA(gBankSetsData);
 -    gAlBankSets = soundAlloc(&gAudioInitPool, 0x100);
 -    audio_dma_copy_immediate((uintptr_t) data, gAlBankSets, 0x100);
 +    gAlBankSets = soundAlloc(&gAudioInitPool, 0x200);
 +    audio_dma_copy_immediate((uintptr_t) data, gAlBankSets, 0x200);
- 
-     init_sequence_players();
-     gAudioLoadLock = AUDIO_LOCK_NOT_LOADING;
+ #else
+     // Load headers for sounds and sequences
+     data = LOAD_DATA(gMusicData);
 diff --git a/src/buffers/buffers.c b/src/buffers/buffers.c
-index f2c09fd..c7b3671 100644
+index 70169a8..6b4d9a4 100644
 --- a/src/buffers/buffers.c
 +++ b/src/buffers/buffers.c
-@@ -4,7 +4,7 @@
+@@ -5,7 +5,7 @@
  
  ALIGNED8 u8 gDecompressionHeap[0xD000];
  
@@ -498,25 +489,10 @@ index f2c09fd..c7b3671 100644
  ALIGNED8 u8 gIdleThreadStack[0x800];
  ALIGNED8 u8 gThread3Stack[0x2000];
 diff --git a/src/game/behavior_actions.c b/src/game/behavior_actions.c
-index 93b849a..7bef8de 100644
+index 9e155ae..de3d2e5 100644
 --- a/src/game/behavior_actions.c
 +++ b/src/game/behavior_actions.c
-@@ -72,14 +72,6 @@ struct Struct8032F698 {
-     s16 unk4;
- };
- 
--struct Struct802C0DF0 {
--    u8 unk0;
--    u8 unk1;
--    u8 unk2;
--    u8 model;
--    const BehaviorScript *behavior;
--};
--
- struct Struct8032F754 {
-     s32 unk0;
-     Vec3f unk1;
-@@ -112,6 +104,9 @@ s16 D_8032F0CC[] = { 6047, 5664, 5292, 4934, 4587, 4254, 3933, 3624, 3329, 3046,
+@@ -76,6 +76,9 @@ static s16 sBooHitRotations[] = {
  #include "behaviors/breakable_wall.inc.c"
  #include "behaviors/kickable_board.inc.c"
  #include "behaviors/tower_door.inc.c"
@@ -527,7 +503,7 @@ index 93b849a..7bef8de 100644
  #include "behaviors/koopa_shell_underwater.inc.c"
  #include "behaviors/warp.inc.c"
 diff --git a/src/game/behavior_actions.h b/src/game/behavior_actions.h
-index d068492..40ddaa6 100644
+index 9793917..ca7b61a 100644
 --- a/src/game/behavior_actions.h
 +++ b/src/game/behavior_actions.h
 @@ -1,6 +1,16 @@
@@ -556,10 +532,10 @@ index d068492..40ddaa6 100644
  void bhv_tiny_star_particles_init(void);
  void bhv_grindel_thwomp_loop(void);
 diff --git a/src/game/behaviors/boo.inc.c b/src/game/behaviors/boo.inc.c
-index 32c0189..ad120c9 100644
+index 6bfcc54..333f3a0 100644
 --- a/src/game/behaviors/boo.inc.c
 +++ b/src/game/behaviors/boo.inc.c
-@@ -580,6 +580,15 @@ static void big_boo_act_2(void) {
+@@ -575,6 +575,15 @@ static void big_boo_act_2(void) {
      }
  }
  
@@ -575,7 +551,7 @@ index 32c0189..ad120c9 100644
  static void big_boo_spawn_ghost_hunt_star(void) {
      spawn_default_star(980.0f, 1100.0f, 250.0f);
  }
-@@ -587,11 +596,16 @@ static void big_boo_spawn_ghost_hunt_star(void) {
+@@ -582,11 +591,16 @@ static void big_boo_spawn_ghost_hunt_star(void) {
  static void big_boo_spawn_balcony_star(void) {
      spawn_default_star(700.0f, 3200.0f, 1900.0f);
  }
@@ -593,72 +569,80 @@ index 32c0189..ad120c9 100644
      merryGoRound = cur_obj_nearest_object_with_behavior(bhvMerryGoRound);
  
 diff --git a/src/game/behaviors/bully.inc.c b/src/game/behaviors/bully.inc.c
-index dd40704..80a6bef 100644
+index 6d5fc5c..1fe15b2 100644
 --- a/src/game/behaviors/bully.inc.c
 +++ b/src/game/behaviors/bully.inc.c
-@@ -204,9 +204,15 @@ void bully_act_level_death(void) {
+@@ -214,9 +214,17 @@ void bully_act_level_death(void) {
              spawn_mist_particles();
  
-             if (o->oBullySubtype == BULLY_STYPE_CHILL)
+             if (o->oBullySubtype == BULLY_STYPE_CHILL) {
 -                spawn_default_star(130.0f, 1600.0f, -4335.0f);
--            else {
--                spawn_default_star(0, 950.0f, -6800.0f);
 +				#ifdef RM2C
 +					spawn_default_star(ChillBullyStarPos);
-+				else {
++                #else
++                    spawn_default_star(130.0f, 1600.0f, -4335.0f);
++                #endif
+             } else {
+-                spawn_default_star(0, 950.0f, -6800.0f);
++                #ifdef RM2C
 +					spawn_default_star(BigBullyStarPos);
 +				#else
-+					spawn_default_star(130.0f, 1600.0f, -4335.0f);
-+				else {
 +					spawn_default_star(0, 950.0f, -6800.0f);
 +				#endif
-                 spawn_object_abs_with_rot(o, 0, MODEL_NONE, bhvLllTumblingBridge, 0, 154, -5631, 0, 0,
-                                           0);
+                 spawn_object_abs_with_rot(o, 0, MODEL_NONE, bhvLllTumblingBridge,
+                                           0, 154, -5631, 0, 0, 0);
              }
 diff --git a/src/game/behaviors/exclamation_box.inc.c b/src/game/behaviors/exclamation_box.inc.c
-index b5edca8..6c026ef 100644
+index 714400a..866c54e 100644
 --- a/src/game/behaviors/exclamation_box.inc.c
 +++ b/src/game/behaviors/exclamation_box.inc.c
-@@ -12,6 +12,9 @@ struct ObjectHitbox sExclamationBoxHitbox = {
-     /* hurtboxHeight: */ 30,
+@@ -12,14 +12,9 @@ struct ObjectHitbox sExclamationBoxHitbox = {
+     /* hurtboxHeight:     */ 30,
  };
  
+-struct Struct802C0DF0 {
+-    u8 unk0;
+-    u8 unk1;
+-    u8 unk2;
+-    u8 model;
+-    const BehaviorScript *behavior;
+-};
+-
 +#ifdef RM2C
 +extern struct Struct802C0DF0 sExclamationBoxContents[];//#include "Item_Box.inc.c"
 +#else
- struct Struct802C0DF0 sExclamationBoxContents[] = { { 0, 0, 0, MODEL_MARIOS_WING_CAP, bhvWingCap },
-                                                     { 1, 0, 0, MODEL_MARIOS_METAL_CAP, bhvMetalCap },
-                                                     { 2, 0, 0, MODEL_MARIOS_CAP, bhvVanishCap },
-@@ -29,6 +32,7 @@ struct Struct802C0DF0 sExclamationBoxContents[] = { { 0, 0, 0, MODEL_MARIOS_WING
-                                                     { 13, 0, 4, MODEL_STAR, bhvSpawnedStar },
-                                                     { 14, 0, 5, MODEL_STAR, bhvSpawnedStar },
-                                                     { 99, 0, 0, 0, NULL } };
+ struct Struct802C0DF0 sExclamationBoxContents[] = {
+     { 0, 0, 0, MODEL_MARIOS_WING_CAP, bhvWingCap },
+     { 1, 0, 0, MODEL_MARIOS_METAL_CAP, bhvMetalCap },
+@@ -38,6 +33,7 @@ struct Struct802C0DF0 sExclamationBoxContents[] = {
+     { 14, 0, 5, MODEL_STAR, bhvSpawnedStar },
+     { 99, 0, 0, 0, NULL }
+ };
 +#endif
  
  void bhv_rotating_exclamation_box_loop(void) {
-     if (o->parentObj->oAction != 1)
+     if (o->parentObj->oAction != 1) {
 diff --git a/src/game/behaviors/eyerok.inc.c b/src/game/behaviors/eyerok.inc.c
-index 473d747..7d492e9 100644
+index 89799af..13faab8 100644
 --- a/src/game/behaviors/eyerok.inc.c
 +++ b/src/game/behaviors/eyerok.inc.c
-@@ -118,7 +118,11 @@ static void eyerok_boss_act_fight(void) {
+@@ -119,7 +119,11 @@ static void eyerok_boss_act_fight(void) {
  static void eyerok_boss_act_die(void) {
      if (o->oTimer == 60) {
-         if (cur_obj_update_dialog_with_cutscene(2, 0, CUTSCENE_DIALOG, DIALOG_118)) {
--            spawn_default_star(0.0f, -900.0f, -3700.0f);
-+			#ifdef RM2C
+         if (cur_obj_update_dialog_with_cutscene(MARIO_DIALOG_LOOK_UP, DIALOG_FLAG_NONE, CUTSCENE_DIALOG, DIALOG_118)) {
++            #ifdef RM2C
 +            spawn_default_star(EyerockStarPos);
 +            #else
-+			spawn_default_star(0.0f, -900.0f, -3700.0f);
-+			#endif
+             spawn_default_star(0.0f, -900.0f, -3700.0f);
++            #endif
          } else {
-             o->oTimer -= 1;
+             o->oTimer--;
          }
 diff --git a/src/game/behaviors/fire_piranha_plant.inc.c b/src/game/behaviors/fire_piranha_plant.inc.c
-index a6d867b..d6a340a 100644
+index be1ea9c..dd9a147 100644
 --- a/src/game/behaviors/fire_piranha_plant.inc.c
 +++ b/src/game/behaviors/fire_piranha_plant.inc.c
-@@ -66,7 +66,11 @@ static void fire_piranha_plant_act_hide(void) {
+@@ -69,7 +69,11 @@ static void fire_piranha_plant_act_hide(void) {
  
              if ((u16)(o->oBehParams >> 16) != 0 && o->oHealth == 0) {
                  if (++sNumKilledFirePiranhaPlants == 5) {
@@ -671,20 +655,20 @@ index a6d867b..d6a340a 100644
  
                  obj_die_if_health_non_positive();
 diff --git a/src/game/behaviors/hidden_star.inc.c b/src/game/behaviors/hidden_star.inc.c
-index 344e896..2d16831 100644
+index 9dd2c1e..033bb5c 100644
 --- a/src/game/behaviors/hidden_star.inc.c
 +++ b/src/game/behaviors/hidden_star.inc.c
-@@ -60,7 +60,7 @@ void bhv_bowser_course_red_coin_star_loop(void) {
-     gRedCoinsCollected = o->oHiddenStarTriggerCounter;
+@@ -59,7 +59,7 @@ void bhv_bowser_course_red_coin_star_loop(void) {
+ 
      switch (o->oAction) {
          case 0:
--            if (o->oHiddenStarTriggerCounter == 8)
-+            if (o->oHiddenStarTriggerCounter == REDS_REQ)
+-            if (o->oHiddenStarTriggerCounter == 8) {
++            if (o->oHiddenStarTriggerCounter == REDS_REQ) {
                  o->oAction = 1;
+             }
              break;
- 
 diff --git a/src/game/behaviors/king_bobomb.inc.c b/src/game/behaviors/king_bobomb.inc.c
-index ca220d5..1014bd5 100644
+index f867cdf..e2f7133 100644
 --- a/src/game/behaviors/king_bobomb.inc.c
 +++ b/src/game/behaviors/king_bobomb.inc.c
 @@ -30,7 +30,7 @@ void king_bobomb_act_0(void) {
@@ -693,12 +677,12 @@ index ca220d5..1014bd5 100644
          cur_obj_set_pos_to_home();
 -        o->oHealth = 3;
 +        o->oHealth = KING_BOMB_HEALTH;
+ 
          if (cur_obj_can_mario_activate_textbox_2(500.0f, 100.0f)) {
              o->oSubAction++;
-             seq_player_lower_volume(SEQ_PLAYER_LEVEL, 60, 40);
-@@ -67,8 +67,8 @@ void king_bobomb_act_2(void) {
-         } else
-             cur_obj_init_animation_with_sound(11);
+@@ -76,8 +76,8 @@ void king_bobomb_act_2(void) {
+         }
+ 
          if (o->oKingBobombUnk108 == 0) {
 -            o->oForwardVel = 3.0f;
 -            cur_obj_rotate_yaw_toward(o->oAngleToMario, 0x100);
@@ -707,9 +691,9 @@ index ca220d5..1014bd5 100644
          } else {
              o->oForwardVel = 0.0f;
              o->oKingBobombUnk108--;
-@@ -177,11 +177,10 @@ void king_bobomb_act_7(void) {
+@@ -214,11 +214,10 @@ void king_bobomb_act_7(void) {
          spawn_mist_particles_variable(0, 0, 200.0f);
-         spawn_triangle_break_particles(20, 138, 3.0f, 4);
+         spawn_triangle_break_particles(20, MODEL_DIRT_ANIMATION, 3.0f, 4);
          cur_obj_shake_screen(SHAKE_POS_SMALL);
 -#ifndef VERSION_JP
 -        cur_obj_spawn_star_at_y_offset(2000.0f, 4500.0f, -4500.0f, 200.0f);
@@ -718,28 +702,28 @@ index ca220d5..1014bd5 100644
  #else
 -        o->oPosY += 100.0f;
 -        spawn_default_star(2000.0f, 4500.0f, -4500.0f);
-+		cur_obj_spawn_star_at_y_offset(2000.0f, 4500.0f, -4500.0f, 200.0f);
++        cur_obj_spawn_star_at_y_offset(2000.0f, 4500.0f, -4500.0f, 200.0f);
  #endif
          o->oAction = 8;
      }
 diff --git a/src/game/behaviors/klepto.inc.c b/src/game/behaviors/klepto.inc.c
-index b758677..f15bfdd 100644
+index 3cf3369..48c93fe 100644
 --- a/src/game/behaviors/klepto.inc.c
 +++ b/src/game/behaviors/klepto.inc.c
-@@ -375,7 +375,11 @@ void bhv_klepto_update(void) {
-             || o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_BLUE_STAR
+@@ -377,7 +377,11 @@ void bhv_klepto_update(void) {
+             || o->oAnimState == KLEPTO_ANIM_STATE_HOLDING_TRANSPARENT_STAR
              #endif
              ) {
-+				#ifdef RM2C
++                #ifdef RM2C
 +                spawn_default_star(KleptoStarPos);
-+				#else
++                #else
                  spawn_default_star(-5550.0f, 300.0f, -930.0f);
-+				#endif
++                #endif
              }
  
              o->oAnimState = KLEPTO_ANIM_STATE_HOLDING_NOTHING;
 diff --git a/src/game/behaviors/koopa.inc.c b/src/game/behaviors/koopa.inc.c
-index 49c1c2d..fc80489 100644
+index 04b345c..a1ec1fa 100644
 --- a/src/game/behaviors/koopa.inc.c
 +++ b/src/game/behaviors/koopa.inc.c
 @@ -60,10 +60,19 @@ struct KoopaTheQuickProperties {
@@ -756,7 +740,7 @@ index 49c1c2d..fc80489 100644
 +//vanilla
  static struct KoopaTheQuickProperties sKoopaTheQuickProperties[] = {
      { DIALOG_005, DIALOG_007, bob_seg7_trajectory_koopa, { 3030, 4500, -4600 } },
-     { DIALOG_009, DIALOG_031, thi_seg7_trajectory_koopa, { 7100, -1300, -6000 } }
+     { DIALOG_009, DIALOG_031, thi_seg7_trajectory_koopa, { 7100, -1300, -6000 } },
  };
 +#endif
  
@@ -778,11 +762,11 @@ index 49c1c2d..fc80489 100644
  
                      obj_forward_vel_approach(o->oKoopaAgility * 6.0f * downhillSteepness,
 diff --git a/src/game/behaviors/mips.inc.c b/src/game/behaviors/mips.inc.c
-index 980457e..031c164 100644
+index 0aed1ec..17216da 100644
 --- a/src/game/behaviors/mips.inc.c
 +++ b/src/game/behaviors/mips.inc.c
-@@ -11,7 +11,7 @@ void bhv_mips_init(void) {
-     u8 starFlags = save_file_get_star_flags(gCurrSaveFileNum - 1, -1);
+@@ -12,7 +12,7 @@ void bhv_mips_init(void) {
+     u8 starFlags = save_file_get_star_flags(gCurrSaveFileNum - 1, COURSE_NUM_TO_INDEX(COURSE_NONE));
  
      // If the player has >= 15 stars and hasn't collected first MIPS star...
 -    if (save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1) >= 15
@@ -790,7 +774,7 @@ index 980457e..031c164 100644
          && !(starFlags & SAVE_FLAG_TO_STAR_FLAG(SAVE_FLAG_COLLECTED_MIPS_STAR_1))) {
          o->oBehParams2ndByte = 0;
  #ifndef VERSION_JP
-@@ -19,7 +19,7 @@ void bhv_mips_init(void) {
+@@ -20,7 +20,7 @@ void bhv_mips_init(void) {
  #endif
      }
      // If the player has >= 50 stars and hasn't collected second MIPS star...
@@ -800,50 +784,58 @@ index 980457e..031c164 100644
          o->oBehParams2ndByte = 1;
  #ifndef VERSION_JP
 diff --git a/src/game/behaviors/mr_i.inc.c b/src/game/behaviors/mr_i.inc.c
-index 4d883dd..75abae0 100644
+index f50fb43..8463bfe 100644
 --- a/src/game/behaviors/mr_i.inc.c
 +++ b/src/game/behaviors/mr_i.inc.c
-@@ -109,7 +109,11 @@ void mr_i_act_3(void) {
-             o->oMrISize = sp1C * 0.6;
-             if (o->oBehParams2ndByte) {
+@@ -140,7 +140,11 @@ void mr_i_act_3(void) {
+             o->oMrIScale = sp1C * 0.6;
+             if (o->oBehParams2ndByte != 0) {
                  o->oPosY += 100.0f;
-+				#ifdef RM2C
++                #ifdef RM2C
 +                spawn_default_star(MrIStarPos);
-+				#else
++                #else
                  spawn_default_star(1370, 2000.0f, -320.0f);
-+				#endif
++                #endif
                  obj_mark_for_deletion(o);
-             } else
+             } else {
                  cur_obj_spawn_loot_blue_coin();
 diff --git a/src/game/behaviors/platform_on_track.inc.c b/src/game/behaviors/platform_on_track.inc.c
-index f33a165..4acd1aa 100644
+index b7c72db..af36e68 100644
 --- a/src/game/behaviors/platform_on_track.inc.c
 +++ b/src/game/behaviors/platform_on_track.inc.c
-@@ -18,11 +18,19 @@ static void const *sPlatformOnTrackCollisionModels[] = {
+@@ -18,6 +18,19 @@ static Collision const *sPlatformOnTrackCollisionModels[] = {
  /**
   * Paths for the different instances of these platforms.
   */
 +#ifdef RM2C
 +static void const *sPlatformOnTrackPaths[] = {
-+    rr_seg7_trajectory_0702EC3C_RM2C_path,    rr_seg7_trajectory_0702ECC0_RM2C_path,  ccm_seg7_trajectory_0701669C_RM2C_path,
-+    bitfs_seg7_trajectory_070159AC_RM2C_path, hmc_seg7_trajectory_0702B86C_RM2C_path, lll_seg7_trajectory_0702856C_RM2C_path,
-+    lll_seg7_trajectory_07028660_RM2C_path,   rr_seg7_trajectory_0702ED9C_RM2C_path,  rr_seg7_trajectory_0702EEE0_RM2C_path,
++    rr_seg7_trajectory_0702EC3C_RM2C_path,
++    rr_seg7_trajectory_0702ECC0_RM2C_path,
++    ccm_seg7_trajectory_0701669C_RM2C_path,
++    bitfs_seg7_trajectory_070159AC_RM2C_path,
++    hmc_seg7_trajectory_0702B86C_RM2C_path,
++    lll_seg7_trajectory_0702856C_RM2C_path,
++    lll_seg7_trajectory_07028660_RM2C_path,
++    rr_seg7_trajectory_0702ED9C_RM2C_path,
++    rr_seg7_trajectory_0702EEE0_RM2C_path,
 +};
 +#else
- static void const *sPlatformOnTrackPaths[] = {
-     rr_seg7_trajectory_0702EC3C,    rr_seg7_trajectory_0702ECC0,  ccm_seg7_trajectory_0701669C,
-     bitfs_seg7_trajectory_070159AC, hmc_seg7_trajectory_0702B86C, lll_seg7_trajectory_0702856C,
-     lll_seg7_trajectory_07028660,   rr_seg7_trajectory_0702ED9C,  rr_seg7_trajectory_0702EEE0,
+ static Trajectory const *sPlatformOnTrackPaths[] = {
+     rr_seg7_trajectory_0702EC3C,
+     rr_seg7_trajectory_0702ECC0,
+@@ -29,6 +42,7 @@ static Trajectory const *sPlatformOnTrackPaths[] = {
+     rr_seg7_trajectory_0702ED9C,
+     rr_seg7_trajectory_0702EEE0,
  };
 +#endif
  
  /**
   * Despawn all track balls and enter the init action.
 diff --git a/src/game/behaviors/racing_penguin.inc.c b/src/game/behaviors/racing_penguin.inc.c
-index 5aeeb25..0bd8b4b 100644
+index 21639ec..1cf0148 100644
 --- a/src/game/behaviors/racing_penguin.inc.c
 +++ b/src/game/behaviors/racing_penguin.inc.c
-@@ -36,8 +36,13 @@ static void racing_penguin_act_show_init_text(void) {
+@@ -38,8 +38,13 @@ static void racing_penguin_act_show_init_text(void) {
          child = cur_obj_nearest_object_with_behavior(bhvPenguinRaceShortcutCheck);
          child->parentObj = o;
  
@@ -857,7 +849,7 @@ index 5aeeb25..0bd8b4b 100644
          o->oPathedPrevWaypointFlags = 0;
  
          o->oAction = RACING_PENGUIN_ACT_PREPARE_FOR_RACE;
-@@ -148,8 +153,8 @@ static void racing_penguin_act_show_final_text(void) {
+@@ -147,8 +152,8 @@ static void racing_penguin_act_show_final_text(void) {
              o->oTimer = 0;
          }
      } else if (o->oRacingPenguinMarioWon) {
@@ -868,7 +860,7 @@ index 5aeeb25..0bd8b4b 100644
  #else
          cur_obj_spawn_star_at_y_offset(-7339.0f, -5700.0f, -6774.0f, 200.0f);
  #endif
-@@ -196,8 +201,16 @@ void bhv_penguin_race_finish_line_update(void) {
+@@ -194,8 +199,16 @@ void bhv_penguin_race_finish_line_update(void) {
      }
  }
  
@@ -886,10 +878,10 @@ index 5aeeb25..0bd8b4b 100644
  }
 +#endif
 diff --git a/src/game/behaviors/red_coin.inc.c b/src/game/behaviors/red_coin.inc.c
-index 40d7d6d..2684489 100644
+index 6c4ef8e..89838d5 100644
 --- a/src/game/behaviors/red_coin.inc.c
 +++ b/src/game/behaviors/red_coin.inc.c
-@@ -62,7 +62,7 @@ void bhv_red_coin_loop(void) {
+@@ -61,7 +61,7 @@ void bhv_red_coin_loop(void) {
              create_sound_spawner(SOUND_GENERAL_RED_COIN);
  #endif
              // Spawn the orange number counter, as long as it isn't the last coin.
@@ -899,18 +891,18 @@ index 40d7d6d..2684489 100644
              }
  
 diff --git a/src/game/behaviors/spawn_star.inc.c b/src/game/behaviors/spawn_star.inc.c
-index 9a194a5..9e56554 100644
+index ed74da3..f961032 100644
 --- a/src/game/behaviors/spawn_star.inc.c
 +++ b/src/game/behaviors/spawn_star.inc.c
-@@ -162,7 +162,7 @@ void bhv_hidden_red_coin_star_loop(void) {
+@@ -172,7 +172,7 @@ void bhv_hidden_red_coin_star_loop(void) {
      gRedCoinsCollected = o->oHiddenStarTriggerCounter;
      switch (o->oAction) {
          case 0:
--            if (o->oHiddenStarTriggerCounter == 8)
-+            if (o->oHiddenStarTriggerCounter == REDS_REQ)
+-            if (o->oHiddenStarTriggerCounter == 8) {
++            if (o->oHiddenStarTriggerCounter == REDS_REQ) {
                  o->oAction = 1;
+             }
              break;
- 
 diff --git a/src/game/behaviors/texscroll.inc.c b/src/game/behaviors/texscroll.inc.c
 new file mode 100644
 index 0000000..2409491
@@ -1064,10 +1056,10 @@ index 0000000..2409491
 +	/*number of verts*/ (u16) o->oPosZ, /*speed*/ (s16) o->oPosX, /*type*/ (u16) o->oPosY);
 +}
 diff --git a/src/game/behaviors/treasure_chest.inc.c b/src/game/behaviors/treasure_chest.inc.c
-index 60e5d20..290f75d 100644
+index 7669011..a41cb66 100644
 --- a/src/game/behaviors/treasure_chest.inc.c
 +++ b/src/game/behaviors/treasure_chest.inc.c
-@@ -165,7 +165,11 @@ void bhv_treasure_chest_jrb_loop(void) {
+@@ -166,7 +166,11 @@ void bhv_treasure_chest_jrb_loop(void) {
          case 1:
              if (o->oTimer == 60) {
                  spawn_mist_particles();
@@ -1080,10 +1072,10 @@ index 60e5d20..290f75d 100644
              }
              break;
 diff --git a/src/game/behaviors/tuxie.inc.c b/src/game/behaviors/tuxie.inc.c
-index 76703bb..169a385 100644
+index 7bd80d7..8afd411 100644
 --- a/src/game/behaviors/tuxie.inc.c
 +++ b/src/game/behaviors/tuxie.inc.c
-@@ -80,10 +80,10 @@ void tuxies_mother_act_1(void) {
+@@ -87,10 +87,10 @@ void tuxies_mother_act_1(void) {
                  o->prevObj->OBJECT_FIELD_S32(o->oInteractionSubtype) &= ~INT_SUBTYPE_DROP_IMMEDIATELY;
  #endif
                  obj_set_behavior(o->prevObj, bhvUnused20E0);
@@ -1098,35 +1090,35 @@ index 76703bb..169a385 100644
                  o->oAction = 2;
              }
 diff --git a/src/game/behaviors/whomp.inc.c b/src/game/behaviors/whomp.inc.c
-index 4bacf0f..cb16ee7 100644
+index 3b65ef2..d479c91 100644
 --- a/src/game/behaviors/whomp.inc.c
 +++ b/src/game/behaviors/whomp.inc.c
-@@ -26,7 +26,7 @@ void whomp_act_0(void) {
+@@ -30,7 +30,7 @@ void whomp_init(void) {
                  seq_player_lower_volume(SEQ_PLAYER_LEVEL, 60, 40);
              } else {
                  cur_obj_set_pos_to_home();
 -                o->oHealth = 3;
 +                o->oHealth = KING_WHOMP_HEALTH;
              }
-         } else if (cur_obj_update_dialog_with_cutscene(2, 1, CUTSCENE_DIALOG, DIALOG_114))
-             o->oAction = 2;
-@@ -217,7 +217,11 @@ void whomp_act_8(void) {
-             spawn_triangle_break_particles(20, 138, 3.0f, 4);
+         } else if (cur_obj_update_dialog_with_cutscene(MARIO_DIALOG_LOOK_UP, 
+             DIALOG_FLAG_TURN_TO_MARIO, CUTSCENE_DIALOG, DIALOG_114)) {
+@@ -252,7 +252,11 @@ void whomp_die(void) {
+             spawn_triangle_break_particles(20, MODEL_DIRT_ANIMATION, 3.0f, 4);
              cur_obj_shake_screen(SHAKE_POS_SMALL);
              o->oPosY += 100.0f;
 +			#ifdef RM2C
 +            spawn_default_star(KingWhompStarPos);
 +			#else
              spawn_default_star(180.0f, 3880.0f, 340.0f);
-+			#endif
++            #endif
              cur_obj_play_sound_2(SOUND_OBJ_KING_WHOMP_DEATH);
              o->oAction = 9;
          }
 diff --git a/src/game/behaviors/wiggler.inc.c b/src/game/behaviors/wiggler.inc.c
-index 7c8a15c..f82b306 100644
+index da1ae80..89d18ff 100644
 --- a/src/game/behaviors/wiggler.inc.c
 +++ b/src/game/behaviors/wiggler.inc.c
-@@ -358,7 +358,11 @@ static void wiggler_act_shrink(void) {
+@@ -355,7 +355,11 @@ static void wiggler_act_shrink(void) {
  
          // 4 is the default scale, so shrink to 1/4 of regular size
          if (approach_f32_ptr(&o->header.gfx.scale[0], 1.0f, 0.1f)) {
@@ -1139,10 +1131,10 @@ index 7c8a15c..f82b306 100644
          }
  
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 2370fdd..de1e4fe 100644
+index aa1f6ff..a39d055 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
-@@ -459,7 +459,6 @@ s32 update_boss_fight_camera(struct Camera *c, Vec3f, Vec3f);
+@@ -463,7 +463,6 @@ s32 update_boss_fight_camera(struct Camera *c, Vec3f, Vec3f);
  s32 update_parallel_tracking_camera(struct Camera *c, Vec3f, Vec3f);
  s32 update_fixed_camera(struct Camera *c, Vec3f, Vec3f);
  s32 update_8_directions_camera(struct Camera *c, Vec3f, Vec3f);
@@ -1150,7 +1142,7 @@ index 2370fdd..de1e4fe 100644
  s32 update_spiral_stairs_camera(struct Camera *c, Vec3f, Vec3f);
  
  typedef s32 (*CameraTransition)(struct Camera *c, Vec3f, Vec3f);
-@@ -479,7 +478,7 @@ CameraTransition sModeTransitions[] = {
+@@ -483,7 +482,7 @@ CameraTransition sModeTransitions[] = {
      update_parallel_tracking_camera,
      update_fixed_camera,
      update_8_directions_camera,
@@ -1159,7 +1151,7 @@ index 2370fdd..de1e4fe 100644
      update_mario_camera,
      update_spiral_stairs_camera
  };
-@@ -948,9 +947,9 @@ s32 update_8_directions_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
+@@ -962,9 +961,9 @@ s32 update_8_directions_camera(struct Camera *c, Vec3f focus, Vec3f pos) {
      calc_y_to_curr_floor(&posY, 1.f, 200.f, &focusY, 0.9f, 200.f);
      focus_on_mario(focus, pos, posY + yOff, focusY + yOff, sLakituDist + baseDist, pitch, camYaw);
      pan_ahead_of_player(c);
@@ -1172,7 +1164,7 @@ index 2370fdd..de1e4fe 100644
  
      return camYaw;
  }
-@@ -1177,6 +1176,24 @@ void mode_radial_camera(struct Camera *c) {
+@@ -1191,6 +1190,24 @@ void mode_radial_camera(struct Camera *c) {
      pan_ahead_of_player(c);
  }
  
@@ -1197,7 +1189,7 @@ index 2370fdd..de1e4fe 100644
  /**
   * A mode that only has 8 camera angles, 45 degrees apart
   */
-@@ -1191,10 +1208,23 @@ void mode_8_directions_camera(struct Camera *c) {
+@@ -1205,10 +1222,23 @@ void mode_8_directions_camera(struct Camera *c) {
          s8DirModeYawOffset += DEGREES(45);
          play_sound_cbutton_side();
      }
@@ -1222,17 +1214,17 @@ index 2370fdd..de1e4fe 100644
  
      lakitu_zoom(400.f, 0x900);
      c->nextYaw = update_8_directions_camera(c, c->focus, pos);
-@@ -2245,7 +2275,8 @@ s16 update_default_camera(struct Camera *c) {
+@@ -2261,7 +2291,8 @@ s16 update_default_camera(struct Camera *c) {
              yawVel = 0;
          }
-         if (yawVel != 0 && get_dialog_id() == -1) {
+         if (yawVel != 0 && get_dialog_id() == DIALOG_NONE) {
 -            camera_approach_s16_symmetric_bool(&yaw, yawGoal, yawVel);
 +            // stop mario cam from swinging behind mario
 +            //camera_approach_s16_symmetric_bool(&yaw, yawGoal, yawVel);
          }
      }
  
-@@ -3063,7 +3094,7 @@ void update_camera(struct Camera *c) {
+@@ -3079,7 +3110,7 @@ void update_camera(struct Camera *c) {
  #endif
      ) {
          // Only process R_TRIG if 'fixed' is not selected in the menu
@@ -1241,7 +1233,7 @@ index 2370fdd..de1e4fe 100644
              if (gPlayer1Controller->buttonPressed & R_TRIG) {
                  if (set_cam_angle(0) == CAM_ANGLE_LAKITU) {
                      set_cam_angle(CAM_ANGLE_MARIO);
-@@ -3169,6 +3200,10 @@ void update_camera(struct Camera *c) {
+@@ -3185,6 +3216,10 @@ void update_camera(struct Camera *c) {
                      mode_8_directions_camera(c);
                      break;
  
@@ -1253,7 +1245,7 @@ index 2370fdd..de1e4fe 100644
                      mode_radial_camera(c);
                      break;
 diff --git a/src/game/camera.h b/src/game/camera.h
-index 7402578..b0b3c96 100644
+index c85a5c4..367e6ab 100644
 --- a/src/game/camera.h
 +++ b/src/game/camera.h
 @@ -110,6 +110,7 @@
@@ -1265,10 +1257,10 @@ index 7402578..b0b3c96 100644
  #define CAMERA_MODE_SPIRAL_STAIRS     0x11
  
 diff --git a/src/game/geo_misc.h b/src/game/geo_misc.h
-index 904633a..7499ae4 100644
+index c43b430..76ceb03 100644
 --- a/src/game/geo_misc.h
 +++ b/src/game/geo_misc.h
-@@ -13,6 +13,18 @@ enum FlyingCarpetState
+@@ -12,6 +12,18 @@ enum FlyingCarpetState {
  
  extern s8 gFlyingCarpetState;
  
@@ -1288,7 +1280,7 @@ index 904633a..7499ae4 100644
  extern void make_vertex(
      Vtx *vtx, s32 n, s16 x, s16 y, s16 z, s16 tx, s16 ty, u8 r, u8 g, u8 b, u8 a
 diff --git a/src/game/hud.c b/src/game/hud.c
-index f8d5b96..8694214 100644
+index a5a5ac2..c57c538 100644
 --- a/src/game/hud.c
 +++ b/src/game/hud.c
 @@ -57,8 +57,8 @@ static s16 sPowerMeterStoredHealth;
@@ -1302,7 +1294,7 @@ index f8d5b96..8694214 100644
      1.0,
  };
  
-@@ -280,9 +280,9 @@ void render_hud_power_meter(void) {
+@@ -307,9 +307,9 @@ void render_hud_power_meter(void) {
   * Renders the amount of lives Mario has.
   */
  void render_hud_mario_lives(void) {
@@ -1315,7 +1307,7 @@ index f8d5b96..8694214 100644
  }
  
  /**
-@@ -294,12 +294,6 @@ void render_hud_coins(void) {
+@@ -321,12 +321,6 @@ void render_hud_coins(void) {
      print_text_fmt_int(198, HUD_TOP_Y, "%d", gHudDisplay.coins);
  }
  
@@ -1328,7 +1320,7 @@ index f8d5b96..8694214 100644
  /**
   * Renders the amount of stars collected.
   * Disables "X" glyph when Mario has 100 stars or more.
-@@ -315,12 +309,12 @@ void render_hud_stars(void) {
+@@ -342,12 +336,12 @@ void render_hud_stars(void) {
          showX = 1;
      }
  
@@ -1345,7 +1337,7 @@ index f8d5b96..8694214 100644
  }
  
  /**
-@@ -350,13 +344,13 @@ void render_hud_timer(void) {
+@@ -375,26 +369,26 @@ void render_hud_timer(void) {
  #ifdef VERSION_EU
      switch (eu_get_language()) {
          case LANGUAGE_ENGLISH:
@@ -1361,29 +1353,27 @@ index f8d5b96..8694214 100644
 +            print_text(HUD_TIME_X, HUD_TIME_Y, "ZEIT");
              break;
      }
- #endif
-@@ -365,14 +359,14 @@ void render_hud_timer(void) {
- 
-     timerFracSecs = ((timerValFrames - (timerMins * 1800) - (timerSecs * 30)) & 0xFFFF) / 3;
- #ifndef VERSION_EU
+ #else
 -    print_text(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(150), 185, "TIME");
 +    print_text(HUD_TIME_X, HUD_TIME_Y, "TIME");
  #endif
+ 
 -    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(91), 185, "%0d", timerMins);
 -    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(71), 185, "%02d", timerSecs);
 -    print_text_fmt_int(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(37), 185, "%d", timerFracSecs);
 +    print_text_fmt_int(HUD_TIME_MIN_X, HUD_TIME_Y, "%0d", timerMins);
 +    print_text_fmt_int(HUD_TIME_SEC_X, HUD_TIME_Y, "%02d", timerSecs);
 +    print_text_fmt_int(HUD_TIME_FSEC_X, HUD_TIME_Y, "%d", timerFracSecs);
+ 
      gSPDisplayList(gDisplayListHead++, dl_hud_img_begin);
 -    render_hud_tex_lut(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(81), 32, (*hudLUT)[GLYPH_APOSTROPHE]);
 -    render_hud_tex_lut(GFX_DIMENSIONS_RECT_FROM_RIGHT_EDGE(46), 32, (*hudLUT)[GLYPH_DOUBLE_QUOTE]);
-+    render_hud_tex_lut(HUD_TIME_MIN_A_X, HUD_TIME_A_Y, (*hudLUT)[GLYPH_APOSTROPHE]);
-+    render_hud_tex_lut(HUD_TIME_SEC_AA_X, HUD_TIME_A_Y, (*hudLUT)[GLYPH_DOUBLE_QUOTE]);
++    render_hud_tex_lut(HUD_TIME_MIN_A_X, 32, (*hudLUT)[GLYPH_APOSTROPHE]);
++    render_hud_tex_lut(HUD_TIME_SEC_AA_X, 32, (*hudLUT)[GLYPH_DOUBLE_QUOTE]);
      gSPDisplayList(gDisplayListHead++, dl_hud_img_end);
  }
  
-@@ -478,15 +472,15 @@ void render_hud(void) {
+@@ -492,15 +486,15 @@ void render_hud(void) {
          }
  #endif
  
@@ -1402,7 +1392,7 @@ index f8d5b96..8694214 100644
              render_hud_stars();
          }
  
-@@ -500,7 +494,7 @@ void render_hud(void) {
+@@ -514,7 +508,7 @@ void render_hud(void) {
              render_hud_camera_status();
          }
  
@@ -1412,10 +1402,10 @@ index f8d5b96..8694214 100644
          }
      }
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index dd5dacd..7a31a64 100644
+index 87fd514..2ff2845 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
-@@ -749,8 +749,8 @@ u32 interact_coin(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -758,8 +758,8 @@ u32 interact_coin(struct MarioState *m, UNUSED u32 interactType, struct Object *
  
      o->oInteractStatus = INT_STATUS_INTERACTED;
  
@@ -1426,7 +1416,7 @@ index dd5dacd..7a31a64 100644
          bhv_spawn_star_no_level_exit(6);
      }
  #ifdef RUMBLE_FEEDBACK
-@@ -1606,17 +1606,17 @@ u32 interact_cap(struct MarioState *m, UNUSED u32 interactType, struct Object *o
+@@ -1639,17 +1639,17 @@ u32 interact_cap(struct MarioState *m, UNUSED u32 interactType, struct Object *o
  
          switch (capFlag) {
              case MARIO_VANISH_CAP:
@@ -1447,9 +1437,9 @@ index dd5dacd..7a31a64 100644
                  capMusic = SEQUENCE_ARGS(4, SEQ_EVENT_POWERUP);
                  break;
          }
-@@ -1867,9 +1867,13 @@ void pss_end_slide(struct MarioState *m) {
-     //! This flag isn't set on death or level entry, allowing double star spawn
-     if (sPssSlideStarted) {
+@@ -1910,9 +1910,13 @@ void pss_end_slide(struct MarioState *m) {
+ #endif
+     if (gPssSlideStarted) {
          u16 slideTime = level_control_timer(TIMER_CONTROL_STOP);
 -        if (slideTime < 630) {
 +        if (slideTime < SLIDE_TIME) {
@@ -1458,15 +1448,15 @@ index dd5dacd..7a31a64 100644
 +            spawn_default_star(PssSlideStarPos);
 +			#else
              spawn_default_star(-6358.0f, -4300.0f, 4700.0f);
-+			#endif
++            #endif
          }
-         sPssSlideStarted = FALSE;
+         gPssSlideStarted = FALSE;
      }
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 61c1b9b..65d7772 100644
+index 8f28b73..93c6444 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -328,17 +328,17 @@ void set_mario_initial_cap_powerup(struct MarioState *m) {
+@@ -325,17 +325,17 @@ void set_mario_initial_cap_powerup(struct MarioState *m) {
      switch (capCourseIndex) {
          case COURSE_COTMC - COURSE_CAP_COURSES:
              m->flags |= MARIO_METAL_CAP | MARIO_CAP_ON_HEAD;
@@ -1487,7 +1477,7 @@ index 61c1b9b..65d7772 100644
              break;
      }
  }
-@@ -780,7 +780,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -778,7 +778,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
                  break;
  
              case WARP_OP_DEATH:
@@ -1496,7 +1486,7 @@ index 61c1b9b..65d7772 100644
                      sDelayedWarpOp = WARP_OP_GAME_OVER;
                  }
                  sDelayedWarpTimer = 48;
-@@ -792,7 +792,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -790,7 +790,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
              case WARP_OP_WARP_FLOOR:
                  sSourceWarpNodeId = WARP_NODE_WARP_FLOOR;
                  if (area_get_warp_node(sSourceWarpNodeId) == NULL) {
@@ -1505,7 +1495,7 @@ index 61c1b9b..65d7772 100644
                          sDelayedWarpOp = WARP_OP_GAME_OVER;
                      } else {
                          sSourceWarpNodeId = WARP_NODE_DEATH;
-@@ -1075,7 +1075,7 @@ s32 play_mode_paused(void) {
+@@ -1068,7 +1068,7 @@ s32 play_mode_paused(void) {
          if (gDebugLevelSelect) {
              fade_into_special_warp(-9, 1);
          } else {
@@ -1514,20 +1504,11 @@ index 61c1b9b..65d7772 100644
              fade_into_special_warp(0, 0);
              gSavedCourseNum = COURSE_NONE;
          }
-@@ -1085,7 +1085,7 @@ s32 play_mode_paused(void) {
- #ifndef TARGET_N64
-     else if (gPauseScreenMode == 3) {
-         // We should only be getting "int 3" to here
--        initiate_warp(LEVEL_CASTLE, 1, 0x1F, 0);
-+        initiate_warp(EXIT_COURSE, 0);
-         fade_into_special_warp(0, 0);
-         game_exit();
-     }
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 0d328d3..333fe2b 100644
+index fd3a4b5..d33360a 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -1939,7 +1939,7 @@ void init_mario_from_save_file(void) {
+@@ -1960,7 +1960,7 @@ void init_mario_from_save_file(void) {
          save_file_get_total_star_count(gCurrSaveFileNum - 1, COURSE_MIN - 1, COURSE_MAX - 1);
      gMarioState->numKeys = 0;
  
@@ -1537,19 +1518,19 @@ index 0d328d3..333fe2b 100644
  
      gMarioState->prevNumStarsForDialog = gMarioState->numStars;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 0bd96de..2aa08f7 100644
+index f49f5b1..8c580c7 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -86,7 +86,7 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+@@ -98,7 +98,7 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
  	}
- 	#endif
+ #endif
  
 -    if (m->action != ACT_TWIRLING && m->floor->type != SURFACE_BURNING) {
 +    if (m->action != ACT_TWIRLING && m->floor->type != SURFACE_BURNING && FALL_DAMAGE) {
          if (m->vel[1] < -55.0f) {
              if (fallHeight > 3000.0f) {
                  m->hurtCounter += (m->flags & MARIO_CAP_ON_HEAD) ? 16 : 24;
-@@ -2118,8 +2118,10 @@ s32 mario_execute_airborne_action(struct MarioState *m) {
+@@ -2152,8 +2152,10 @@ s32 mario_execute_airborne_action(struct MarioState *m) {
      if (check_common_airborne_cancels(m)) {
          return TRUE;
      }
@@ -1563,10 +1544,10 @@ index 0bd96de..2aa08f7 100644
      /* clang-format off */
      switch (m->action) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index 2f748f7..fef5fc3 100644
+index eb2f7a4..2927cea 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
-@@ -62,7 +62,7 @@ static s8 D_8032CBE4 = 0;
+@@ -52,7 +52,7 @@ static s8 D_8032CBE4 = 0;
  static s8 D_8032CBE8 = 0;
  static s8 D_8032CBEC[7] = { 2, 3, 2, 1, 2, 3, 2 };
  
@@ -1575,7 +1556,7 @@ index 2f748f7..fef5fc3 100644
  
  /**
   * Data for the jumbo star cutscene. It specifies the flight path after triple
-@@ -289,7 +289,11 @@ void handle_save_menu(struct MarioState *m) {
+@@ -279,7 +279,11 @@ void handle_save_menu(struct MarioState *m) {
              disable_time_stop();
              m->faceAngle[1] += 0x8000;
              // figure out what dialog to show, if we should
@@ -1585,10 +1566,10 @@ index 2f748f7..fef5fc3 100644
 +			} else {
 +				dialogID = 0;
 +			}
-             if (dialogID != 0) {
+             if (dialogID) {
                  play_peachs_jingle();
                  // look up for dialog
-@@ -672,7 +676,11 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
+@@ -662,7 +666,11 @@ void general_star_dance_handler(struct MarioState *m, s32 isInWater) {
      } else if (m->actionState == 2 && is_anim_at_end(m)) {
          disable_time_stop();
          enable_background_sound();
@@ -1598,14 +1579,14 @@ index 2f748f7..fef5fc3 100644
 +		} else {
 +			dialogID = 0;
 +		}
-         if (dialogID != 0) {
+         if (dialogID) {
              // look up for dialog
              set_mario_action(m, ACT_READING_AUTOMATIC_DIALOG, dialogID);
 diff --git a/src/game/mario_misc.c b/src/game/mario_misc.c
-index 8dd04a4..243abb4 100644
+index 43153ea..c9cd620 100644
 --- a/src/game/mario_misc.c
 +++ b/src/game/mario_misc.c
-@@ -31,18 +31,6 @@
+@@ -32,18 +32,6 @@
  #include "extras/bettercamera.h"
  #endif
  
@@ -1625,7 +1606,7 @@ index 8dd04a4..243abb4 100644
      TOAD_MESSAGE_FADED,
      TOAD_MESSAGE_OPAQUE,
 diff --git a/src/game/moving_texture.c b/src/game/moving_texture.c
-index 268d7ef..012411b 100644
+index 175b854..5c36aa4 100644
 --- a/src/game/moving_texture.c
 +++ b/src/game/moving_texture.c
 @@ -588,8 +588,13 @@ void *get_quad_collection_from_id(u32 id) {
@@ -1644,10 +1625,10 @@ index 268d7ef..012411b 100644
  }
  
 diff --git a/src/game/moving_texture.h b/src/game/moving_texture.h
-index 9d2e3db..1aa3115 100644
+index 05858a9..40dfb70 100644
 --- a/src/game/moving_texture.h
 +++ b/src/game/moving_texture.h
-@@ -111,6 +111,10 @@ extern f32 gPaintingMarioYEntry;
+@@ -110,6 +110,10 @@ extern f32 gPaintingMarioYEntry;
  #define MOVTEX_TREADMILL_BIG         (0 | MOVTEX_AREA_TTC)
  #define MOVTEX_TREADMILL_SMALL       (1 | MOVTEX_AREA_TTC)
  
@@ -1659,7 +1640,7 @@ index 9d2e3db..1aa3115 100644
  Gfx *geo_movtex_pause_control(s32 callContext, UNUSED struct GraphNode *node, UNUSED Mat4 mtx);
  Gfx *geo_movtex_draw_water_regions(s32 callContext, struct GraphNode *node, UNUSED Mat4 mtx);
 diff --git a/src/game/obj_behaviors.h b/src/game/obj_behaviors.h
-index 02a0567..126543d 100644
+index 9755984..50ef6ee 100644
 --- a/src/game/obj_behaviors.h
 +++ b/src/game/obj_behaviors.h
 @@ -7,6 +7,13 @@
@@ -1701,18 +1682,18 @@ index 74c97b2..899b3ae 100644
  void obj_spit_fire(s16 relativePosX, s16 relativePosY, s16 relativePosZ, f32 scale, s32 model,
                     f32 startSpeed, f32 endSpeed, s16 movePitch);
 diff --git a/src/game/object_list_processor.c b/src/game/object_list_processor.c
-index b24f7a9..acd4dab 100644
+index 87dd3d6..e82ed1b 100644
 --- a/src/game/object_list_processor.c
 +++ b/src/game/object_list_processor.c
-@@ -614,6 +614,7 @@ void unload_deactivated_objects(void) {
+@@ -618,6 +618,7 @@ void unload_deactivated_objects(void) {
  /**
   * Unused profiling function.
   */
 +/**
- static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
+ UNUSED static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
      u16 time;
      f64 cycles;
-@@ -630,6 +631,7 @@ static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
+@@ -634,6 +635,7 @@ UNUSED static u16 unused_get_elapsed_time(u64 *cycleCounts, s32 index) {
  
      return time;
  }
@@ -1721,7 +1702,7 @@ index b24f7a9..acd4dab 100644
  /**
   * Update all objects. This includes script execution, object collision detection,
 diff --git a/src/game/skybox.c b/src/game/skybox.c
-index 35d6627..396da51 100644
+index ae5b216..4b1154d 100644
 --- a/src/game/skybox.c
 +++ b/src/game/skybox.c
 @@ -87,7 +87,14 @@ extern SkyboxTexture ssl_skybox_ptrlist;
@@ -1874,10 +1855,10 @@ index 0000000..7b33b71
 +// Replace with RM2C Output after exporting skyboxes
 \ No newline at end of file
 diff --git a/tools/assemble_sound.py b/tools/assemble_sound.py
-index 9c6598f..425de23 100644
+index f4a81d2..f18d756 100644
 --- a/tools/assemble_sound.py
 +++ b/tools/assemble_sound.py
-@@ -824,6 +824,13 @@ def write_sequences(
+@@ -825,6 +825,13 @@ def write_sequences(
              )
  
      ind_to_name = []

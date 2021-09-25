@@ -1,8 +1,8 @@
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index 6a51c0d..466d8b7 100644
+index 17d3adb..f6f6247 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
-@@ -1640,6 +1640,25 @@ const BehaviorScript bhvBlackSmokeUpward[] = {
+@@ -1644,6 +1644,25 @@ const BehaviorScript bhvBlackSmokeUpward[] = {
      DEACTIVATE(),
  };
  
@@ -29,7 +29,7 @@ index 6a51c0d..466d8b7 100644
      BEGIN(OBJ_LIST_DEFAULT),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
 diff --git a/include/behavior_data.h b/include/behavior_data.h
-index 7acb330..47d8953 100644
+index 55b4070..8a8d6b0 100644
 --- a/include/behavior_data.h
 +++ b/include/behavior_data.h
 @@ -117,6 +117,8 @@ extern const BehaviorScript bhvFireParticleSpawner[];
@@ -42,7 +42,7 @@ index 7acb330..47d8953 100644
  extern const BehaviorScript bhvSpindrift[];
  extern const BehaviorScript bhvTowerPlatformGroup[];
 diff --git a/src/game/behavior_actions.h b/src/game/behavior_actions.h
-index d068492..9520b55 100644
+index 9793917..60ab5a3 100644
 --- a/src/game/behavior_actions.h
 +++ b/src/game/behavior_actions.h
 @@ -111,6 +111,8 @@ void bhv_flame_mario_loop(void);
@@ -55,16 +55,13 @@ index d068492..9520b55 100644
  void bhv_spindrift_loop(void);
  void bhv_tower_platform_group_loop(void);
 diff --git a/src/game/behaviors/beta_fish_splash_spawner.inc.c b/src/game/behaviors/beta_fish_splash_spawner.inc.c
-index 6daab4c..a967a8c 100644
+index 93a2ee1..0d1fee7 100644
 --- a/src/game/behaviors/beta_fish_splash_spawner.inc.c
 +++ b/src/game/behaviors/beta_fish_splash_spawner.inc.c
-@@ -8,10 +8,81 @@
+@@ -9,10 +9,84 @@
   * Mario splashes in water.
   */
  
--/**
-- * Update function for bhvBetaFishSplashSpawner.
-- */
 +void bhv_beta_fish_small_drop_loop(void) {
 +    struct Object *splashDrop;
 +    f32 waterLvl = find_water_level(o->oPosX, o->oPosZ);
@@ -98,10 +95,13 @@ index 6daab4c..a967a8c 100644
 +void bhv_beta_fish_small_drop_ripple_init(void) {
 +    cur_obj_scale(1.5f + random_float());
 +}
-+    
++
+ /**
+  * Update function for bhvBetaFishSplashSpawner.
+  */
  void bhv_beta_fish_splash_spawner_loop(void) {
--    UNUSED u8 pad[12];
--    UNUSED f32 water_level = find_water_level(o->oPosX, o->oPosZ);
+-    UNUSED u8 filler[12];
+-    UNUSED f32 waterLevel = find_water_level(o->oPosX, o->oPosZ);
 +    int i;
 +    f32 scale;
 +    struct Object *dropObj;

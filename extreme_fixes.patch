@@ -1,9 +1,22 @@
+diff --git a/include/config.h b/include/config.h
+index a34d9c1..3fb64dc 100644
+--- a/include/config.h
++++ b/include/config.h
+@@ -10,6 +10,8 @@
+ 
+ // Qol Defines
+ #include "qol_defines.h"
++// Extreme Fixes
++#include "extreme_fixes.h"
+ 
+ // Bug Fixes
+ // --| Post-JP Version Nintendo Bug Fixes
 diff --git a/include/extreme_fixes.h b/include/extreme_fixes.h
 new file mode 100644
-index 0000000..ddc60ba
+index 0000000..9830769
 --- /dev/null
 +++ b/include/extreme_fixes.h
-@@ -0,0 +1,35 @@
+@@ -0,0 +1,37 @@
 +#ifndef EXTREME_FIXES_H
 +#define EXTREME_FIXES_H
 +
@@ -37,23 +50,12 @@ index 0000000..ddc60ba
 +#define EXTREME_FIX_HAT_IN_HAND (0 || EXTREME_FIXES)
 +/// Fix groundpound height damage
 +#define EXTREME_FIX_GROUNDPOUND_HEIGHT (0 || EXTREME_FIXES)
++/// Fix Held Object's Last Position
++#define EXTREME_FIX_HOLP (0 || EXTREME_FIXES)
 +
 +#endif // EXTREME_FIXES
-diff --git a/include/config.h b/include/config.h
-index ae9fe90..6916725 100644
---- a/include/config.h
-+++ b/include/config.h
-@@ -10,6 +10,8 @@
- 
- // Qol Defines
- #include "qol_defines.h"
-+// Extreme Fixes
-+#include "extreme_fixes.h"
- 
- // Bug Fixes
- // --| Post-JP Version Nintendo Bug Fixes
 diff --git a/levels/wf/script.c b/levels/wf/script.c
-index 6697b49..b129500 100644
+index 6697b49..154fa5d 100644
 --- a/levels/wf/script.c
 +++ b/levels/wf/script.c
 @@ -40,7 +40,11 @@ static const LevelScript script_func_local_2[] = {
@@ -79,64 +81,79 @@ index 6697b49..b129500 100644
  };
  
 diff --git a/src/game/behaviors/bobomb.inc.c b/src/game/behaviors/bobomb.inc.c
-index 1f6124e..5db85de 100644
+index 4db4137..261e21c 100644
 --- a/src/game/behaviors/bobomb.inc.c
 +++ b/src/game/behaviors/bobomb.inc.c
-@@ -29,6 +29,9 @@ void bobomb_spawn_coin(void) {
+@@ -28,6 +28,10 @@ void bobomb_spawn_coin(void) {
+ }
  
  void bobomb_act_explode(void) {
-     struct Object *explosion;
 +#if EXTREME_FIX_BOBOMB_INTANGIBLE
 +    cur_obj_become_intangible();
 +#endif
-     if (o->oTimer < 5)
++
+     if (o->oTimer < 5) {
          cur_obj_scale(1.0 + (f32) o->oTimer / 5.0);
-     else {
-@@ -100,6 +103,9 @@ void bobomb_act_chase_mario(void) {
+     } else {
+@@ -100,6 +104,9 @@ void bobomb_act_chase_mario(void) {
  void bobomb_act_launched(void) {
      s16 collisionFlags = 0;
      collisionFlags = object_step();
 +#if EXTREME_FIX_BOBOMB_INTANGIBLE
 +    cur_obj_become_intangible();
 +#endif
-     if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) == OBJ_COL_FLAG_GROUNDED)
-         o->oAction = BOBOMB_ACT_EXPLODE; /* bit 0 */
- }
+     if ((collisionFlags & OBJ_COL_FLAG_GROUNDED) == OBJ_COL_FLAG_GROUNDED) {
+         o->oAction = BOBOMB_ACT_EXPLODE;
+     }
 diff --git a/src/game/behaviors/breakable_wall.inc.c b/src/game/behaviors/breakable_wall.inc.c
-index e3195f7..b4aa980 100644
+index 7e98032..a12f71b 100644
 --- a/src/game/behaviors/breakable_wall.inc.c
 +++ b/src/game/behaviors/breakable_wall.inc.c
-@@ -9,6 +9,9 @@ void bhv_wf_breakable_wall_loop(void) {
+@@ -8,6 +8,9 @@ void bhv_wf_breakable_wall_loop(void) {
+                 play_puzzle_jingle();
  #if QOL_FEATURE_BETTER_WF_BREAKEABLE_WALL
-                 play_sound(SOUND_MARIO_HAHA, gMarioState->marioObj->header.gfx.cameraToObject);
- #endif
-+                #if EXTREME_FIX_BLAST_AWAY_WALL   
+                 set_mario_action(gMarioState, ACT_SPAWN_SPIN_AIRBORNE, 0);
++#endif
++#if EXTREME_FIX_BLAST_AWAY_WALL   
 +                spawn_default_star(o->oPosX, o->oPosY, o->oPosZ);
-+                #endif
+ #endif
              }
  
- #if QOL_FEATURE_BETTER_WF_BREAKEABLE_WALL
 diff --git a/src/game/behaviors/camera_lakitu.inc.c b/src/game/behaviors/camera_lakitu.inc.c
-index 2b66cff..9769d17 100644
+index b337119..f1567b8 100644
 --- a/src/game/behaviors/camera_lakitu.inc.c
 +++ b/src/game/behaviors/camera_lakitu.inc.c
-@@ -28,7 +28,11 @@ void bhv_camera_lakitu_init(void) {
+@@ -28,7 +28,12 @@ void bhv_camera_lakitu_init(void) {
  static void camera_lakitu_intro_act_trigger_cutscene(void) {
      //! These bounds are slightly smaller than the actual bridge bounds, allowing
      //  the RTA speedrunning method of lakitu skip
+-    if (gMarioObject->oPosX > -544.0f && gMarioObject->oPosX < 545.0f
++    if (
 +#if EXTREME_FIX_LAKITU_INTRO_SKIP
-+    if (gMarioObject->oPosX > -555.0f && gMarioObject->oPosX < 555.0f && gMarioObject->oPosY > 800.0f
++    gMarioObject->oPosX > -555.0f && gMarioObject->oPosX < 555.0f
 +#else
-     if (gMarioObject->oPosX > -544.0f && gMarioObject->oPosX < 545.0f && gMarioObject->oPosY > 800.0f
++    gMarioObject->oPosX > -544.0f && gMarioObject->oPosX < 545.0f
 +#endif
-         && gMarioObject->oPosZ > -2000.0f && gMarioObject->oPosZ < -177.0f
-         && gMarioObject->oPosZ < -177.0f) // always double check your conditions
-     {
+         && gMarioObject->oPosY > 800.0f && gMarioObject->oPosZ > -2000.0f
+         && gMarioObject->oPosZ < -177.0f && gMarioObject->oPosZ < -177.0f // always double check your conditions
+         && set_mario_npc_dialog(MARIO_DIALOG_LOOK_UP) == MARIO_DIALOG_STATUS_START) {
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 44f0302..0e09458 100644
+index 87fd514..17d2539 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
-@@ -1070,7 +1070,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -308,7 +308,11 @@ void mario_drop_held_object(struct MarioState *m) {
+         // y-positon instead of the HOLP's y-position. This fact is often exploited when
+         // cloning objects.
+         m->heldObj->oPosX = m->marioBodyState->heldObjLastPosition[0];
++#if EXTREME_FIX_HOLP
++        m->heldObj->oPosY = m->marioBodyState->heldObjLastPosition[1];
++#else
+         m->heldObj->oPosY = m->pos[1];
++#endif
+         m->heldObj->oPosZ = m->marioBodyState->heldObjLastPosition[2];
+ 
+         m->heldObj->oMoveAngleYaw = m->faceAngle[1];
+@@ -1087,7 +1091,11 @@ u32 interact_door(struct MarioState *m, UNUSED u32 interactType, struct Object *
  }
  
  u32 interact_cannon_base(struct MarioState *m, UNUSED u32 interactType, struct Object *o) {
@@ -150,10 +167,10 @@ index 44f0302..0e09458 100644
          o->oInteractStatus = INT_STATUS_INTERACTED;
          m->interactObj = o;
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 7757b13..cebfcf3 100644
+index f49f5b1..09af4c1 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -67,22 +67,18 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
+@@ -71,22 +71,18 @@ s32 check_fall_damage(struct MarioState *m, u32 hardFallAction) {
  
      fallHeight = m->peakHeight - m->pos[1];
  
@@ -164,11 +181,11 @@ index 7757b13..cebfcf3 100644
 -#pragma GCC diagnostic ignored "-Wtype-limits"
 -#endif
 -
-     //! Never true
--    if (m->actionState == ACT_GROUND_POUND) {
 +#if EXTREME_FIX_GROUNDPOUND_HEIGHT
 +    if (m->action == ACT_GROUND_POUND)
 +#else
+     //! Never true
+-    if (m->actionState == ACT_GROUND_POUND) {
 +    if (m->actionState == ACT_GROUND_POUND)
 +#endif
 +    {
@@ -179,10 +196,10 @@ index 7757b13..cebfcf3 100644
  
 -#pragma GCC diagnostic pop
 -
- 	#ifdef PORT_MOP_OBJS
- 	if (m->SelFallDmg){
- 		m->SelFallDmg=0;
-@@ -423,12 +419,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
+ #ifdef CHEATS_ACTIONS
+ 	if (Cheats.EnableCheats && Cheats.NoFallDamage) return FALSE;
+ #endif
+@@ -435,12 +431,20 @@ u32 common_air_action_step(struct MarioState *m, u32 landAction, s32 animation,
                      // not able to ledge grab it.
                      if (m->forwardVel >= 38.0f) {
                          m->particleFlags |= PARTICLE_VERTICAL_STAR;
@@ -203,7 +220,7 @@ index 7757b13..cebfcf3 100644
                      }
                  }
              } else {
-@@ -1325,6 +1329,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
+@@ -1350,6 +1354,9 @@ s32 act_air_hit_wall(struct MarioState *m) {
          if (m->input & INPUT_A_PRESSED) {
              m->vel[1] = 52.0f;
              m->faceAngle[1] += 0x8000;
@@ -214,10 +231,10 @@ index 7757b13..cebfcf3 100644
          }
      } else if (m->forwardVel >= 38.0f) {
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index 1d43550..f31bd12 100644
+index eb2f7a4..da3e0df 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
-@@ -1652,6 +1652,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
+@@ -1657,6 +1657,12 @@ s32 act_putting_on_cap(struct MarioState *m) {
      }
  
      if (is_anim_at_end(m)) {
@@ -231,10 +248,10 @@ index 1d43550..f31bd12 100644
          disable_time_stop();
      }
 diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
-index 06ceda3..f4b7cea 100644
+index 5a083ac..2fddcbf 100644
 --- a/src/game/mario_actions_moving.c
 +++ b/src/game/mario_actions_moving.c
-@@ -151,7 +151,11 @@ void slide_bonk(struct MarioState *m, u32 fastAction, u32 slowAction) {
+@@ -167,7 +167,11 @@ void slide_bonk(struct MarioState *m, u32 fastAction, u32 slowAction) {
  s32 set_triple_jump_action(struct MarioState *m, UNUSED u32 action, UNUSED u32 actionArg) {
      if (m->flags & MARIO_WING_CAP) {
          return set_mario_action(m, ACT_FLYING_TRIPLE_JUMP, 0);
@@ -247,7 +264,7 @@ index 06ceda3..f4b7cea 100644
          return set_mario_action(m, ACT_TRIPLE_JUMP, 0);
      } else {
          return set_mario_action(m, ACT_JUMP, 0);
-@@ -388,6 +392,12 @@ void update_shell_speed(struct MarioState *m) {
+@@ -408,6 +412,12 @@ void update_shell_speed(struct MarioState *m) {
          m->forwardVel = 64.0f;
      }
  
@@ -260,7 +277,7 @@ index 06ceda3..f4b7cea 100644
      m->faceAngle[1] =
          m->intendedYaw - approach_s32((s16)(m->intendedYaw - m->faceAngle[1]), 0, 0x800, 0x800);
  
-@@ -862,7 +872,11 @@ s32 act_move_punching(struct MarioState *m) {
+@@ -898,7 +908,11 @@ s32 act_move_punching(struct MarioState *m) {
          return set_mario_action(m, ACT_BEGIN_SLIDING, 0);
      }
  
@@ -273,7 +290,7 @@ index 06ceda3..f4b7cea 100644
          return set_mario_action(m, ACT_JUMP_KICK, 0);
      }
  
-@@ -1863,7 +1877,7 @@ s32 act_hold_freefall_land(struct MarioState *m) {
+@@ -1937,7 +1951,7 @@ s32 act_hold_freefall_land(struct MarioState *m) {
  }
  
  s32 act_long_jump_land(struct MarioState *m) {
@@ -282,3 +299,37 @@ index 06ceda3..f4b7cea 100644
      // BLJ (Backwards Long Jump) speed build up fix, crushing SimpleFlips's dreams since July 1997
      if (m->forwardVel < 0.0f) {
          m->forwardVel = 0.0f;
+diff --git a/src/game/mario_actions_object.c b/src/game/mario_actions_object.c
+index c7341eb..f7f574a 100644
+--- a/src/game/mario_actions_object.c
++++ b/src/game/mario_actions_object.c
+@@ -181,7 +181,11 @@ s32 act_picking_up(struct MarioState *m) {
+         return drop_and_set_mario_action(m, ACT_FREEFALL, 0);
+     }
+ 
+-    if (m->actionState == 0 && is_anim_at_end(m)) {
++    if (m->actionState == 0 && is_anim_at_end(m)
++#if EXTREME_FIX_HOLP
++    && (m->usedObj != NULL)
++#endif
++    ) {
+         //! While the animation is playing, it is possible for the used object
+         // to unload. This allows you to pick up a vacant or newly loaded object
+         // slot (cloning via fake object).
+diff --git a/src/game/mario_misc.c b/src/game/mario_misc.c
+index 43153ea..c533aec 100644
+--- a/src/game/mario_misc.c
++++ b/src/game/mario_misc.c
+@@ -598,7 +598,11 @@ Gfx *geo_switch_mario_hand_grab_pos(s32 callContext, struct GraphNode *b, Mat4 *
+                     break;
+             }
+         }
+-    } else if (callContext == GEO_CONTEXT_HELD_OBJ) {
++    }
++#if !EXTREME_FIX_HOLP
++    else
++#endif    
++    if (callContext == GEO_CONTEXT_HELD_OBJ) {
+         // ! The HOLP is set here, which is why it only updates when the held object is drawn.
+         // This is why it won't update during a pause buffered hitstun or when the camera is very far
+         // away.

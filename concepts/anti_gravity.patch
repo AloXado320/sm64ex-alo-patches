@@ -1,8 +1,8 @@
 diff --git a/src/engine/math_util.c b/src/engine/math_util.c
-index d6978a3..f728e13 100644
+index 378a54f..313575e 100644
 --- a/src/engine/math_util.c
 +++ b/src/engine/math_util.c
-@@ -484,6 +484,13 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
+@@ -496,6 +496,13 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
      point1[1] = find_floor(point1[0], pos[1] + 150, point1[2], &sp74);
      point2[1] = find_floor(point2[0], pos[1] + 150, point2[2], &sp74);
  
@@ -16,7 +16,7 @@ index d6978a3..f728e13 100644
      if (point0[1] - pos[1] < minY) {
          point0[1] = pos[1];
      }
-@@ -501,6 +508,13 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
+@@ -513,6 +520,13 @@ void mtxf_align_terrain_triangle(Mat4 mtx, Vec3f pos, s16 yaw, f32 radius) {
      vec3f_set(forward, sins(yaw), 0, coss(yaw));
      find_vector_perpendicular_to_plane(yColumn, point0, point1, point2);
      vec3f_normalize(yColumn);
@@ -31,7 +31,7 @@ index d6978a3..f728e13 100644
      vec3f_normalize(xColumn);
      vec3f_cross(zColumn, xColumn, yColumn);
 diff --git a/src/engine/surface_collision.c b/src/engine/surface_collision.c
-index a3323a3..cf00f4a 100644
+index 46b2385..c2daa91 100644
 --- a/src/engine/surface_collision.c
 +++ b/src/engine/surface_collision.c
 @@ -13,6 +13,27 @@
@@ -117,15 +117,15 @@ index a3323a3..cf00f4a 100644
  
          // Checks for ceiling interaction with a 78 unit buffer.
          //! (Exposed Ceilings) Because any point above a ceiling counts
-@@ -311,6 +342,7 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
-     struct SurfaceNode *surfaceList;
+@@ -313,6 +344,7 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
+ 
      f32 height = CELL_HEIGHT_LIMIT;
      f32 dynamicHeight = CELL_HEIGHT_LIMIT;
 +    s32 ceilPartition = (gGravityMode ? SPATIAL_PARTITION_FLOORS : SPATIAL_PARTITION_CEILS);
-     s16 x, y, z;
  
      //! (Parallel Universes) Because position is casted to an s16, reaching higher
-@@ -333,11 +365,11 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
+     //  float locations can return ceilings despite them not existing there.
+@@ -335,11 +367,11 @@ f32 find_ceil(f32 posX, f32 posY, f32 posZ, struct Surface **pceil) {
      cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
  
      // Check for surfaces belonging to objects.
@@ -139,18 +139,19 @@ index a3323a3..cf00f4a 100644
      ceil = find_ceil_from_list(surfaceList, x, y, z, &height);
  
      if (dynamicHeight < height) {
-@@ -410,6 +442,9 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
- #ifdef HIGH_FPS_PC
-     s32 interpolate;
- #endif
+@@ -409,6 +441,10 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+     f32 height;
+     struct Surface *floor = NULL;
+ 
 +    s32 temp;
 +
 +    if (gGravityMode) floor = &gCeilingDeathPlane;
- 
++
      // Iterate through the list of floors until there are no more floors.
      while (surfaceNode != NULL) {
-@@ -440,7 +475,8 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
- #endif
+         surf = surfaceNode->surface;
+@@ -420,7 +456,8 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+         z2 = surf->vertex2[2];
  
          // Check that the point is within the triangle bounds.
 -        if ((z1 - z) * (x2 - x1) - (x1 - x) * (z2 - z1) < 0) {
@@ -159,9 +160,9 @@ index a3323a3..cf00f4a 100644
              continue;
          }
  
-@@ -454,10 +490,12 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
-         }
- #endif
+@@ -428,10 +465,12 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+         x3 = surf->vertex3[0];
+         z3 = surf->vertex3[2];
  
 -        if ((z2 - z) * (x3 - x2) - (x2 - x) * (z3 - z2) < 0) {
 +        temp = (z2 - z) * (x3 - x2) - (x2 - x) * (z3 - z2) < 0;
@@ -174,7 +175,7 @@ index a3323a3..cf00f4a 100644
              continue;
          }
  
-@@ -511,6 +549,9 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
+@@ -458,6 +497,9 @@ static struct Surface *find_floor_from_list(struct SurfaceNode *surfaceNode, s32
  
          // Find the height of the floor at a given location.
          height = -(x * nx + nz * z + oo) / ny;
@@ -184,7 +185,7 @@ index a3323a3..cf00f4a 100644
          // Checks for floor interaction with a 78 unit buffer.
          if (y - (height + -78.0f) < 0.0f) {
              continue;
-@@ -560,6 +601,7 @@ f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfl
+@@ -496,6 +538,7 @@ f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfl
      struct SurfaceNode *surfaceList;
      struct Surface *floor;
      f32 floorHeight = FLOOR_LOWER_LIMIT;
@@ -192,7 +193,7 @@ index a3323a3..cf00f4a 100644
  
      // Would normally cause PUs, but dynamic floors unload at that range.
      s16 x = (s16) xPos;
-@@ -570,7 +612,7 @@ f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfl
+@@ -506,7 +549,7 @@ f32 unused_find_dynamic_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfl
      s16 cellX = ((x + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
      s16 cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
  
@@ -201,7 +202,7 @@ index a3323a3..cf00f4a 100644
      floor = find_floor_from_list(surfaceList, x, y, z, &floorHeight);
  
      *pfloor = floor;
-@@ -586,6 +628,7 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -522,6 +565,7 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
  
      struct Surface *floor, *dynamicFloor;
      struct SurfaceNode *surfaceList;
@@ -209,7 +210,7 @@ index a3323a3..cf00f4a 100644
  
      f32 height = FLOOR_LOWER_LIMIT;
      f32 dynamicHeight = FLOOR_LOWER_LIMIT;
-@@ -611,11 +654,11 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
+@@ -547,11 +591,11 @@ f32 find_floor(f32 xPos, f32 yPos, f32 zPos, struct Surface **pfloor) {
      cellZ = ((z + LEVEL_BOUNDARY_MAX) / CELL_SIZE) & NUM_CELLS_INDEX;
  
      // Check for surfaces belonging to objects.
@@ -224,49 +225,49 @@ index a3323a3..cf00f4a 100644
  
      // To prevent the Merry-Go-Round room from loading when Mario passes above the hole that leads
 diff --git a/src/engine/surface_collision.h b/src/engine/surface_collision.h
-index b47fc78..6af6aba 100644
+index f469508..540d64e 100644
 --- a/src/engine/surface_collision.h
 +++ b/src/engine/surface_collision.h
-@@ -46,5 +46,7 @@ f32 find_water_level(f32 x, f32 z);
+@@ -44,4 +44,7 @@ f32 find_water_level(f32 x, f32 z);
  f32 find_poison_gas_level(f32 x, f32 z);
  void debug_surface_list_info(f32 xPos, f32 zPos);
- void find_surface_on_ray(Vec3f orig, Vec3f dir, struct Surface **hit_surface, Vec3f hit_pos);
+ 
 +extern u32 gGravityMode;
 +extern u32 gIsGravityFlipped;
- 
++
  #endif // SURFACE_COLLISION_H
 diff --git a/src/game/behaviors/bobomb.inc.c b/src/game/behaviors/bobomb.inc.c
-index 1f6124e..07e2ed3 100644
+index 4db4137..76dfd13 100644
 --- a/src/game/behaviors/bobomb.inc.c
 +++ b/src/game/behaviors/bobomb.inc.c
-@@ -205,7 +205,7 @@ void bobomb_thrown_loop(void) {
+@@ -211,7 +211,7 @@ void bobomb_thrown_loop(void) {
      o->oHeldState = 0;
-     o->oFlags &= ~0x8; /* bit 3 */
-     o->oForwardVel = 25.0;
--    o->oVelY = 20.0;
+     o->oFlags &= ~OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW;
+     o->oForwardVel = 25.0f;
+-    o->oVelY = 20.0f;
 +    o->oVelY = (gIsGravityFlipped ? -20.f : 20.f);
      o->oAction = BOBOMB_ACT_LAUNCHED;
  }
  
 diff --git a/src/game/behaviors/breakable_box_small.inc.c b/src/game/behaviors/breakable_box_small.inc.c
-index db9afc3..75a2b85 100644
+index dbb305e..2a5e459 100644
 --- a/src/game/behaviors/breakable_box_small.inc.c
 +++ b/src/game/behaviors/breakable_box_small.inc.c
-@@ -122,7 +122,7 @@ void breakable_box_small_get_thrown(void) {
+@@ -127,7 +127,7 @@ void breakable_box_small_get_thrown(void) {
      o->oHeldState = 0;
-     o->oFlags &= ~0x08;
+     o->oFlags &= ~OBJ_FLAG_SET_FACE_YAW_TO_MOVE_YAW;
      o->oForwardVel = 40.0f;
 -    o->oVelY = 20.0f;
 +    o->oVelY = (gIsGravityFlipped ? -20.f : 20.f);
-     o->oBreakableBoxSmallReleased = 1;
+     o->oBreakableBoxSmallReleased = TRUE;
      o->oBreakableBoxSmallFramesSinceReleased = 0;
      o->activeFlags &= ~ACTIVE_FLAG_UNK9;
 diff --git a/src/game/behaviors/koopa_shell.inc.c b/src/game/behaviors/koopa_shell.inc.c
-index 1fcbf40..d85dbdb 100644
+index 1ae1091..3a2254f 100644
 --- a/src/game/behaviors/koopa_shell.inc.c
 +++ b/src/game/behaviors/koopa_shell.inc.c
-@@ -67,6 +67,10 @@ void bhv_koopa_shell_loop(void) {
-             break;
+@@ -92,6 +92,10 @@ void bhv_koopa_shell_loop(void) {
+ 
          case 1:
              obj_copy_pos(o, gMarioObject);
 +            if (gIsGravityFlipped)
@@ -274,13 +275,13 @@ index 1fcbf40..d85dbdb 100644
 +            else
 +                o->oFaceAngleRoll = 0;
              sp34 = cur_obj_update_floor_height_and_get_floor();
-             if (absf(find_water_level(o->oPosX, o->oPosZ) - o->oPosY) < 10.0f)
-                 koopa_shell_spawn_water_drop();
+ 
+             if (absf(find_water_level(o->oPosX, o->oPosZ) - o->oPosY) < 10.0f) {
 diff --git a/src/game/behaviors/mips.inc.c b/src/game/behaviors/mips.inc.c
-index 461e9f2..8b4256e 100644
+index 0aed1ec..28dbe06 100644
 --- a/src/game/behaviors/mips.inc.c
 +++ b/src/game/behaviors/mips.inc.c
-@@ -278,7 +278,7 @@ void bhv_mips_thrown(void) {
+@@ -275,7 +275,7 @@ void bhv_mips_thrown(void) {
      cur_obj_init_animation(2);
      cur_obj_become_tangible();
      o->oForwardVel = 25.0f;
@@ -290,20 +291,20 @@ index 461e9f2..8b4256e 100644
  }
  
 diff --git a/src/game/behaviors/seesaw_platform.inc.c b/src/game/behaviors/seesaw_platform.inc.c
-index 81a47e7..23ee00f 100644
+index 5b2e4bc..a97836d 100644
 --- a/src/game/behaviors/seesaw_platform.inc.c
 +++ b/src/game/behaviors/seesaw_platform.inc.c
-@@ -39,7 +39,7 @@ void bhv_seesaw_platform_update(void) {
+@@ -44,7 +44,7 @@ void bhv_seesaw_platform_update(void) {
      if (gMarioObject->platform == o) {
          // Rotate toward mario
          f32 rotation = o->oDistanceToMario * coss(o->oAngleToMario - o->oMoveAngleYaw);
--        UNUSED s32 unused;
+-        UNUSED u8 filler[4];
 +        if (gIsGravityFlipped) rotation = -rotation; // Rotate in correct direction if Mario is underneath
  
          // Deceleration is faster than acceleration
          if (o->oSeesawPlatformPitchVel * rotation < 0) {
 diff --git a/src/game/camera.c b/src/game/camera.c
-index e088517..a2b43fb 100644
+index aa1f6ff..6941b00 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -730,7 +730,7 @@ void focus_on_mario(Vec3f focus, Vec3f pos, f32 posYOff, f32 focYOff, f32 dist,
@@ -324,7 +325,7 @@ index e088517..a2b43fb 100644
      vec3f_get_dist_and_angle(pos, sMarioCamState->pos, &posDist, &posPitch, &posYaw);
  
      //! Useless get and set
-@@ -6967,6 +6967,8 @@ void find_mario_floor_and_ceil(struct PlayerGeometry *pg) {
+@@ -6969,6 +6969,8 @@ void find_mario_floor_and_ceil(struct PlayerGeometry *pg) {
      s16 tempCheckingSurfaceCollisionsForCamera = gCheckingSurfaceCollisionsForCamera;
      gCheckingSurfaceCollisionsForCamera = TRUE;
  
@@ -333,7 +334,7 @@ index e088517..a2b43fb 100644
      if (find_floor(sMarioCamState->pos[0], sMarioCamState->pos[1] + 10.f,
                     sMarioCamState->pos[2], &surf) != FLOOR_LOWER_LIMIT) {
          pg->currFloorType = surf->type;
-@@ -6990,6 +6992,8 @@ void find_mario_floor_and_ceil(struct PlayerGeometry *pg) {
+@@ -6992,6 +6994,8 @@ void find_mario_floor_and_ceil(struct PlayerGeometry *pg) {
                                     sMarioCamState->pos[2], &pg->currCeil);
      pg->waterHeight = find_water_level(sMarioCamState->pos[0], sMarioCamState->pos[2]);
      gCheckingSurfaceCollisionsForCamera = tempCheckingSurfaceCollisionsForCamera;
@@ -343,7 +344,7 @@ index e088517..a2b43fb 100644
  
  /**
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 44f0302..cf219fc 100644
+index 87fd514..3fef7c8 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -234,12 +234,16 @@ u32 determine_interaction(struct MarioState *m, struct Object *o) {
@@ -394,7 +395,7 @@ index 44f0302..cf219fc 100644
              if (m->vel[1] < 20.0f) {
                  m->vel[1] = 20.0f;
              }
-@@ -1104,7 +1109,7 @@ u32 interact_tornado(struct MarioState *m, UNUSED u32 interactType, struct Objec
+@@ -1121,7 +1126,7 @@ u32 interact_tornado(struct MarioState *m, UNUSED u32 interactType, struct Objec
          m->usedObj = o;
  
          marioObj->oMarioTornadoYawVel = 0x400;
@@ -403,7 +404,7 @@ index 44f0302..cf219fc 100644
  
          play_sound(SOUND_MARIO_WAAAOOOW, m->marioObj->header.gfx.cameraToObject);
  #ifdef RUMBLE_FEEDBACK  
-@@ -1345,7 +1350,7 @@ u32 interact_hit_from_below(struct MarioState *m, UNUSED u32 interactType, struc
+@@ -1362,7 +1367,7 @@ u32 interact_hit_from_below(struct MarioState *m, UNUSED u32 interactType, struc
          attack_object(o, interaction);
          bounce_back_from_attack(m, interaction);
  
@@ -412,17 +413,15 @@ index 44f0302..cf219fc 100644
              hit_object_from_below(m, o);
          }
  
-@@ -1542,11 +1547,19 @@ u32 interact_pole(struct MarioState *m, UNUSED u32 interactType, struct Object *
+@@ -1576,9 +1581,17 @@ u32 interact_pole(struct MarioState *m, UNUSED u32 interactType, struct Object *
              marioObj->oMarioPoleUnk108 = 0;
              marioObj->oMarioPoleYawVel = 0;
  #if QOL_FIX_POLE_BOTTOM_GRAB
--            marioObj->oMarioPolePos = (m->pos[1] - o->oPosY) < 0
+-            marioObj->oMarioPolePos = max(m->pos[1] - o->oPosY, poleBottom);
 +            if (gGravityMode) {
 +                marioObj->oMarioPolePos = o->oPosY - (9000.f - m->pos[1]) + o->hitboxHeight + 100.f;
 +            } else {
-+                marioObj->oMarioPolePos = (m->pos[1] - o->oPosY) < 0
-                 ? -o->hitboxDownOffset
-                 : (m->pos[1] - o->oPosY);
++                marioObj->oMarioPolePos = max(m->pos[1] - o->oPosY, poleBottom);
 +            }
  #else
 -            marioObj->oMarioPolePos = m->pos[1] - o->oPosY;
@@ -435,10 +434,10 @@ index 44f0302..cf219fc 100644
  
              if (lowSpeed) {
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index a1ecb75..f8e6d0f 100644
+index 8f28b73..9377793 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -417,6 +417,8 @@ void init_mario_after_warp(void) {
+@@ -414,6 +414,8 @@ void init_mario_after_warp(void) {
          gPlayerSpawnInfos[0].startAngle[1] = spawnNode->object->oMoveAngleYaw;
          gPlayerSpawnInfos[0].startAngle[2] = 0;
  
@@ -447,7 +446,7 @@ index a1ecb75..f8e6d0f 100644
          if (marioSpawnType == MARIO_SPAWN_DOOR_WARP) {
              init_door_warp(&gPlayerSpawnInfos[0], sWarpDest.arg);
          }
-@@ -568,15 +570,19 @@ void warp_credits(void) {
+@@ -566,15 +568,19 @@ void warp_credits(void) {
  
  void check_instant_warp(void) {
      s16 cameraAngle;
@@ -470,7 +469,7 @@ index a1ecb75..f8e6d0f 100644
          if (index >= INSTANT_WARP_INDEX_START && index < INSTANT_WARP_INDEX_STOP
              && gCurrentArea->instantWarps != NULL) {
              struct InstantWarp *warp = &gCurrentArea->instantWarps[index];
-@@ -691,7 +697,13 @@ void initiate_warp(s16 destLevel, s16 destArea, s16 destWarpNode, s32 arg3) {
+@@ -689,7 +695,13 @@ void initiate_warp(s16 destLevel, s16 destArea, s16 destWarpNode, s32 arg3) {
   */
  struct WarpNode *get_painting_warp_node(void) {
      struct WarpNode *warpNode = NULL;
@@ -485,7 +484,7 @@ index a1ecb75..f8e6d0f 100644
  
      if (paintingIndex >= PAINTING_WARP_INDEX_START && paintingIndex < PAINTING_WARP_INDEX_END) {
          if (paintingIndex < PAINTING_WARP_INDEX_FA
-@@ -722,6 +734,7 @@ void initiate_painting_warp(void) {
+@@ -720,6 +732,7 @@ void initiate_painting_warp(void) {
                  }
  
                  initiate_warp(warpNode.destLevel & 0x7F, warpNode.destArea, warpNode.destNode, 0);
@@ -493,7 +492,7 @@ index a1ecb75..f8e6d0f 100644
                  check_if_should_set_warp_checkpoint(&warpNode);
  
                  play_transition_after_delay(WARP_TRANSITION_FADE_INTO_COLOR, 30, 255, 255, 255, 45);
-@@ -741,6 +754,7 @@ void initiate_painting_warp(void) {
+@@ -739,6 +752,7 @@ void initiate_painting_warp(void) {
          }
      }
  }
@@ -501,7 +500,7 @@ index a1ecb75..f8e6d0f 100644
  
  /**
   * If there is not already a delayed warp, schedule one. The source node is
-@@ -791,7 +805,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -789,7 +803,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
  
              case WARP_OP_WARP_FLOOR:
                  sSourceWarpNodeId = WARP_NODE_WARP_FLOOR;
@@ -511,7 +510,7 @@ index a1ecb75..f8e6d0f 100644
                          sDelayedWarpOp = WARP_OP_GAME_OVER;
                      } else {
 diff --git a/src/game/mario.c b/src/game/mario.c
-index c54d12b..7c42d1e 100644
+index fd3a4b5..893aa56 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
 @@ -139,6 +139,16 @@ s16 set_mario_anim_with_accel(struct MarioState *m, s32 targetAnimID, s32 accel)
@@ -576,16 +575,16 @@ index c54d12b..7c42d1e 100644
  }
  
  /**
-@@ -682,7 +692,7 @@ s32 mario_floor_is_steep(struct MarioState *m) {
-                 break;
+@@ -686,7 +696,7 @@ s32 mario_floor_is_steep(struct MarioState *m) {
+ #endif
          }
  
--        result = m->floor->normal.y <= normY;
-+        result = ABS(m->floor->normal.y) <= normY;
+-        return (m->floor->normal.y <= normY);
++        return ABS(m->floor->normal.y) <= normY;
      }
  
-     return result;
-@@ -1261,7 +1271,7 @@ void debug_print_speed_action_normal(struct MarioState *m) {
+     return FALSE;
+@@ -1265,7 +1275,7 @@ void debug_print_speed_action_normal(struct MarioState *m) {
      if (gShowDebugText) {
          steepness = sqrtf(
              ((m->floor->normal.x * m->floor->normal.x) + (m->floor->normal.z * m->floor->normal.z)));
@@ -594,7 +593,7 @@ index c54d12b..7c42d1e 100644
  
          print_text_fmt_int(210, 88, "ANG %d", (atan2s(floor_nY, steepness) * 180.0f) / 32768.0f);
  
-@@ -1350,7 +1360,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
+@@ -1354,7 +1364,7 @@ void update_mario_geometry_inputs(struct MarioState *m) {
      // This can cause errant behavior when combined with astral projection,
      // since the graphical position was not Mario's previous location.
      if (m->floor == NULL) {
@@ -603,7 +602,7 @@ index c54d12b..7c42d1e 100644
          m->floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &m->floor);
      }
  
-@@ -1567,8 +1577,10 @@ void update_mario_info_for_cam(struct MarioState *m) {
+@@ -1575,8 +1585,10 @@ void update_mario_info_for_cam(struct MarioState *m) {
      vec3s_copy(m->statusForCamera->faceAngle, m->faceAngle);
  
      if (!(m->flags & MARIO_UNKNOWN_25)) {
@@ -615,7 +614,7 @@ index c54d12b..7c42d1e 100644
  }
  
  /**
-@@ -1698,6 +1710,11 @@ void mario_update_hitbox_and_cap_model(struct MarioState *m) {
+@@ -1710,6 +1722,11 @@ void mario_update_hitbox_and_cap_model(struct MarioState *m) {
      } else {
          m->marioObj->hitboxHeight = 160.0f;
      }
@@ -627,7 +626,7 @@ index c54d12b..7c42d1e 100644
  
      if ((m->flags & MARIO_TELEPORTING) && (m->fadeWarpOpacity != 0xFF)) {
          bodyState->modelState &= ~0xFF;
-@@ -1910,7 +1927,7 @@ void init_mario(void) {
+@@ -1925,7 +1942,7 @@ void init_mario(void) {
      gMarioState->marioObj->oMoveAngleYaw = gMarioState->faceAngle[1];
      gMarioState->marioObj->oMoveAngleRoll = gMarioState->faceAngle[2];
  
@@ -648,7 +647,7 @@ index 0c573b8..11df5dd 100644
  
  #endif // MARIO_H
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 7757b13..e91ba51 100644
+index f49f5b1..a4adbcc 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
 @@ -16,6 +16,7 @@
@@ -659,7 +658,7 @@ index 7757b13..e91ba51 100644
  
  void play_flip_sounds(struct MarioState *m, s16 frame1, s16 frame2, s16 frame3) {
      s32 animFrame = m->marioObj->header.gfx.animInfo.animFrame;
-@@ -315,7 +316,7 @@ void update_flying_yaw(struct MarioState *m) {
+@@ -327,7 +328,7 @@ void update_flying_yaw(struct MarioState *m) {
  }
  
  void update_flying_pitch(struct MarioState *m) {
@@ -668,10 +667,10 @@ index 7757b13..e91ba51 100644
  
      if (targetPitchVel > 0) {
          if (m->angleVel[0] < 0) {
-@@ -342,11 +343,12 @@ void update_flying_pitch(struct MarioState *m) {
+@@ -354,11 +355,12 @@ void update_flying_pitch(struct MarioState *m) {
  
  void update_flying(struct MarioState *m) {
-     UNUSED u32 unused;
+     UNUSED u8 filler[4];
 +    s16 pitch = (gGravityMode ? -m->faceAngle[0] : m->faceAngle[0]);
  
      update_flying_pitch(m);
@@ -682,7 +681,7 @@ index 7757b13..e91ba51 100644
      m->forwardVel -= 0.5f * (1.0f - coss(m->angleVel[1]));
  
      if (m->forwardVel < 0.0f) {
-@@ -354,25 +356,27 @@ void update_flying(struct MarioState *m) {
+@@ -366,25 +368,27 @@ void update_flying(struct MarioState *m) {
      }
  
      if (m->forwardVel > 16.0f) {
@@ -721,7 +720,7 @@ index 7757b13..e91ba51 100644
  
      m->slideVelX = m->vel[0];
      m->slideVelZ = m->vel[2];
-@@ -683,7 +687,7 @@ s32 act_riding_shell_air(struct MarioState *m) {
+@@ -701,7 +705,7 @@ s32 act_riding_shell_air(struct MarioState *m) {
              break;
      }
  
@@ -730,7 +729,7 @@ index 7757b13..e91ba51 100644
      return FALSE;
  }
  
-@@ -752,10 +756,15 @@ s32 act_dive(struct MarioState *m) {
+@@ -770,10 +774,15 @@ s32 act_dive(struct MarioState *m) {
  
      switch (perform_air_step(m, 0)) {
          case AIR_STEP_NONE:
@@ -750,7 +749,7 @@ index 7757b13..e91ba51 100644
                  }
              }
              m->marioObj->header.gfx.angle[0] = -m->faceAngle[0];
-@@ -938,9 +947,13 @@ s32 act_ground_pound(struct MarioState *m) {
+@@ -956,9 +965,13 @@ s32 act_ground_pound(struct MarioState *m) {
                  m->pos[1] += yOffset;
                  m->peakHeight = m->pos[1];
                  vec3f_copy(m->marioObj->header.gfx.pos, m->pos);
@@ -761,10 +760,10 @@ index 7757b13..e91ba51 100644
  
 +        m->marioObj->header.gfx.angle[2] = 0; // GP doesn't do air steps while in mid-air, so reset roll manually each frame
 +
-         m->vel[1] = -50.0f;
-         mario_set_forward_vel(m, 0.0f);
- 
-@@ -1100,7 +1113,7 @@ s32 act_crazy_box_bounce(struct MarioState *m) {
+ #if QOL_FIX_GROUND_POUND_WALL
+         mario_set_forward_vel(m, -0.1f);
+ #else
+@@ -1125,7 +1138,7 @@ s32 act_crazy_box_bounce(struct MarioState *m) {
              break;
      }
  
@@ -773,7 +772,7 @@ index 7757b13..e91ba51 100644
      return FALSE;
  }
  
-@@ -1451,7 +1464,7 @@ s32 act_butt_slide_air(struct MarioState *m) {
+@@ -1481,7 +1494,7 @@ s32 act_butt_slide_air(struct MarioState *m) {
  
      switch (perform_air_step(m, 0)) {
          case AIR_STEP_LANDED:
@@ -782,7 +781,7 @@ index 7757b13..e91ba51 100644
                  m->vel[1] = -m->vel[1] / 2.0f;
                  m->actionState = 1;
              } else {
-@@ -1490,7 +1503,7 @@ s32 act_hold_butt_slide_air(struct MarioState *m) {
+@@ -1520,7 +1533,7 @@ s32 act_hold_butt_slide_air(struct MarioState *m) {
  
      switch (perform_air_step(m, 0)) {
          case AIR_STEP_LANDED:
@@ -791,7 +790,7 @@ index 7757b13..e91ba51 100644
                  m->vel[1] = -m->vel[1] / 2.0f;
                  m->actionState = 1;
              } else {
-@@ -1689,7 +1702,7 @@ s32 act_shot_from_cannon(struct MarioState *m) {
+@@ -1719,7 +1732,7 @@ s32 act_shot_from_cannon(struct MarioState *m) {
      switch (perform_air_step(m, 0)) {
          case AIR_STEP_NONE:
              set_mario_animation(m, MARIO_ANIM_AIRBORNE_ON_STOMACH);
@@ -800,7 +799,7 @@ index 7757b13..e91ba51 100644
              m->marioObj->header.gfx.angle[0] = -m->faceAngle[0];
              break;
  
-@@ -1728,7 +1741,7 @@ s32 act_shot_from_cannon(struct MarioState *m) {
+@@ -1758,7 +1771,7 @@ s32 act_shot_from_cannon(struct MarioState *m) {
          mario_set_forward_vel(m, 10.0f);
      }
  
@@ -809,7 +808,7 @@ index 7757b13..e91ba51 100644
          m->particleFlags |= PARTICLE_DUST;
      }
  #ifdef RUMBLE_FEEDBACK
-@@ -1888,7 +1901,7 @@ s32 act_riding_hoot(struct MarioState *m) {
+@@ -1918,7 +1931,7 @@ s32 act_riding_hoot(struct MarioState *m) {
      }
  
      vec3f_set(m->vel, 0.0f, 0.0f, 0.0f);
@@ -818,7 +817,7 @@ index 7757b13..e91ba51 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, 0x4000 - m->faceAngle[1], 0);
      return FALSE;
  }
-@@ -2100,7 +2113,12 @@ s32 act_special_triple_jump(struct MarioState *m) {
+@@ -2130,7 +2143,12 @@ s32 act_special_triple_jump(struct MarioState *m) {
  }
  
  s32 check_common_airborne_cancels(struct MarioState *m) {
@@ -833,10 +832,10 @@ index 7757b13..e91ba51 100644
      }
  
 diff --git a/src/game/mario_actions_automatic.c b/src/game/mario_actions_automatic.c
-index d8f447c..83b85e0 100644
+index 63d0470..812b37b 100644
 --- a/src/game/mario_actions_automatic.c
 +++ b/src/game/mario_actions_automatic.c
-@@ -71,8 +71,10 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
+@@ -74,8 +74,10 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
      f32 ceilHeight;
      s32 collided;
      s32 result = POLE_NONE;
@@ -848,7 +847,7 @@ index d8f447c..83b85e0 100644
  
      if (marioObj->oMarioPolePos > poleTop) {
          marioObj->oMarioPolePos = poleTop;
-@@ -80,7 +82,11 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
+@@ -83,7 +85,11 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
  
      m->pos[0] = m->usedObj->oPosX;
      m->pos[2] = m->usedObj->oPosZ;
@@ -861,7 +860,7 @@ index d8f447c..83b85e0 100644
  
      collided = f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 60.0f, 50.0f);
      collided |= f32_find_wall_collision(&m->pos[0], &m->pos[1], &m->pos[2], 30.0f, 24.0f);
-@@ -88,7 +94,15 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
+@@ -91,7 +97,15 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
      ceilHeight = vec3f_find_ceil(m->pos, m->pos[1], &ceil);
      if (m->pos[1] > ceilHeight - 160.0f) {
          m->pos[1] = ceilHeight - 160.0f;
@@ -878,7 +877,7 @@ index d8f447c..83b85e0 100644
      }
  
      floorHeight = find_floor(m->pos[0], m->pos[1], m->pos[2], &floor);
-@@ -96,8 +110,12 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
+@@ -99,8 +113,12 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
          m->pos[1] = floorHeight;
          set_mario_action(m, ACT_IDLE, 0);
          result = POLE_TOUCHED_FLOOR;
@@ -893,7 +892,7 @@ index d8f447c..83b85e0 100644
          set_mario_action(m, ACT_FREEFALL, 0);
          result = POLE_FELL_OFF;
      } else if (collided) {
-@@ -111,7 +129,7 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
+@@ -114,7 +132,7 @@ s32 set_pole_position(struct MarioState *m, f32 offsetY) {
          }
      }
  
@@ -902,7 +901,7 @@ index d8f447c..83b85e0 100644
      vec3s_set(m->marioObj->header.gfx.angle, m->usedObj->oMoveAnglePitch, m->faceAngle[1],
                m->usedObj->oMoveAngleRoll);
  
-@@ -147,21 +165,23 @@ s32 act_holding_pole(struct MarioState *m) {
+@@ -150,21 +168,23 @@ s32 act_holding_pole(struct MarioState *m) {
      }
  #endif
  
@@ -930,7 +929,7 @@ index d8f447c..83b85e0 100644
          if (marioObj->oMarioPoleYawVel > 0x1000) {
              marioObj->oMarioPoleYawVel = 0x1000;
          }
-@@ -212,17 +232,17 @@ s32 act_climbing_pole(struct MarioState *m) {
+@@ -218,17 +238,17 @@ s32 act_climbing_pole(struct MarioState *m) {
          return set_mario_action(m, ACT_WALL_KICK_AIR, 0);
      }
  
@@ -951,7 +950,7 @@ index d8f447c..83b85e0 100644
          add_tree_leaf_particles(m);
          play_climbing_sounds(m, 1);
      }
-@@ -293,7 +313,7 @@ s32 act_top_of_pole(struct MarioState *m) {
+@@ -299,7 +319,7 @@ s32 act_top_of_pole(struct MarioState *m) {
      if (m->input & INPUT_A_PRESSED) {
          return set_mario_action(m, ACT_TOP_OF_POLE_JUMP, 0);
      }
@@ -960,7 +959,7 @@ index d8f447c..83b85e0 100644
          return set_mario_action(m, ACT_TOP_OF_POLE_TRANSITION, 1);
      }
  
-@@ -379,7 +399,7 @@ s32 update_hang_moving(struct MarioState *m) {
+@@ -385,7 +405,7 @@ s32 update_hang_moving(struct MarioState *m) {
  
      stepResult = perform_hanging_step(m, nextPos);
  
@@ -969,16 +968,16 @@ index d8f447c..83b85e0 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
      return stepResult;
  }
-@@ -391,7 +411,7 @@ void update_hang_stationary(struct MarioState *m) {
+@@ -397,7 +417,7 @@ void update_hang_stationary(struct MarioState *m) {
  
      m->pos[1] = m->ceilHeight - 160.0f;
      vec3f_copy(m->vel, gVec3fZero);
 -    vec3f_copy(m->marioObj->header.gfx.pos, m->pos);
 +    vec3f_copy_with_gravity_switch(m->marioObj->header.gfx.pos, m->pos);
- }
- 
- s32 act_start_hanging(struct MarioState *m) {
-@@ -552,7 +572,7 @@ void climb_up_ledge(struct MarioState *m) {
+ #if QOL_FEATURE_BETTER_HANGING
+     vec3s_set(m->marioObj->header.gfx.angle, 0x0, m->faceAngle[1], 0x0);
+ #endif
+@@ -582,7 +602,7 @@ void climb_up_ledge(struct MarioState *m) {
      set_mario_animation(m, MARIO_ANIM_IDLE_HEAD_LEFT);
      m->pos[0] += 14.0f * sins(m->faceAngle[1]);
      m->pos[2] += 14.0f * coss(m->faceAngle[1]);
@@ -987,7 +986,7 @@ index d8f447c..83b85e0 100644
  }
  
  void update_ledge_climb_camera(struct MarioState *m) {
-@@ -566,6 +586,7 @@ void update_ledge_climb_camera(struct MarioState *m) {
+@@ -596,6 +616,7 @@ void update_ledge_climb_camera(struct MarioState *m) {
      m->statusForCamera->pos[0] = m->pos[0] + sp4 * sins(m->faceAngle[1]);
      m->statusForCamera->pos[2] = m->pos[2] + sp4 * coss(m->faceAngle[1]);
      m->statusForCamera->pos[1] = m->pos[1];
@@ -995,7 +994,7 @@ index d8f447c..83b85e0 100644
      m->actionTimer++;
      m->flags |= MARIO_UNKNOWN_25;
  }
-@@ -591,7 +612,7 @@ s32 act_ledge_grab(struct MarioState *m) {
+@@ -621,7 +642,7 @@ s32 act_ledge_grab(struct MarioState *m) {
          m->actionTimer++;
      }
  
@@ -1004,7 +1003,7 @@ index d8f447c..83b85e0 100644
          return let_go_of_ledge(m);
      }
  
-@@ -701,7 +722,7 @@ s32 act_grabbed(struct MarioState *m) {
+@@ -731,7 +752,7 @@ s32 act_grabbed(struct MarioState *m) {
          s32 thrown = (m->marioObj->oInteractStatus & INT_STATUS_MARIO_UNK6) == 0;
  
          m->faceAngle[1] = m->usedObj->oMoveAngleYaw;
@@ -1013,7 +1012,7 @@ index d8f447c..83b85e0 100644
  #ifdef RUMBLE_FEEDBACK
          queue_rumble_data(5, 60);
  #endif
-@@ -780,10 +801,10 @@ s32 act_in_cannon(struct MarioState *m) {
+@@ -810,10 +831,10 @@ s32 act_in_cannon(struct MarioState *m) {
              if (m->input & INPUT_A_PRESSED) {
                  m->forwardVel = 100.0f * coss(m->faceAngle[0]);
  
@@ -1026,7 +1025,7 @@ index d8f447c..83b85e0 100644
                  m->pos[2] += 120.0f * coss(m->faceAngle[0]) * coss(m->faceAngle[1]);
  
                  play_sound(SOUND_ACTION_FLYING_FAST, m->marioObj->header.gfx.cameraToObject);
-@@ -809,7 +830,7 @@ s32 act_in_cannon(struct MarioState *m) {
+@@ -839,7 +860,7 @@ s32 act_in_cannon(struct MarioState *m) {
              }
      }
  
@@ -1035,7 +1034,7 @@ index d8f447c..83b85e0 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
      set_mario_animation(m, MARIO_ANIM_DIVE);
  
-@@ -829,16 +850,26 @@ s32 act_tornado_twirling(struct MarioState *m) {
+@@ -859,16 +880,26 @@ s32 act_tornado_twirling(struct MarioState *m) {
      f32 dx = (m->pos[0] - usedObj->oPosX) * 0.95f;
      f32 dz = (m->pos[2] - usedObj->oPosZ) * 0.95f;
  
@@ -1070,7 +1069,7 @@ index d8f447c..83b85e0 100644
          }
          return set_mario_action(m, ACT_TWIRLING, 1);
      }
-@@ -858,7 +889,10 @@ s32 act_tornado_twirling(struct MarioState *m) {
+@@ -888,7 +919,10 @@ s32 act_tornado_twirling(struct MarioState *m) {
  
      nextPos[0] = usedObj->oPosX + dx * cosAngleVel + dz * sinAngleVel;
      nextPos[2] = usedObj->oPosZ - dx * sinAngleVel + dz * cosAngleVel;
@@ -1082,7 +1081,7 @@ index d8f447c..83b85e0 100644
  
      f32_find_wall_collision(&nextPos[0], &nextPos[1], &nextPos[2], 60.0f, 50.0f);
  
-@@ -888,7 +922,7 @@ s32 act_tornado_twirling(struct MarioState *m) {
+@@ -918,7 +952,7 @@ s32 act_tornado_twirling(struct MarioState *m) {
          play_sound(SOUND_ACTION_TWIRL, m->marioObj->header.gfx.cameraToObject);
      }
  
@@ -1091,7 +1090,7 @@ index d8f447c..83b85e0 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1] + m->twirlYaw, 0);
  #ifdef RUMBLE_FEEDBACK
      reset_rumble_timers_slip();
-@@ -897,7 +931,12 @@ s32 act_tornado_twirling(struct MarioState *m) {
+@@ -927,7 +961,12 @@ s32 act_tornado_twirling(struct MarioState *m) {
  }
  
  s32 check_common_automatic_cancels(struct MarioState *m) {
@@ -1106,7 +1105,7 @@ index d8f447c..83b85e0 100644
      }
  
 diff --git a/src/game/mario_actions_cutscene.c b/src/game/mario_actions_cutscene.c
-index 1d43550..8e10a79 100644
+index eb2f7a4..8879abc 100644
 --- a/src/game/mario_actions_cutscene.c
 +++ b/src/game/mario_actions_cutscene.c
 @@ -422,7 +422,7 @@ s32 act_reading_npc_dialog(struct MarioState *m) {
@@ -1154,7 +1153,7 @@ index 1d43550..8e10a79 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
      general_star_dance_handler(m, 1);
      if (m->actionState != 2 && m->actionTimer >= 62) {
-@@ -1602,7 +1602,7 @@ s32 act_squished(struct MarioState *m) {
+@@ -1605,7 +1605,7 @@ s32 act_squished(struct MarioState *m) {
      }
  
      // steep floor
@@ -1163,7 +1162,7 @@ index 1d43550..8e10a79 100644
          surfAngle = atan2s(m->floor->normal.z, m->floor->normal.x);
          underSteepSurf = TRUE;
      }
-@@ -1936,7 +1936,7 @@ static s32 jumbo_star_cutscene_taking_off(struct MarioState *m) {
+@@ -1941,7 +1941,7 @@ static s32 jumbo_star_cutscene_taking_off(struct MarioState *m) {
  
      vec3f_set(m->pos, 0.0f, 307.0, marioObj->rawData.asF32[0x22]);
      update_mario_pos_for_anim(m);
@@ -1172,7 +1171,7 @@ index 1d43550..8e10a79 100644
      vec3s_set(marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
  
      // not sure why they did this, probably was from being used to action
-@@ -1985,7 +1985,7 @@ static s32 jumbo_star_cutscene_flying(struct MarioState *m) {
+@@ -1990,7 +1990,7 @@ static s32 jumbo_star_cutscene_flying(struct MarioState *m) {
      }
  
      m->marioBodyState->handState = MARIO_HAND_RIGHT_OPEN;
@@ -1181,7 +1180,7 @@ index 1d43550..8e10a79 100644
      m->particleFlags |= PARTICLE_SPARKLES;
  
      if (m->actionTimer++ == 500) {
-@@ -2227,7 +2227,7 @@ static void end_peach_cutscene_run_to_peach(struct MarioState *m) {
+@@ -2238,7 +2238,7 @@ static void end_peach_cutscene_run_to_peach(struct MarioState *m) {
      set_mario_anim_with_accel(m, MARIO_ANIM_RUNNING, 0x00080000);
      play_step_sound(m, 9, 45);
  
@@ -1190,7 +1189,7 @@ index 1d43550..8e10a79 100644
      m->particleFlags |= PARTICLE_DUST;
  }
  
-@@ -2533,7 +2533,7 @@ static void end_peach_cutscene_run_to_castle(struct MarioState *m) {
+@@ -2544,7 +2544,7 @@ static void end_peach_cutscene_run_to_castle(struct MarioState *m) {
      set_mario_animation(m, m->actionState == 0 ? MARIO_ANIM_CREDITS_START_WALK_LOOK_UP
                                                 : MARIO_ANIM_CREDITS_LOOK_BACK_THEN_RUN);
  
@@ -1199,7 +1198,7 @@ index 1d43550..8e10a79 100644
  
      if (m->actionState == 0 && is_anim_past_end(m)) {
          m->actionState = 1;
-@@ -2653,7 +2653,7 @@ static s32 act_credits_cutscene(struct MarioState *m) {
+@@ -2664,7 +2664,7 @@ static s32 act_credits_cutscene(struct MarioState *m) {
              set_camera_mode(m->area->camera, CAMERA_MODE_BEHIND_MARIO, 1);
          }
          set_mario_animation(m, MARIO_ANIM_WATER_IDLE);
@@ -1209,7 +1208,7 @@ index 1d43550..8e10a79 100644
          vec3s_copy(m->marioObj->header.gfx.angle, m->faceAngle);
          m->particleFlags |= PARTICLE_BUBBLE;
 diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
-index 06ceda3..885f230 100644
+index 5a083ac..80f3dd2 100644
 --- a/src/game/mario_actions_moving.c
 +++ b/src/game/mario_actions_moving.c
 @@ -16,6 +16,7 @@
@@ -1220,9 +1219,25 @@ index 06ceda3..885f230 100644
  
  struct LandingAction {
      s16 numFrames;
-@@ -90,8 +91,12 @@ void play_step_sound(struct MarioState *m, s16 frame1, s16 frame2) {
+@@ -93,9 +94,14 @@ void play_step_sound(struct MarioState *m, s16 frame1, s16 frame2) {
+ void align_with_floor(struct MarioState *m, s16 smooth) {
+     struct Surface *floor = m->floor;
+     Vec3f floorNormal;
++    // Use a temp position so m->pos is not passed to the function
++    Vec3f tempPos;
++    vec3f_copy(tempPos,m->pos);
++    tempPos[1] = m->floorHeight;
++
+     if ((floor != NULL) && (m->pos[1] < (m->floorHeight + 80.0f))) {
+         if (smooth) {
+-            mtxf_align_terrain_triangle(sFloorAlignMatrix[m->unk00], m->pos, m->faceAngle[1], 40.0f);
++            mtxf_align_terrain_triangle(sFloorAlignMatrix[m->unk00], tempPos, m->faceAngle[1], 40.0f);
+         } else {
+             vec3f_set(floorNormal, floor->normal.x, floor->normal.y, floor->normal.z);
+             mtxf_align_terrain_normal(sFloorAlignMatrix[m->unk00], floorNormal, m->pos, m->faceAngle[1]);
+@@ -105,8 +111,12 @@ void align_with_floor(struct MarioState *m, s16 smooth) {
  }
- 
+ #else
  void align_with_floor(struct MarioState *m) {
 -    m->pos[1] = m->floorHeight;
 -    mtxf_align_terrain_triangle(sFloorAlignMatrix[m->unk00], m->pos, m->faceAngle[1], 40.0f);
@@ -1234,8 +1249,8 @@ index 06ceda3..885f230 100644
 +    mtxf_align_terrain_triangle(sFloorAlignMatrix[m->unk00], tempPos, m->faceAngle[1], 40.0f);
      m->marioObj->header.gfx.throwMatrix = &sFloorAlignMatrix[m->unk00];
  }
- 
-@@ -379,7 +384,7 @@ void update_shell_speed(struct MarioState *m) {
+ #endif
+@@ -399,7 +409,7 @@ void update_shell_speed(struct MarioState *m) {
          m->forwardVel += 1.1f;
      } else if (m->forwardVel <= targetSpeed) {
          m->forwardVel += 1.1f - m->forwardVel / 58.0f;
@@ -1244,7 +1259,7 @@ index 06ceda3..885f230 100644
          m->forwardVel -= 1.0f;
      }
  
-@@ -455,7 +460,7 @@ void update_walking_speed(struct MarioState *m) {
+@@ -475,7 +485,7 @@ void update_walking_speed(struct MarioState *m) {
          m->forwardVel += 1.1f;
      } else if (m->forwardVel <= targetSpeed) {
          m->forwardVel += 1.1f - m->forwardVel / 43.0f;
@@ -1253,7 +1268,7 @@ index 06ceda3..885f230 100644
          m->forwardVel -= 1.0f;
      }
  
-@@ -515,7 +520,7 @@ s32 begin_braking_action(struct MarioState *m) {
+@@ -562,7 +572,7 @@ s32 begin_braking_action(struct MarioState *m) {
          return set_mario_action(m, ACT_STANDING_AGAINST_WALL, 0);
      }
  
@@ -1262,7 +1277,7 @@ index 06ceda3..885f230 100644
          return set_mario_action(m, ACT_BRAKING, 0);
      }
  
-@@ -780,7 +785,7 @@ void tilt_body_ground_shell(struct MarioState *m, s16 startYaw) {
+@@ -827,7 +837,7 @@ void tilt_body_ground_shell(struct MarioState *m, s16 startYaw) {
      val0C->headAngle[2] = -val0C->torsoAngle[2];
  
      marioObj->header.gfx.angle[2] = val0C->torsoAngle[2];
@@ -1271,7 +1286,7 @@ index 06ceda3..885f230 100644
  }
  
  s32 act_walking(struct MarioState *m) {
-@@ -1734,6 +1739,8 @@ s32 act_death_exit_land(struct MarioState *m) {
+@@ -1800,6 +1810,8 @@ s32 act_death_exit_land(struct MarioState *m) {
          set_mario_action(m, ACT_IDLE, 0);
      }
  
@@ -1280,16 +1295,16 @@ index 06ceda3..885f230 100644
      return FALSE;
  }
  
-@@ -1778,7 +1785,7 @@ s32 common_landing_cancels(struct MarioState *m, struct LandingAction *landingAc
-     //! Everything here, including floor steepness, is checked before checking
+@@ -1850,7 +1862,7 @@ s32 common_landing_cancels(struct MarioState *m, struct LandingAction *landingAc
      // if Mario is actually on the floor. This leads to e.g. remote sliding.
+ #endif
  
 -    if (m->floor->normal.y < 0.2923717f) {
 +    if (ABS(m->floor->normal.y) < 0.2923717f) {
          return mario_push_off_steep_floor(m, landingAction->verySteepAction, 0);
      }
  
-@@ -1969,7 +1976,12 @@ s32 act_hold_quicksand_jump_land(struct MarioState *m) {
+@@ -2043,7 +2055,12 @@ s32 act_hold_quicksand_jump_land(struct MarioState *m) {
  }
  
  s32 check_common_moving_cancels(struct MarioState *m) {
@@ -1304,7 +1319,7 @@ index 06ceda3..885f230 100644
      }
  
 diff --git a/src/game/mario_actions_object.c b/src/game/mario_actions_object.c
-index 1280c14..53ba7f4 100644
+index c7341eb..a6a79f4 100644
 --- a/src/game/mario_actions_object.c
 +++ b/src/game/mario_actions_object.c
 @@ -9,6 +9,7 @@
@@ -1386,7 +1401,7 @@ index 597e41d..5bfdc69 100644
      if (m->input & INPUT_SQUISHED) {
          update_mario_sound_and_camera(m);
 diff --git a/src/game/mario_actions_submerged.c b/src/game/mario_actions_submerged.c
-index ec68a65..1f85e92 100644
+index 72fc656..5bd458e 100644
 --- a/src/game/mario_actions_submerged.c
 +++ b/src/game/mario_actions_submerged.c
 @@ -181,14 +181,18 @@ static u32 perform_water_step(struct MarioState *m) {
@@ -1429,7 +1444,7 @@ index ec68a65..1f85e92 100644
              return;
          }
      }
-@@ -1086,7 +1090,7 @@ static s32 act_caught_in_whirlpool(struct MarioState *m) {
+@@ -1100,7 +1104,7 @@ static s32 act_caught_in_whirlpool(struct MarioState *m) {
      m->faceAngle[1] = atan2s(dz, dx) + 0x8000;
  
      set_mario_animation(m, MARIO_ANIM_GENERAL_FALL);
@@ -1438,7 +1453,7 @@ index ec68a65..1f85e92 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
  #ifdef RUMBLE_FEEDBACK
      reset_rumble_timers_slip();
-@@ -1117,7 +1121,7 @@ static void update_metal_water_walking_speed(struct MarioState *m) {
+@@ -1131,7 +1135,7 @@ static void update_metal_water_walking_speed(struct MarioState *m) {
          m->forwardVel += 1.1f;
      } else if (m->forwardVel <= val) {
          m->forwardVel += 1.1f - m->forwardVel / 43.0f;
@@ -1448,7 +1463,7 @@ index ec68a65..1f85e92 100644
      }
  
 diff --git a/src/game/mario_misc.c b/src/game/mario_misc.c
-index ec8fdfc..a8203e6 100644
+index 43153ea..1db56bd 100644
 --- a/src/game/mario_misc.c
 +++ b/src/game/mario_misc.c
 @@ -31,6 +31,7 @@
@@ -1460,10 +1475,10 @@ index ec8fdfc..a8203e6 100644
  #define TOAD_STAR_1_REQUIREMENT 12
  #define TOAD_STAR_2_REQUIREMENT 25
 diff --git a/src/game/mario_step.c b/src/game/mario_step.c
-index 7ba5008..cf9d7a9 100644
+index fd07d7b..378f491 100644
 --- a/src/game/mario_step.c
 +++ b/src/game/mario_step.c
-@@ -247,7 +247,7 @@ void stop_and_set_height_to_floor(struct MarioState *m) {
+@@ -240,7 +240,7 @@ void stop_and_set_height_to_floor(struct MarioState *m) {
      //! This is responsible for some downwarps.
      m->pos[1] = m->floorHeight;
  
@@ -1472,7 +1487,7 @@ index 7ba5008..cf9d7a9 100644
      vec3s_set(marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
  }
  
-@@ -266,7 +266,7 @@ s32 stationary_ground_step(struct MarioState *m) {
+@@ -265,7 +265,7 @@ s32 stationary_ground_step(struct MarioState *m) {
          //! This is responsible for several stationary downwarps.
          m->pos[1] = m->floorHeight;
  
@@ -1481,16 +1496,16 @@ index 7ba5008..cf9d7a9 100644
          vec3s_set(marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
      }
  
-@@ -296,7 +296,7 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
+@@ -298,7 +298,7 @@ static s32 perform_ground_quarter_step(struct MarioState *m, Vec3f nextPos) {
          return GROUND_STEP_HIT_WALL_STOP_QSTEPS;
      }
  
 -    if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel) {
-+    if ((m->action & ACT_FLAG_RIDING_SHELL) && (floorHeight < waterLevel) && !gGravityMode) {
++    if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel && !gGravityMode) {
          floorHeight = waterLevel;
          floor = &gWaterSurfacePseudoFloor;
-         floor->originOffset = floorHeight; //! Wrong origin offset (no effect)
-@@ -343,8 +343,8 @@ s32 perform_ground_step(struct MarioState *m) {
+ #if QOL_FIX_SHELL_SPEED_NEGATIVE_OFFSET
+@@ -359,8 +359,8 @@ s32 perform_ground_step(struct MarioState *m) {
      Vec3f intendedPos;
  
      for (i = 0; i < 4; i++) {
@@ -1501,7 +1516,7 @@ index 7ba5008..cf9d7a9 100644
          intendedPos[1] = m->pos[1];
  
          stepResult = perform_ground_quarter_step(m, intendedPos);
-@@ -354,7 +354,7 @@ s32 perform_ground_step(struct MarioState *m) {
+@@ -370,7 +370,7 @@ s32 perform_ground_step(struct MarioState *m) {
      }
  
      m->terrainSoundAddend = mario_get_terrain_sound_addend(m);
@@ -1510,16 +1525,16 @@ index 7ba5008..cf9d7a9 100644
      vec3s_set(m->marioObj->header.gfx.angle, 0, m->faceAngle[1], 0);
  
      if (stepResult == GROUND_STEP_HIT_WALL_CONTINUE_QSTEPS) {
-@@ -439,7 +439,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+@@ -455,7 +455,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
          return AIR_STEP_HIT_WALL;
      }
  
 -    if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel) {
-+    if ((m->action & ACT_FLAG_RIDING_SHELL) && (floorHeight < waterLevel) & !gGravityMode) {
++    if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel && !gGravityMode) {
          floorHeight = waterLevel;
          floor = &gWaterSurfacePseudoFloor;
-         floor->originOffset = floorHeight; //! Incorrect origin offset (no effect)
-@@ -670,7 +670,7 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
+ #if QOL_FIX_SHELL_SPEED_NEGATIVE_OFFSET
+@@ -696,7 +696,7 @@ s32 perform_air_step(struct MarioState *m, u32 stepArg) {
      }
      apply_vertical_wind(m);
  
@@ -1529,10 +1544,10 @@ index 7ba5008..cf9d7a9 100644
  
      return stepResult;
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index e396ad3..f9920a7 100644
+index c4575a7..fded24c 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
-@@ -1084,7 +1084,7 @@ static void cur_obj_move_after_thrown_or_dropped(f32 forwardVel, f32 velY) {
+@@ -1088,7 +1088,7 @@ static void cur_obj_move_after_thrown_or_dropped(f32 forwardVel, f32 velY) {
      }
  
      o->oForwardVel = forwardVel;
@@ -1542,7 +1557,7 @@ index e396ad3..f9920a7 100644
      if (o->oForwardVel != 0) {
          cur_obj_move_y(/*gravity*/ -4.0f, /*bounciness*/ -0.1f, /*buoyancy*/ 2.0f);
 diff --git a/src/game/object_list_processor.c b/src/game/object_list_processor.c
-index 1daeb00..df40226 100644
+index 87dd3d6..d08dcf6 100644
 --- a/src/game/object_list_processor.c
 +++ b/src/game/object_list_processor.c
 @@ -20,6 +20,9 @@
@@ -1555,7 +1570,7 @@ index 1daeb00..df40226 100644
  
  /**
   * Flags controlling what debug info is displayed.
-@@ -235,7 +238,7 @@ void copy_mario_state_to_object(void) {
+@@ -239,7 +242,7 @@ void copy_mario_state_to_object(void) {
      gCurrentObject->oVelZ = gMarioStates[i].vel[2];
  
      gCurrentObject->oPosX = gMarioStates[i].pos[0];
@@ -1564,7 +1579,7 @@ index 1daeb00..df40226 100644
      gCurrentObject->oPosZ = gMarioStates[i].pos[2];
  
      gCurrentObject->oMoveAnglePitch = gCurrentObject->header.gfx.angle[0];
-@@ -269,6 +272,43 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
+@@ -273,6 +276,43 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
  void bhv_mario_update(void) {
      u32 particleFlags = 0;
      s32 i;
@@ -1608,7 +1623,7 @@ index 1daeb00..df40226 100644
  
      particleFlags = execute_mario_action(gCurrentObject);
      gCurrentObject->oMarioParticleFlags = particleFlags;
-@@ -286,6 +326,11 @@ void bhv_mario_update(void) {
+@@ -290,6 +330,11 @@ void bhv_mario_update(void) {
  
          i++;
      }
@@ -1621,10 +1636,10 @@ index 1daeb00..df40226 100644
  
  /**
 diff --git a/src/game/platform_displacement.c b/src/game/platform_displacement.c
-index 9153bc4..1be43b2 100644
+index 1808af2..1ac18b3 100644
 --- a/src/game/platform_displacement.c
 +++ b/src/game/platform_displacement.c
-@@ -37,9 +37,11 @@ void update_mario_platform(void) {
+@@ -38,9 +38,11 @@ void update_mario_platform(void) {
      //  of displacement since he is considered to be far from the platform's
      //  axis of rotation.
  
@@ -1639,7 +1654,7 @@ index 9153bc4..1be43b2 100644
      floorHeight = find_floor(marioX, marioY, marioZ, &floor);
  
      if (absf(marioY - floorHeight) < 4.0f) {
-@@ -64,6 +66,8 @@ void update_mario_platform(void) {
+@@ -65,6 +67,8 @@ void update_mario_platform(void) {
              }
              break;
      }
@@ -1649,7 +1664,7 @@ index 9153bc4..1be43b2 100644
  
  /**
 diff --git a/src/game/shadow.c b/src/game/shadow.c
-index dd278bd..8e4a48d 100644
+index 77f0f5d..8102d83 100644
 --- a/src/game/shadow.c
 +++ b/src/game/shadow.c
 @@ -213,7 +213,7 @@ s8 init_shadow(struct Shadow *s, f32 xPos, f32 yPos, f32 zPos, s16 shadowScale,
@@ -1659,9 +1674,9 @@ index dd278bd..8e4a48d 100644
 -    s->floorHeight = find_floor_height_and_data(s->parentX, s->parentY, s->parentZ, &floorGeometry);
 +    s->floorHeight = find_floor_height_and_data(s->parentX, s->parentY-70.f, s->parentZ, &floorGeometry); // awful hack
  
-     if (gEnvironmentRegions != 0) {
+     if (gEnvironmentRegions != NULL) {
          waterLevel = get_water_level_below_shadow(s);
-@@ -396,7 +396,7 @@ void calculate_vertex_xyz(s8 index, struct Shadow s, f32 *xPosVtx, f32 *yPosVtx,
+@@ -393,7 +393,7 @@ void calculate_vertex_xyz(s8 index, struct Shadow s, f32 *xPosVtx, f32 *yPosVtx,
                  // Clamp this vertex's y-position to that of the floor directly
                  // below it, which may differ from the floor below the center
                  // vertex.

@@ -473,10 +473,10 @@ index dcb637d..24429e9 100644
 +    gsSPBranchList(coin_material_mesh),
  };
 diff --git a/actors/common1.h b/actors/common1.h
-index 9a1b650..89e7b26 100644
+index a82e225..dcbf1f7 100644
 --- a/actors/common1.h
 +++ b/actors/common1.h
-@@ -31,20 +31,10 @@ extern const GeoLayout blue_coin_geo[];
+@@ -32,20 +32,10 @@ extern const GeoLayout blue_coin_geo[];
  extern const GeoLayout blue_coin_no_shadow_geo[];
  extern const GeoLayout red_coin_geo[];
  extern const GeoLayout red_coin_no_shadow_geo[];
@@ -502,10 +502,10 @@ index 9a1b650..89e7b26 100644
  // dirt
  extern const GeoLayout dirt_animation_geo[];
 diff --git a/assets.json b/assets.json
-index 85305a1..8ab3fb5 100644
+index 177c3cb..c1743dd 100644
 --- a/assets.json
 +++ b/assets.json
-@@ -178,10 +178,6 @@
+@@ -177,10 +177,6 @@
  "actors/chuckya/chuckya_hand_antenna.rgba16.png": [32,32,2048,{"jp":[2032944,30584],"us":[2040320,30584],"eu":[1912288,30584],"sh":[1888800,30584]}],
  "actors/clam_shell/clam_shell.rgba16.png": [32,32,2048,{"jp":[1285392,48],"us":[1292560,48],"eu":[1164528,48],"sh":[1141040,48]}],
  "actors/clam_shell/clam_shell_mouth.rgba16.png": [32,32,2048,{"jp":[1285392,2096],"us":[1292560,2096],"eu":[1164528,2096],"sh":[1141040,2096]}],
@@ -517,19 +517,19 @@ index 85305a1..8ab3fb5 100644
  "actors/dirt/dirt_particle.rgba16.png": [16,16,512,{"jp":[2094912,179704],"us":[2102288,179704],"eu":[1974256,179704],"sh":[1950768,179704]}],
  "actors/door/bbh_door.rgba16.png": [32,64,4096,{"jp":[2094912,66832],"us":[2102288,66832],"eu":[1974256,66832],"sh":[1950768,66832]}],
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index 6a51c0d..af25633 100644
+index 17d3adb..9602d7e 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
-@@ -938,7 +938,7 @@ const BehaviorScript bhvMrIBlueCoin[] = {
+@@ -942,7 +942,7 @@ const BehaviorScript bhvMrIBlueCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      SET_INT(oInteractType, INTERACT_COIN),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
 -    BILLBOARD(),
 +    //BILLBOARD(),
      SET_INT(oIntangibleTimer, 0),
-     SET_FLOAT(oMrIUnk110, 20),
+     SET_FLOAT(oCoinUnk110, 20),
      SET_INT(oAnimState, -1),
-@@ -958,7 +958,7 @@ const BehaviorScript bhvCoinInsideBoo[] = {
+@@ -962,7 +962,7 @@ const BehaviorScript bhvCoinInsideBoo[] = {
      SET_INT(oInteractType, INTERACT_COIN),
      OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
      SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
@@ -538,7 +538,7 @@ index 6a51c0d..af25633 100644
      CALL_NATIVE(bhv_init_room),
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_coin_inside_boo_loop),
-@@ -969,7 +969,7 @@ const BehaviorScript bhvCoinInsideBoo[] = {
+@@ -973,7 +973,7 @@ const BehaviorScript bhvCoinInsideBoo[] = {
  const BehaviorScript bhvCoinFormationSpawn[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
@@ -547,7 +547,7 @@ index 6a51c0d..af25633 100644
      BEGIN_LOOP(),
          CALL_NATIVE(bhv_coin_formation_spawn_loop),
      END_LOOP(),
-@@ -993,7 +993,7 @@ const BehaviorScript bhvOneCoin[] = {
+@@ -997,7 +997,7 @@ const BehaviorScript bhvOneCoin[] = {
  const BehaviorScript bhvYellowCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      // Yellow coin - common:
@@ -556,7 +556,7 @@ index 6a51c0d..af25633 100644
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
      CALL_NATIVE(bhv_yellow_coin_init),
      BEGIN_LOOP(),
-@@ -1003,7 +1003,7 @@ const BehaviorScript bhvYellowCoin[] = {
+@@ -1007,7 +1007,7 @@ const BehaviorScript bhvYellowCoin[] = {
  
  const BehaviorScript bhvTemporaryYellowCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
@@ -565,7 +565,7 @@ index 6a51c0d..af25633 100644
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
      CALL_NATIVE(bhv_yellow_coin_init),
      BEGIN_LOOP(),
-@@ -1032,7 +1032,7 @@ const BehaviorScript bhvTenCoinsSpawn[] = {
+@@ -1036,7 +1036,7 @@ const BehaviorScript bhvTenCoinsSpawn[] = {
  const BehaviorScript bhvSingleCoinGetsSpawned[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
@@ -574,7 +574,7 @@ index 6a51c0d..af25633 100644
      CALL_NATIVE(bhv_coin_init),
      SET_OBJ_PHYSICS(/*Wall hitbox radius*/ 30, /*Gravity*/ -400, /*Bounciness*/ -70, /*Drag strength*/ 1000, /*Friction*/ 1000, /*Buoyancy*/ 200, /*Unused*/ 0, 0),
      BEGIN_LOOP(),
-@@ -2897,7 +2897,7 @@ const BehaviorScript bhvHiddenBlueCoin[] = {
+@@ -2902,7 +2902,7 @@ const BehaviorScript bhvHiddenBlueCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      SET_INT(oInteractType, INTERACT_COIN),
      OR_INT(oFlags, (OBJ_FLAG_ACTIVE_FROM_AFAR | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
@@ -583,7 +583,7 @@ index 6a51c0d..af25633 100644
      SET_HITBOX(/*Radius*/ 100, /*Height*/ 64),
      SET_INT(oDamageOrCoinValue, 5),
      SET_INT(oIntangibleTimer, 0),
-@@ -3728,7 +3728,7 @@ const BehaviorScript bhvActSelector[] = {
+@@ -3733,7 +3733,7 @@ const BehaviorScript bhvActSelector[] = {
  const BehaviorScript bhvMovingYellowCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
@@ -592,7 +592,7 @@ index 6a51c0d..af25633 100644
      SET_HITBOX(/*Radius*/ 100, /*Height*/ 64),
      SET_INT(oInteractType, INTERACT_COIN),
      SET_INT(oIntangibleTimer, 0),
-@@ -3743,7 +3743,7 @@ const BehaviorScript bhvMovingYellowCoin[] = {
+@@ -3748,7 +3748,7 @@ const BehaviorScript bhvMovingYellowCoin[] = {
  const BehaviorScript bhvMovingBlueCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
@@ -601,7 +601,7 @@ index 6a51c0d..af25633 100644
      SET_INT(oIntangibleTimer, 0),
      SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_moving_blue_coin_init),
-@@ -3756,7 +3756,7 @@ const BehaviorScript bhvMovingBlueCoin[] = {
+@@ -3761,7 +3761,7 @@ const BehaviorScript bhvMovingBlueCoin[] = {
  const BehaviorScript bhvBlueCoinSliding[] = {
      BEGIN(OBJ_LIST_GENACTOR),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
@@ -610,7 +610,7 @@ index 6a51c0d..af25633 100644
      SET_INT(oIntangibleTimer, 0),
      SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_blue_coin_sliding_jumping_init),
-@@ -3769,7 +3769,7 @@ const BehaviorScript bhvBlueCoinSliding[] = {
+@@ -3774,7 +3774,7 @@ const BehaviorScript bhvBlueCoinSliding[] = {
  const BehaviorScript bhvBlueCoinJumping[] = {
      BEGIN(OBJ_LIST_GENACTOR),
      OR_INT(oFlags, (OBJ_FLAG_COMPUTE_ANGLE_TO_MARIO | OBJ_FLAG_COMPUTE_DIST_TO_MARIO | OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE)),
@@ -619,7 +619,7 @@ index 6a51c0d..af25633 100644
      SET_INT(oIntangibleTimer, 0),
      SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_blue_coin_sliding_jumping_init),
-@@ -4702,7 +4702,7 @@ const BehaviorScript bhvHiddenRedCoinStar[] = {
+@@ -4707,7 +4707,7 @@ const BehaviorScript bhvHiddenRedCoinStar[] = {
  const BehaviorScript bhvRedCoin[] = {
      BEGIN(OBJ_LIST_LEVEL),
      OR_INT(oFlags, OBJ_FLAG_UPDATE_GFX_POS_AND_ANGLE),
@@ -629,22 +629,21 @@ index 6a51c0d..af25633 100644
      SET_INT(oAnimState, -1),
      CALL_NATIVE(bhv_init_room),
 diff --git a/src/game/ingame_menu.c b/src/game/ingame_menu.c
-index 44e5fc4..7b91bd2 100644
+index 2e0f336..5c91661 100644
 --- a/src/game/ingame_menu.c
 +++ b/src/game/ingame_menu.c
-@@ -2150,26 +2150,14 @@ void shade_screen(void) {
+@@ -2244,26 +2244,14 @@ void shade_screen(void) {
  }
  
  void print_animated_red_coin(s16 x, s16 y) {
--    s32 timer = gGlobalTimer;
--
+-    s32 globalTimer = gGlobalTimer;
 +    f32 rotation = gGlobalTimer * 16;
-+    
+ 
      create_dl_translation_matrix(MENU_MTX_PUSH, x, y, 0);
 -    create_dl_scale_matrix(MENU_MTX_NOPUSH, 0.2f, 0.2f, 1.0f);
 -    gDPSetRenderMode(gDisplayListHead++, G_RM_TEX_EDGE, G_RM_TEX_EDGE2);
 -
--    switch (timer & 6) {
+-    switch (globalTimer & 6) {
 -        case 0:
 -            gSPDisplayList(gDisplayListHead++, coin_seg3_dl_03007940);
 -            break;
@@ -667,10 +666,10 @@ index 44e5fc4..7b91bd2 100644
      gDPSetRenderMode(gDisplayListHead++, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2);
      gSPPopMatrix(gDisplayListHead++, G_MTX_MODELVIEW);
 diff --git a/src/game/object_helpers.c b/src/game/object_helpers.c
-index a1427dd..0b78a35 100644
+index c4575a7..5ed047e 100644
 --- a/src/game/object_helpers.c
 +++ b/src/game/object_helpers.c
-@@ -126,6 +126,28 @@ Gfx *geo_update_layer_transparency(s32 callContext, struct GraphNode *node, UNUS
+@@ -126,6 +126,34 @@ Gfx *geo_update_layer_transparency(s32 callContext, struct GraphNode *node, UNUS
      return dlStart;
  }
  
@@ -678,13 +677,19 @@ index a1427dd..0b78a35 100644
 +
 +Gfx *geo_rotate_coin(s32 callContext, UNUSED struct GraphNode *node, UNUSED void *context) {
 +    struct Object *obj;
-+    
++
 +    if (callContext == GEO_CONTEXT_RENDER) {
 +        obj = (struct Object *) gCurGraphNodeObject;
-+    
++
++        obj->header.gfx.angle[0] = 0;
++        obj->header.gfx.angle[1] = 0;
++        obj->header.gfx.angle[2] = 0;
++
++        obj->oFaceAnglePitch = 0;
 +        // Set rotation
 +        obj->oFaceAngleYaw += COIN_ROTATION;
-+    
++        obj->oFaceAngleRoll = 0;
++
 +        // Reset anim state (used in vanilla coins)
 +        if (obj->oAnimState > 0) {
 +            obj->oAnimState = 0;
@@ -699,24 +704,11 @@ index a1427dd..0b78a35 100644
  /**
   * @bug Every geo function declares the 3 parameters of callContext, node, and
   * the matrix array. This one (see also geo_switch_area) doesn't. When executed,
-@@ -1618,6 +1640,12 @@ static void obj_spawn_loot_coins(struct Object *obj, s32 numCoins, f32 sp30,
- 
-         coin = spawn_object(obj, model, coinBehavior);
-         obj_translate_xz_random(coin, posJitter);
-+        coin->header.gfx.angle[0] = 0;
-+        coin->header.gfx.angle[1] = 0;
-+        coin->header.gfx.angle[2] = 0;
-+        coin->oFaceAnglePitch = 0;
-+        coin->oFaceAngleYaw = 0;
-+        coin->oFaceAngleRoll = 0;
-         coin->oPosY = spawnHeight;
-         coin->oCoinUnk110 = sp30;
-     }
 diff --git a/src/game/object_helpers.h b/src/game/object_helpers.h
-index 895604f..538ec4f 100644
+index c7ba8cc..dc8fe5a 100644
 --- a/src/game/object_helpers.h
 +++ b/src/game/object_helpers.h
-@@ -76,6 +76,7 @@ Gfx *geo_switch_area(s32 callContext, struct GraphNode *node, UNUSED void *conte
+@@ -72,6 +72,7 @@ Gfx *geo_switch_area(s32 callContext, struct GraphNode *node, UNUSED void *conte
  Gfx *geo_switch_anim_state(s32 callContext, struct GraphNode *node);
  Gfx *geo_switch_area(s32 callContext, struct GraphNode *node);
  #endif

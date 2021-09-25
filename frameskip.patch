@@ -1,5 +1,5 @@
 diff --git a/src/engine/behavior_script.c b/src/engine/behavior_script.c
-index f999c3c..21543b1 100644
+index 4316e04..c13a5fc 100644
 --- a/src/engine/behavior_script.c
 +++ b/src/engine/behavior_script.c
 @@ -11,6 +11,7 @@
@@ -25,7 +25,7 @@ index f999c3c..21543b1 100644
  
      // Calculate the distance from the object to Mario.
      if (objFlags & OBJ_FLAG_COMPUTE_DIST_TO_MARIO) {
-@@ -1013,4 +1022,12 @@ void cur_obj_update(void) {
+@@ -1014,4 +1023,12 @@ void cur_obj_update(void) {
              }
          }
      }
@@ -39,12 +39,12 @@ index f999c3c..21543b1 100644
 +
  }
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 03b3e91..bb317d2 100644
+index 8f28b73..fe837a2 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -212,6 +212,14 @@ s8 sWarpCheckpointActive = FALSE;
- u8 unused3[4];
- u8 unused4[2];
+@@ -213,6 +213,14 @@ s8 sWarpCheckpointActive = FALSE;
+ u8 unused2[4];
+ u8 unused3[2];
  
 +#ifdef TARGET_N64
 +// Frameskip
@@ -57,7 +57,7 @@ index 03b3e91..bb317d2 100644
  u16 level_control_timer(s32 timerOp) {
      switch (timerOp) {
          case TIMER_CONTROL_SHOW:
-@@ -999,6 +1007,31 @@ void basic_update(UNUSED s16 *arg) {
+@@ -1008,6 +1016,31 @@ void basic_update(UNUSED s16 *arg) {
      }
  }
  
@@ -89,7 +89,7 @@ index 03b3e91..bb317d2 100644
  s32 play_mode_normal(void) {
      if (gCurrDemoInput != NULL) {
          print_intro_text();
-@@ -1014,11 +1047,19 @@ s32 play_mode_normal(void) {
+@@ -1023,11 +1056,19 @@ s32 play_mode_normal(void) {
      warp_area();
      check_instant_warp();
  
@@ -98,7 +98,7 @@ index 03b3e91..bb317d2 100644
 +    delta_time_handle();
 +#else
      if (sTimerRunning && gHudDisplay.timer < 17999) {
-         gHudDisplay.timer += 1;
+         gHudDisplay.timer++;
      }
  
      area_update_objects();
@@ -109,7 +109,7 @@ index 03b3e91..bb317d2 100644
      update_hud_values();
  
      if (gCurrentArea != NULL) {
-@@ -1185,15 +1226,19 @@ s32 update_level(void) {
+@@ -1207,15 +1248,19 @@ s32 update_level(void) {
              break;
          case PLAY_MODE_PAUSED:
              changeLevel = play_mode_paused();
@@ -127,9 +127,9 @@ index 03b3e91..bb317d2 100644
              changeLevel = play_mode_frame_advance();
 +            delta_time_reset();
              break;
-     }
- 
-@@ -1303,6 +1348,7 @@ s32 lvl_init_or_update(s16 initOrUpdate, UNUSED s32 unused) {
+ #if QOL_FIX_UNUSED_PLAY_MODE
+         default:
+@@ -1320,6 +1365,7 @@ s32 lvl_init_or_update(s16 initOrUpdate, UNUSED s32 unused) {
      switch (initOrUpdate) {
          case 0:
              result = init_level();
@@ -138,12 +138,12 @@ index 03b3e91..bb317d2 100644
          case 1:
              result = update_level();
 diff --git a/src/game/level_update.h b/src/game/level_update.h
-index 90cd167..136bb6c 100644
+index 2ca79e1..05c54c3 100644
 --- a/src/game/level_update.h
 +++ b/src/game/level_update.h
-@@ -72,6 +72,11 @@ extern s16 sTransitionTimer;
+@@ -71,6 +71,11 @@ extern s16 sTransitionTimer;
  extern void (*sTransitionUpdate)(s16 *);
- extern u8 unused3[4];
+ extern u8 unused2[4];
  
 +#ifdef TARGET_N64
 +// Frameskip
@@ -154,12 +154,12 @@ index 90cd167..136bb6c 100644
      u8 type;
      u8 levelNum;
 diff --git a/src/game/mario.c b/src/game/mario.c
-index 92dd7bd..91daf11 100644
+index fd3a4b5..7daa056 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -1404,6 +1404,12 @@ void update_mario_inputs(struct MarioState *m) {
-     }
- #endif
+@@ -1405,6 +1405,12 @@ void update_mario_inputs(struct MarioState *m) {
+     m->collidedObjInteractTypes = m->marioObj->collidedObjInteractTypes;
+     m->flags &= 0xFFFFFF;
  
 +#ifdef TARGET_N64
 +    if (doneSkipped >= 0) {

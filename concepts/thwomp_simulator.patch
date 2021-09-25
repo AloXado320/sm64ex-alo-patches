@@ -17,7 +17,7 @@ index fb6367d..5fefefc 100644
  
  #if defined(VERSION_JP) || defined(VERSION_SH)
 diff --git a/data/behavior_data.c b/data/behavior_data.c
-index 3261f62..af69d90 100644
+index 17d3adb..3bb581c 100644
 --- a/data/behavior_data.c
 +++ b/data/behavior_data.c
 @@ -819,7 +819,7 @@ const BehaviorScript bhvKickableBoard[] = {
@@ -70,10 +70,10 @@ index 8a49027..2c80d91 100644
  #define TEXT_MENU_CCM _(" 4 COOL, COOL MOUNTAIN")
  #define TEXT_MENU_BBH _(" 5 BIG BOO'S HAUNT")
 diff --git a/include/types.h b/include/types.h
-index 28d9891..4d9628c 100644
+index c44e154..afcaaff 100644
 --- a/include/types.h
 +++ b/include/types.h
-@@ -357,6 +357,9 @@ struct MarioState
+@@ -337,6 +337,9 @@ struct MarioState {
      #ifdef PORT_MOP_OBJS
  	/*0xd4*/ u8 SelFallDmg; //For certain objects I don't want fall damage ever
      #endif
@@ -84,10 +84,10 @@ index 28d9891..4d9628c 100644
  
  #endif // _SM64_TYPES_H_
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index 795a480..39cbb82 100644
+index 18f2eb0..83c3604 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
-@@ -68,53 +68,11 @@ const LevelScript level_intro_splash_screen[] = {
+@@ -66,53 +66,11 @@ const LevelScript level_intro_splash_screen[] = {
  
  #ifdef GODDARD_MFACE
  const LevelScript level_intro_mario_head_regular[] = {
@@ -267,10 +267,10 @@ index 6697b49..e976004 100644
      OBJECT(/*model*/ MODEL_PIRANHA_PLANT,     /*pos*/  1822, 2560,  -101, /*angle*/ 0,   90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvPiranhaPlant),
      OBJECT(/*model*/ MODEL_PIRANHA_PLANT,     /*pos*/  4625,  256,  5017, /*angle*/ 0,  -90, 0, /*behParam*/ 0x00000000, /*beh*/ bhvPiranhaPlant),
 diff --git a/src/extras/bettercamera.c b/src/extras/bettercamera.c
-index 99823c5..9b26da2 100644
+index 648bf06..1c3d2bb 100644
 --- a/src/extras/bettercamera.c
 +++ b/src/extras/bettercamera.c
-@@ -133,9 +133,9 @@ void puppycam_default_config(void) {
+@@ -166,9 +166,9 @@ void puppycam_default_config(void) {
  //Initial setup. Ran at the beginning of the game and never again.
  void puppycam_boot(void)
  {
@@ -283,7 +283,7 @@ index 99823c5..9b26da2 100644
      gPuppyCam.povHeight = 125;
      gPuppyCam.stick2[0] = 0;
      gPuppyCam.stick2[1] = 0;
-@@ -203,9 +203,11 @@ void puppycam_reset_values(void)
+@@ -312,9 +312,11 @@ void puppycam_reset_values(void)
  void puppycam_init(void)
  {
  
@@ -298,7 +298,7 @@ index 99823c5..9b26da2 100644
  
      gPuppyCam.intendedFlags = PUPPYCAM_BEHAVIOUR_DEFAULT;
  
-@@ -215,7 +217,7 @@ void puppycam_init(void)
+@@ -324,7 +326,7 @@ void puppycam_init(void)
      gPuppyCam.zoom = gPuppyCam.zoomPoints[1];
      gPuppyCam.zoomSet = 1;
      gPuppyCam.zoomTarget = gPuppyCam.zoom;
@@ -307,7 +307,7 @@ index 99823c5..9b26da2 100644
      gPuppyCam.yawTarget = gPuppyCam.yaw;
      gPuppyCam.pitch = 0x3800;
      gPuppyCam.pitchTarget = gPuppyCam.pitch;
-@@ -296,7 +298,7 @@ void puppycam_input_centre(void)
+@@ -406,7 +408,7 @@ void puppycam_input_centre(void)
      if (gPlayer1Controller->buttonPressed & inputDefault && gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_YAW_ROTATION &&
      !(gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_8DIR) && !(gPuppyCam.flags & PUPPYCAM_BEHAVIOUR_INPUT_4DIR) && !(gPlayer1Controller->buttonDown & U_JPAD))
      {
@@ -316,7 +316,7 @@ index 99823c5..9b26da2 100644
          play_sound(SOUND_MENU_CLICK_CHANGE_VIEW,gGlobalSoundSource);
      }
  }
-@@ -500,14 +502,14 @@ static void puppycam_input_hold(void)
+@@ -629,14 +631,14 @@ static void puppycam_input_hold(void)
      {
          switch (gPuppyCam.options.inputType)
          {
@@ -497,17 +497,19 @@ index 0000000..70fc6d1
 +#endif // THWOMP_SIMULATOR_LOGIC_H
 \ No newline at end of file
 diff --git a/src/game/behaviors/thwomp.inc.c b/src/game/behaviors/thwomp.inc.c
-index fdb3345..9f6d1b7 100644
+index 00093c9..c2b5b2e 100644
 --- a/src/game/behaviors/thwomp.inc.c
 +++ b/src/game/behaviors/thwomp.inc.c
-@@ -2,13 +2,13 @@
+@@ -2,7 +2,7 @@
  
  void grindel_thwomp_act_4(void) {
-     if (o->oTimer == 0)
+     if (o->oTimer == 0) {
 -        o->oThwompRandomTimer = random_float() * 10.0f + 20.0f;
 +        o->oThwompRandomTimer = 10.0f;
-     if (o->oTimer > o->oThwompRandomTimer)
+     }
+     if (o->oTimer > o->oThwompRandomTimer) {
          o->oAction = 0;
+@@ -10,7 +10,7 @@ void grindel_thwomp_act_4(void) {
  }
  
  void grindel_thwomp_act_2(void) {
@@ -516,11 +518,11 @@ index fdb3345..9f6d1b7 100644
      o->oPosY += o->oVelY;
      if (o->oPosY < o->oHomeY) {
          o->oPosY = o->oHomeY;
-@@ -18,28 +18,25 @@ void grindel_thwomp_act_2(void) {
+@@ -20,11 +20,9 @@ void grindel_thwomp_act_2(void) {
  }
  
  void grindel_thwomp_act_3(void) {
--    if (o->oTimer == 0)
+-    if (o->oTimer == 0) {
 -        if (o->oDistanceToMario < 1500.0f) {
 -            cur_obj_shake_screen(SHAKE_POS_SMALL);
 -            cur_obj_play_sound_2(SOUND_OBJ_THWOMP);
@@ -528,17 +530,20 @@ index fdb3345..9f6d1b7 100644
 +    if (o->oTimer == 0){
 +        cur_obj_shake_screen(SHAKE_POS_SMALL);
 +        cur_obj_play_sound_2(SOUND_OBJ_THWOMP);
-+    }
-     if (o->oTimer > 9)
+     }
+     if (o->oTimer >= 10) {
          o->oAction = 4;
+@@ -32,20 +30,17 @@ void grindel_thwomp_act_3(void) {
  }
  
  void grindel_thwomp_act_1(void) {
--    if (o->oTimer == 0)
+-    if (o->oTimer == 0) {
 -        o->oThwompRandomTimer = random_float() * 30.0f + 10.0f;
--    if (o->oTimer > o->oThwompRandomTimer)
-+    if (gPlayer1Controller->buttonPressed & A_BUTTON)
+-    }
+-    if (o->oTimer > o->oThwompRandomTimer) {
++    if (gPlayer1Controller->buttonPressed & A_BUTTON) {
          o->oAction = 2;
+     }
  }
  
  void grindel_thwomp_act_0(void) {
@@ -546,14 +551,14 @@ index fdb3345..9f6d1b7 100644
 +    if (o->oBehParams2ndByte + 5 < o->oTimer) {
          o->oAction = 1;
          o->oPosY += 5.0f;
-     } else
+     } else {
 -        o->oPosY += 10.0f;
 +        o->oPosY += 80.0f;
+     }
  }
  
- void (*sGrindelThwompActions[])(void) = { grindel_thwomp_act_0, grindel_thwomp_act_1,
 diff --git a/src/game/camera.c b/src/game/camera.c
-index 007c7a8..68686af 100644
+index aa1f6ff..a9de0ca 100644
 --- a/src/game/camera.c
 +++ b/src/game/camera.c
 @@ -726,38 +726,23 @@ BAD_RETURN(f32) calc_y_to_curr_floor(f32 *posOff, f32 posMul, f32 posBound, f32
@@ -608,7 +613,7 @@ index 007c7a8..68686af 100644
  }
  
  /**
-@@ -790,7 +775,8 @@ void set_camera_height(struct Camera *c, f32 goalHeight) {
+@@ -792,7 +777,8 @@ void set_camera_height(struct Camera *c, f32 goalHeight) {
          approach_camera_height(c, goalHeight, 5.f);
      } else {
          camFloorHeight = find_floor(c->pos[0], c->pos[1] + 100.f, c->pos[2], &surface) + baseOff;
@@ -618,7 +623,7 @@ index 007c7a8..68686af 100644
  
          if (camFloorHeight < marioFloorHeight) {
              camFloorHeight = marioFloorHeight;
-@@ -1084,7 +1070,8 @@ void radial_camera_move(struct Camera *c) {
+@@ -1088,7 +1074,8 @@ void radial_camera_move(struct Camera *c) {
          } else {
              if (c->mode == CAMERA_MODE_RADIAL) {
                  // sModeOffsetYaw only updates when Mario is moving
@@ -689,7 +694,7 @@ index 007c7a8..68686af 100644
  }
  
  /**
-@@ -11584,6 +11573,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
+@@ -11591,6 +11580,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
      struct MarioState *marioState = &gMarioStates[0];
      u8 fovFunc = sFOVState.fovFunc;
  
@@ -697,7 +702,7 @@ index 007c7a8..68686af 100644
      if (callContext == GEO_CONTEXT_RENDER) {
          switch (fovFunc) {
              case CAM_FOV_SET_45:
-@@ -11625,6 +11615,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
+@@ -11632,6 +11622,7 @@ Gfx *geo_camera_fov(s32 callContext, struct GraphNode *g, UNUSED void *context)
  
      perspective->fov = sFOVState.fov;
      shake_camera_fov(perspective);
@@ -706,7 +711,7 @@ index 007c7a8..68686af 100644
  }
  
 diff --git a/src/game/debug.c b/src/game/debug.c
-index be66a13..99a430f 100644
+index 39911f4..b785390 100644
 --- a/src/game/debug.c
 +++ b/src/game/debug.c
 @@ -18,6 +18,8 @@
@@ -718,7 +723,7 @@ index be66a13..99a430f 100644
  #define DEBUG_INFO_NOFLAGS (0 << 0)
  #define DEBUG_INFO_FLAG_DPRINT (1 << 0)
  #define DEBUG_INFO_FLAG_LSELECT (1 << 1)
-@@ -414,6 +416,8 @@ void stub_debug_5(void) {
+@@ -411,6 +413,8 @@ void stub_debug_5(void) {
   * count, floor misses, and an unknown wall counter) is also printed.
   */
  void try_print_debug_mario_object_info(void) {
@@ -728,10 +733,10 @@ index be66a13..99a430f 100644
          switch (sDebugPage) {
              case DEBUG_PAGE_CHECKSURFACEINFO:
 diff --git a/src/game/hud.c b/src/game/hud.c
-index db36db7..c0fdf2f 100644
+index a5a5ac2..9fdb59f 100644
 --- a/src/game/hud.c
 +++ b/src/game/hud.c
-@@ -342,16 +342,16 @@ void render_hud_stars(void) {
+@@ -338,16 +338,16 @@ void render_hud_stars(void) {
          return;
      }
  
@@ -752,37 +757,37 @@ index db36db7..c0fdf2f 100644
  
  /**
 diff --git a/src/game/ingame_menu.c b/src/game/ingame_menu.c
-index 8df66bd..bc15c37 100644
+index 2e0f336..51cce98 100644
 --- a/src/game/ingame_menu.c
 +++ b/src/game/ingame_menu.c
-@@ -2339,20 +2339,23 @@ void render_pause_my_score_coins(void) {
+@@ -2360,21 +2360,22 @@ void render_pause_my_score_coins(void) {
      gSPDisplayList(gDisplayListHead++, dl_rgba16_text_begin);
      gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
  
 +/**
-     if (courseIndex < COURSE_STAGES_COUNT) {
+     if (courseIndex <= COURSE_NUM_TO_INDEX(COURSE_STAGES_MAX)) {
          print_hud_my_score_coins(1, gCurrSaveFileNum - 1, courseIndex, 178, 103);
          print_hud_my_score_stars(gCurrSaveFileNum - 1, courseIndex, 118, 103);
      }
 -
-+ */
++*/
      gSPDisplayList(gDisplayListHead++, dl_rgba16_text_end);
      gSPDisplayList(gDisplayListHead++, dl_ia_text_begin);
  
      gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, gDialogTextAlpha);
- 
+-
 +/**
-     if (courseIndex < COURSE_STAGES_COUNT && save_file_get_course_star_count(gCurrSaveFileNum - 1, courseIndex) != 0) {
-         print_generic_string(MYSCORE_X, 121, textMyScore);
+     if (courseIndex <= COURSE_NUM_TO_INDEX(COURSE_STAGES_MAX)
+         && save_file_get_course_star_count(gCurrSaveFileNum - 1, courseIndex) != 0) {
+         print_generic_string(MYSCORE_X, 121, LANGUAGE_ARRAY(textMyScore));
      }
 -
-+ */
-+ 
++*/
      courseName = segmented_to_virtual(courseNameTbl[courseIndex]);
  
-     if (courseIndex < COURSE_STAGES_COUNT) {
+     if (courseIndex <= COURSE_NUM_TO_INDEX(COURSE_STAGES_MAX)) {
 diff --git a/src/game/interaction.c b/src/game/interaction.c
-index 44f0302..6cace24 100644
+index 87fd514..d7dff63 100644
 --- a/src/game/interaction.c
 +++ b/src/game/interaction.c
 @@ -610,7 +610,7 @@ u32 determine_knockback_action(struct MarioState *m, UNUSED s32 arg) {
@@ -795,10 +800,10 @@ index 44f0302..6cace24 100644
      }
  
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index 3acc337..2547c09 100644
+index 8f28b73..8dadf45 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -781,7 +781,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
+@@ -779,7 +779,7 @@ s16 level_trigger_warp(struct MarioState *m, s32 warpOp) {
  
              case WARP_OP_DEATH:
                  if (m->numLives == 0) {
@@ -807,44 +812,38 @@ index 3acc337..2547c09 100644
                  }
                  sDelayedWarpTimer = 48;
                  sSourceWarpNodeId = WARP_NODE_DEATH;
-@@ -940,11 +940,11 @@ void update_hud_values(void) {
+@@ -938,11 +938,11 @@ void update_hud_values(void) {
      if (gCurrCreditsEntry == NULL) {
          s16 numHealthWedges = gMarioState->health > 0 ? gMarioState->health >> 8 : 0;
  
 -        if (gCurrCourseNum >= COURSE_MIN) {
--            gHudDisplay.flags |= HUD_DISPLAY_FLAG_COIN_COUNT;
--        } else {
--            gHudDisplay.flags &= ~HUD_DISPLAY_FLAG_COIN_COUNT;
++        /**if (gCurrCourseNum >= COURSE_MIN) {
+             gHudDisplay.flags |= HUD_DISPLAY_FLAG_COIN_COUNT;
+         } else {
+             gHudDisplay.flags &= ~HUD_DISPLAY_FLAG_COIN_COUNT;
 -        }
-+        //if (gCurrCourseNum >= COURSE_MIN) {
-+        //    gHudDisplay.flags |= HUD_DISPLAY_FLAG_COIN_COUNT;
-+        //} else {
-+        //    gHudDisplay.flags &= ~HUD_DISPLAY_FLAG_COIN_COUNT;
-+        //}
++        } */
  
          if (gHudDisplay.coins < gMarioState->numCoins) {
-             if (gGlobalTimer & 0x00000001) {
-@@ -1178,14 +1178,7 @@ s16 gSkipIntroKeyCombo = FALSE;
+             if (gGlobalTimer & 1) {
+@@ -1177,11 +1177,7 @@ s16 gSkipGameIntro = FALSE;
  // ex-alo change
  // Checks for peach intro skip
  u8 should_intro_be_skipped(void) {
--    return save_file_exists(gCurrSaveFileNum - 1) || gSkipIntroKeyCombo == TRUE
+-    return save_file_exists(gCurrSaveFileNum - 1) || gSkipGameIntro == TRUE
 -#ifndef TARGET_N64
--#ifdef COMMAND_LINE_OPTIONS
--    || gCLIOpts.SkipIntro == TRUE
--#endif
 -    || configSkipIntro == TRUE
 -#endif
 -    ;
 +    return TRUE;
  }
  
- s32 update_level(void) {
+ // ex-alo change
 diff --git a/src/game/level_update.h b/src/game/level_update.h
-index 90cd167..891b475 100644
+index 2ca79e1..3cc109f 100644
 --- a/src/game/level_update.h
 +++ b/src/game/level_update.h
-@@ -114,7 +114,7 @@ enum HUDDisplayFlag {
+@@ -113,7 +113,7 @@ enum HUDDisplayFlag {
      HUD_DISPLAY_FLAG_EMPHASIZE_POWER = 0x8000,
  
      HUD_DISPLAY_NONE = 0x0000,
@@ -854,10 +853,10 @@ index 90cd167..891b475 100644
  
  
 diff --git a/src/game/mario.c b/src/game/mario.c
-index c54d12b..f84ea3c 100644
+index fd3a4b5..65bd591 100644
 --- a/src/game/mario.c
 +++ b/src/game/mario.c
-@@ -783,11 +783,14 @@ void set_steep_jump_action(struct MarioState *m) {
+@@ -787,11 +787,14 @@ void set_steep_jump_action(struct MarioState *m) {
  static void set_mario_y_vel_based_on_fspeed(struct MarioState *m, f32 initialVelY, f32 multiplier) {
      // get_additive_y_vel_for_jumps is always 0 and a stubbed function.
      // It was likely trampoline related based on code location.
@@ -873,7 +872,7 @@ index c54d12b..f84ea3c 100644
  }
  
  /**
-@@ -1276,29 +1279,6 @@ void debug_print_speed_action_normal(struct MarioState *m) {
+@@ -1280,29 +1283,6 @@ void debug_print_speed_action_normal(struct MarioState *m) {
   * Update the button inputs for Mario.
   */
  void update_mario_button_inputs(struct MarioState *m) {
@@ -903,7 +902,7 @@ index c54d12b..f84ea3c 100644
      if (m->input & INPUT_A_PRESSED) {
          m->framesSinceA = 0;
      } else if (m->framesSinceA < 0xFF) {
-@@ -1316,21 +1296,26 @@ void update_mario_button_inputs(struct MarioState *m) {
+@@ -1320,21 +1300,26 @@ void update_mario_button_inputs(struct MarioState *m) {
   * Updates the joystick intended magnitude.
   */
  void update_mario_joystick_inputs(struct MarioState *m) {
@@ -943,7 +942,7 @@ index c54d12b..f84ea3c 100644
  }
  
  /**
-@@ -1561,10 +1546,10 @@ void update_mario_health(struct MarioState *m) {
+@@ -1569,10 +1554,10 @@ void update_mario_health(struct MarioState *m) {
   * Updates some basic info for camera usage.
   */
  void update_mario_info_for_cam(struct MarioState *m) {
@@ -958,10 +957,10 @@ index c54d12b..f84ea3c 100644
      if (!(m->flags & MARIO_UNKNOWN_25)) {
          vec3f_copy(m->statusForCamera->pos, m->pos);
 diff --git a/src/game/mario_actions_airborne.c b/src/game/mario_actions_airborne.c
-index 7757b13..463e729 100644
+index f49f5b1..904a7f0 100644
 --- a/src/game/mario_actions_airborne.c
 +++ b/src/game/mario_actions_airborne.c
-@@ -29,7 +29,7 @@ void play_far_fall_sound(struct MarioState *m) {
+@@ -33,7 +33,7 @@ void play_far_fall_sound(struct MarioState *m) {
      if (!(action & ACT_FLAG_INVULNERABLE) && action != ACT_TWIRLING && action != ACT_FLYING
          && !(m->flags & MARIO_UNKNOWN_18)) {
          if (m->peakHeight - m->pos[1] > 1150.0f) {
@@ -970,7 +969,7 @@ index 7757b13..463e729 100644
              m->flags |= MARIO_UNKNOWN_18;
          }
      }
-@@ -1220,7 +1220,7 @@ s32 act_thrown_backward(struct MarioState *m) {
+@@ -1245,7 +1245,7 @@ s32 act_thrown_backward(struct MarioState *m) {
          landAction = ACT_BACKWARD_GROUND_KB;
      }
  
@@ -979,7 +978,7 @@ index 7757b13..463e729 100644
  
      common_air_knockback_step(m, landAction, ACT_HARD_BACKWARD_GROUND_KB, 0x0002, m->forwardVel);
  
-@@ -1238,7 +1238,7 @@ s32 act_thrown_forward(struct MarioState *m) {
+@@ -1263,7 +1263,7 @@ s32 act_thrown_forward(struct MarioState *m) {
          landAction = ACT_FORWARD_GROUND_KB;
      }
  
@@ -988,7 +987,7 @@ index 7757b13..463e729 100644
  
      if (common_air_knockback_step(m, landAction, ACT_HARD_FORWARD_GROUND_KB, 0x002D, m->forwardVel)
          == AIR_STEP_NONE) {
-@@ -1309,7 +1309,7 @@ s32 act_getting_blown(struct MarioState *m) {
+@@ -1334,7 +1334,7 @@ s32 act_getting_blown(struct MarioState *m) {
                  m->vel[1] = 0.0f;
              }
  
@@ -998,10 +997,10 @@ index 7757b13..463e729 100644
      }
  
 diff --git a/src/game/mario_actions_moving.c b/src/game/mario_actions_moving.c
-index 06ceda3..cb94ebf 100644
+index 5a083ac..1ad3b24 100644
 --- a/src/game/mario_actions_moving.c
 +++ b/src/game/mario_actions_moving.c
-@@ -459,9 +459,9 @@ void update_walking_speed(struct MarioState *m) {
+@@ -479,9 +479,9 @@ void update_walking_speed(struct MarioState *m) {
          m->forwardVel -= 1.0f;
      }
  
@@ -1012,13 +1011,13 @@ index 06ceda3..cb94ebf 100644
 +    //    m->forwardVel = 48.0f;
 +    //}
  
- /* Handles the "Super responsive controls" cheat. The content of the "else" is Mario's original code for turning around.*/
  #ifdef CHEATS_ACTIONS
+     if (Cheats.EnableCheats && Cheats.Responsive) {
 diff --git a/src/game/mario_step.c b/src/game/mario_step.c
-index 7ba5008..6a70759 100644
+index fd07d7b..66f2535 100644
 --- a/src/game/mario_step.c
 +++ b/src/game/mario_step.c
-@@ -107,12 +107,6 @@ void mario_bonk_reflection(struct MarioState *m, u32 negateSpeed) {
+@@ -100,12 +100,6 @@ void mario_bonk_reflection(struct MarioState *m, u32 negateSpeed) {
      } else {
          play_sound(SOUND_ACTION_HIT, m->marioObj->header.gfx.cameraToObject);
      }
@@ -1031,7 +1030,7 @@ index 7ba5008..6a70759 100644
  }
  
  u32 mario_update_quicksand(struct MarioState *m, f32 sinkingSpeed) {
-@@ -436,7 +430,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+@@ -452,7 +446,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
          }
  
          m->pos[1] = nextPos[1];
@@ -1040,7 +1039,7 @@ index 7ba5008..6a70759 100644
      }
  
      if ((m->action & ACT_FLAG_RIDING_SHELL) && floorHeight < waterLevel) {
-@@ -481,7 +475,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+@@ -507,7 +501,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
          }
  
          m->pos[1] = nextPos[1];
@@ -1049,7 +1048,7 @@ index 7ba5008..6a70759 100644
      }
  
      //! When the wall is not completely vertical or there is a slight wall
-@@ -511,7 +505,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
+@@ -537,7 +531,7 @@ s32 perform_air_quarter_step(struct MarioState *m, Vec3f intendedPos, u32 stepAr
  
          if (wallDYaw < -0x6000 || wallDYaw > 0x6000) {
              m->flags |= MARIO_UNKNOWN_30;
@@ -1058,7 +1057,7 @@ index 7ba5008..6a70759 100644
          }
      }
  
-@@ -591,7 +585,7 @@ void apply_gravity(struct MarioState *m) {
+@@ -617,7 +611,7 @@ void apply_gravity(struct MarioState *m) {
              }
          }
      } else {
@@ -1068,14 +1067,14 @@ index 7ba5008..6a70759 100644
              m->vel[1] = -75.0f;
          }
 diff --git a/src/menu/star_select.c b/src/menu/star_select.c
-index 94bdc11..c65898b 100644
+index 91647d7..b856047 100644
 --- a/src/menu/star_select.c
 +++ b/src/menu/star_select.c
-@@ -419,35 +419,5 @@ s32 lvl_init_act_selector_values_and_stars(UNUSED s32 arg, UNUSED s32 unused) {
+@@ -409,35 +409,5 @@ s32 lvl_init_act_selector_values_and_stars(UNUSED s32 arg, UNUSED s32 unused) {
   * Also updates objects and returns act number selected after is chosen.
   */
  s32 lvl_update_obj_and_load_act_button_actions(UNUSED s32 arg, UNUSED s32 unused) {
--    if (sActSelectorMenuTimer >= 11) {
+-    if (sActSelectorMenuTimer > 10) {
 -        // If any of these buttons are pressed, play sound and go to course act
 -#if !QOL_FEATURE_Z_BUTTON_EXTRA_OPTION
 -        if ((gPlayer3Controller->buttonPressed & A_BUTTON)
@@ -1085,7 +1084,7 @@ index 94bdc11..c65898b 100644
 -        if ((gPlayer3Controller->buttonPressed & (A_BUTTON | START_BUTTON | B_BUTTON | Z_TRIG))) 
 -#endif
 -        {
--#if defined(VERSION_JP)
+-#ifdef VERSION_JP
 -            play_sound(SOUND_MENU_STAR_SOUND, gGlobalSoundSource);
 -#else
 -            play_sound(SOUND_MENU_STAR_SOUND_LETS_A_GO, gGlobalSoundSource);

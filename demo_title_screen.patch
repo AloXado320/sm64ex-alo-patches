@@ -1,3 +1,16 @@
+diff --git a/Makefile b/Makefile
+index 9b15874..b44def8 100644
+--- a/Makefile
++++ b/Makefile
+@@ -64,7 +64,7 @@ DISCORDRPC ?= 0
+ # Enable rumble functions (Originally in Shindou)
+ RUMBLE_FEEDBACK ?= 0
+ # Enable Goddard (Mario Face)
+-GODDARD_MFACE ?= 1
++GODDARD_MFACE ?= 0
+ # Enable Command Line Options
+ COMMAND_LINE_OPTIONS ?= 1
+ # Kaze MOP Objects Port, disabled by default
 diff --git a/include/level_commands.h b/include/level_commands.h
 index c5940bf..c9769f7 100644
 --- a/include/level_commands.h
@@ -19,7 +32,7 @@ index c5940bf..c9769f7 100644
  
  #ifdef NO_SEGMENTED_MEMORY
 diff --git a/levels/intro/script.c b/levels/intro/script.c
-index 795a480..68f4403 100644
+index 18f2eb0..6f752a6 100644
 --- a/levels/intro/script.c
 +++ b/levels/intro/script.c
 @@ -9,6 +9,7 @@
@@ -30,83 +43,44 @@ index 795a480..68f4403 100644
  
  #include "levels/scripts.h"
  #include "levels/menu/header.h"
-@@ -66,65 +67,36 @@ const LevelScript level_intro_splash_screen[] = {
-     EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
- };
- 
--#ifdef GODDARD_MFACE
-+
+@@ -117,18 +118,27 @@ const LevelScript level_intro_mario_head_dizzy[] = {
+ #else
  const LevelScript level_intro_mario_head_regular[] = {
      INIT_LEVEL(),
-     BLACKOUT(/*active*/ TRUE),
-+#ifdef GODDARD_MFACE
-     FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
--    LOAD_MARIO_HEAD(/*loadHeadID*/ REGULAR_FACE),
-+#endif
-     LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
-     LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
- 
-     ALLOC_LEVEL_POOL(),
--    AREA(/*index*/ 1, intro_geo_mario_head_regular),
--    END_AREA(),
-     FREE_LEVEL_POOL(),
- 
-     SLEEP(/*frames*/ 2),
-     BLACKOUT(/*active*/ FALSE),
--    LOAD_AREA(/*area*/ 1),
--    SET_MENU_MUSIC(/*seq*/ SEQ_MENU_TITLE_SCREEN),
--    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
--    SLEEP(/*frames*/ 20),
 -    CALL_LOOP(/*arg*/ LVL_INTRO_REGULAR, /*func*/ lvl_intro_update),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
 -    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
--    JUMP(script_intro_L4),
--};
--
--const LevelScript level_intro_mario_head_dizzy[] = {
--    INIT_LEVEL(),
--    BLACKOUT(/*active*/ TRUE),
--    FIXED_LOAD(/*loadAddr*/ _goddardSegmentStart, /*romStart*/ _goddardSegmentRomStart, /*romEnd*/ _goddardSegmentRomEnd),
--    LOAD_MARIO_HEAD(/*loadHeadID*/ DIZZY_FACE),
--    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
--    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
--    ALLOC_LEVEL_POOL(),
- 
--    AREA(/*index*/ 1, intro_geo_mario_head_dizzy),
--    END_AREA(),
+-    EXIT_AND_EXECUTE(/*seg*/ 0x14, _menuSegmentRomStart, _menuSegmentRomEnd, level_main_menu_entry_1),
++    BLACKOUT(/*active*/ TRUE),
++    LOAD_RAW(/*seg*/ 0x13, _behaviorSegmentRomStart, _behaviorSegmentRomEnd),
++    LOAD_MIO0_TEXTURE(/*seg*/ 0x0A, _title_screen_bg_mio0SegmentRomStart, _title_screen_bg_mio0SegmentRomEnd),
++    ALLOC_LEVEL_POOL(),
++    FREE_LEVEL_POOL(),
++    SLEEP(/*frames*/ 2),
++    BLACKOUT(/*active*/ FALSE),
++     
 +    DEMO_SCRIPT(LVL_DEMO_CLEAR), // we need to do this or else file select will be tainted with inputs
 +    GET_OR_SET(/*op*/ OP_GET, /*var*/ VAR_CURR_DEMO_START_BUTTON),
 +    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 1, script_intro_L1), // was start pressed when demo ended last time?
- 
--    FREE_LEVEL_POOL(),
--    SLEEP(/*frames*/ 2),
--    BLACKOUT(/*active*/ FALSE),
--    LOAD_AREA(/*area*/ 1),
--    SET_MENU_MUSIC(/*seq*/ SEQ_MENU_GAME_OVER),
++
 +    SET_MENU_MUSIC(/*seq*/ SEQ_MENU_TITLE_SCREEN),
-     TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
-     SLEEP(/*frames*/ 20),
--    CALL_LOOP(/*arg*/ LVL_INTRO_GAME_OVER, /*func*/ lvl_intro_update),
--    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
--    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
--    JUMP(script_intro_L4),
--};
--#else
--const LevelScript level_intro_mario_head_regular[] = {
--    EXIT_AND_EXECUTE(/*seg*/ 0x14, _menuSegmentRomStart, _menuSegmentRomEnd, level_main_menu_entry_1),
++    TRANSITION(/*transType*/ WARP_TRANSITION_FADE_FROM_STAR, /*time*/ 20, /*color*/ 0x00, 0x00, 0x00),
++    SLEEP(/*frames*/ 20),
 +    DEMO_SCRIPT(LVL_DEMO_SET_ADVANCE), // advance the demo ID manually with a new command which sets the level as script register
 +    JUMP(script_intro_L4), // go to ingame
  };
  
  const LevelScript level_intro_mario_head_dizzy[] = {
+-    INIT_LEVEL(),
+-    CALL_LOOP(/*arg*/ LVL_INTRO_GAME_OVER, /*func*/ lvl_intro_update),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 100, script_intro_L1),
+-    JUMP_IF(/*op*/ OP_EQ, /*arg*/ 101, script_intro_L2),
 -    EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_splash_screen),
 +    EXIT_AND_EXECUTE(/*seg*/ 0x14, _introSegmentRomStart, _introSegmentRomEnd, level_intro_mario_head_regular),
  };
--#endif
+ #endif
  
- const LevelScript level_intro_entry_4[] = {
-     INIT_LEVEL(),
-@@ -138,6 +110,7 @@ const LevelScript level_intro_entry_4[] = {
+@@ -144,6 +154,7 @@ const LevelScript level_intro_entry_4[] = {
  
      AREA(/*index*/ 1, intro_geo_000414),
      END_AREA(),
@@ -115,7 +89,7 @@ index 795a480..68f4403 100644
      FREE_LEVEL_POOL(),
      LOAD_AREA(/*area*/ 1),
 diff --git a/src/engine/level_script.c b/src/engine/level_script.c
-index 74c41bf..d7f5bcc 100644
+index 1d3f7dc..64418d3 100644
 --- a/src/engine/level_script.c
 +++ b/src/engine/level_script.c
 @@ -32,6 +32,8 @@
@@ -192,7 +166,7 @@ index 74c41bf..d7f5bcc 100644
 +    level_cmd_demo,
  };
  
- struct LevelCommand *level_script_execute(struct LevelCommand *cmd) {
+ #ifdef TOUCH_CONTROLS
 diff --git a/src/extras/demo_screen.c b/src/extras/demo_screen.c
 new file mode 100644
 index 0000000..2545f89
@@ -276,10 +250,10 @@ index 0000000..8f0efc6
 +
 +#endif // OPTIONS_MENU_H
 diff --git a/src/game/level_update.c b/src/game/level_update.c
-index a1ecb75..01ecaf2 100644
+index 8f28b73..50ce145 100644
 --- a/src/game/level_update.c
 +++ b/src/game/level_update.c
-@@ -46,6 +46,8 @@
+@@ -47,6 +47,8 @@
  #include "extras/bettercamera.h"
  #endif
  
@@ -288,7 +262,7 @@ index a1ecb75..01ecaf2 100644
  #define PLAY_MODE_NORMAL 0
  #define PLAY_MODE_PAUSED 2
  #define PLAY_MODE_CHANGE_AREA 3
-@@ -1012,12 +1014,13 @@ void basic_update(UNUSED s16 *arg) {
+@@ -1010,12 +1012,13 @@ void basic_update(UNUSED s16 *arg) {
  
  s32 play_mode_normal(void) {
      if (gCurrDemoInput != NULL) {

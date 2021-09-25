@@ -11,10 +11,10 @@ index 736d31f..66442ea 100644
  const GeoLayout mario_geo_face_and_wings[] = {
     GEO_ASM(0, geo_mario_head_rotation),
 diff --git a/include/sm64.h b/include/sm64.h
-index f846c01..936285e 100644
+index 75de983..aafa6c9 100644
 --- a/include/sm64.h
 +++ b/include/sm64.h
-@@ -54,6 +54,7 @@ void *memmove(void *str1, const void *str2, size_t n);
+@@ -55,6 +55,7 @@ int strcmp(char *s, char *t);
  #define LAYER_TRANSPARENT       5
  #define LAYER_TRANSPARENT_DECAL 6
  #define LAYER_TRANSPARENT_INTER 7
@@ -22,8 +22,134 @@ index f846c01..936285e 100644
  
  #define INPUT_NONZERO_ANALOG         0x0001
  #define INPUT_A_PRESSED              0x0002
+diff --git a/silhouette.patch b/silhouette.patch
+new file mode 100644
+index 0000000..43c39c6
+--- /dev/null
++++ b/silhouette.patch
+@@ -0,0 +1,120 @@
++diff --git a/actors/mario/geo.inc.c b/actors/mario/geo.inc.c
++index 736d31f..66442ea 100644
++--- a/actors/mario/geo.inc.c
+++++ b/actors/mario/geo.inc.c
++@@ -1,5 +1,7 @@
++ // Normal Mario Geo
++ 
+++#define LAYER_OPAQUE LAYER_SILHOUETTE // Temporarily set the opaque layer to 8, for the silhouette
+++
++ // 0x170002E0
++ const GeoLayout mario_geo_face_and_wings[] = {
++    GEO_ASM(0, geo_mario_head_rotation),
++diff --git a/include/sm64.h b/include/sm64.h
++index f846c01..936285e 100644
++--- a/include/sm64.h
+++++ b/include/sm64.h
++@@ -54,6 +54,7 @@ void *memmove(void *str1, const void *str2, size_t n);
++ #define LAYER_TRANSPARENT       5
++ #define LAYER_TRANSPARENT_DECAL 6
++ #define LAYER_TRANSPARENT_INTER 7
+++#define LAYER_SILHOUETTE        8
++ 
++ #define INPUT_NONZERO_ANALOG         0x0001
++ #define INPUT_A_PRESSED              0x0002
++diff --git a/src/engine/graph_node.h b/src/engine/graph_node.h
++index 3d630d1..dcd36fb 100644
++--- a/src/engine/graph_node.h
+++++ b/src/engine/graph_node.h
++@@ -47,7 +47,7 @@
++ 
++ // The number of master lists. A master list determines the order and render
++ // mode with which display lists are drawn.
++-#define GFX_NUM_MASTER_LISTS 8
+++#define GFX_NUM_MASTER_LISTS 9
++ 
++ // Passed as first argument to a GraphNodeFunc to give information about in
++ // which context it was called and what it is expected to do.
++diff --git a/src/game/rendering_graph_node.c b/src/game/rendering_graph_node.c
++index 63866d6..d959ba2 100644
++--- a/src/game/rendering_graph_node.c
+++++ b/src/game/rendering_graph_node.c
++@@ -68,7 +68,7 @@ s16 *gCurAnimData;
++ struct AllocOnlyPool *gDisplayListHeap;
++ 
++ struct RenderModeContainer {
++-    u32 modes[8];
+++    u32 modes[GFX_NUM_MASTER_LISTS];
++ };
++ 
++ /* Rendermode settings for cycle 1 for all 8 layers. */
++@@ -81,6 +81,7 @@ struct RenderModeContainer renderModeTable_1Cycle[2] = { { {
++     G_RM_AA_XLU_SURF,
++     G_RM_AA_XLU_SURF,
++     G_RM_AA_XLU_SURF,
+++    G_RM_FOG_SHADE_A,
++     } },
++     { {
++     /* z-buffered */
++@@ -92,6 +93,7 @@ struct RenderModeContainer renderModeTable_1Cycle[2] = { { {
++     G_RM_AA_ZB_XLU_SURF,
++     G_RM_AA_ZB_XLU_DECAL,
++     G_RM_AA_ZB_XLU_INTER,
+++    G_RM_FOG_SHADE_A,
++     } } };
++ 
++ /* Rendermode settings for cycle 2 for all 8 layers. */
++@@ -104,6 +106,7 @@ struct RenderModeContainer renderModeTable_2Cycle[2] = { { {
++     G_RM_AA_XLU_SURF2,
++     G_RM_AA_XLU_SURF2,
++     G_RM_AA_XLU_SURF2,
+++    G_RM_NOOP2,
++     } },
++     { {
++     /* z-buffered */
++@@ -115,6 +118,7 @@ struct RenderModeContainer renderModeTable_2Cycle[2] = { { {
++     G_RM_AA_ZB_XLU_SURF2,
++     G_RM_AA_ZB_XLU_DECAL2,
++     G_RM_AA_ZB_XLU_INTER2,
+++    G_RM_NOOP2 
++     } } };
++ 
++ struct GraphNodeRoot *gCurGraphNodeRoot = NULL;
++@@ -153,9 +157,35 @@ static void geo_process_master_list_sub(struct GraphNodeMasterList *node) {
++     }
++ 
++     for (i = 0; i < GFX_NUM_MASTER_LISTS; i++) {
++-        if ((currList = node->listHeads[i]) != NULL) {
++-            gDPSetRenderMode(gDisplayListHead++, modeList->modes[i], mode2List->modes[i]);
+++        if (i == LAYER_TRANSPARENT) {  // If model isn't visible, render silhouette
+++            if ((currList = node->listHeads[LAYER_SILHOUETTE]) != NULL) {   
+++                while (currList != NULL) {
+++                    gDPSetRenderMode(gDisplayListHead++, modeList->modes[LAYER_SILHOUETTE], mode2List->modes[LAYER_SILHOUETTE]);
+++                    gDPSetFogColor(gDisplayListHead++, 0, 0, 0, 160);
+++                    gSPFogPosition(gDisplayListHead++, 1, 2);
+++                    gSPSetGeometryMode(gDisplayListHead++, G_FOG);
+++                    gDPSetEnvColor(gDisplayListHead++, 127, 127, 127, 160);
+++                    gDPSetAlphaCompare(gDisplayListHead++, G_AC_DITHER);
+++                    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transform), 
+++                        G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+++                    gSPDisplayList(gDisplayListHead++, currList->displayList);
+++                    currList = currList->next;
+++                }
+++                gSPClearGeometryMode(gDisplayListHead++, G_FOG);
+++                gDPSetEnvColor(gDisplayListHead++, 255, 255, 255, 255);
+++                currList = node->listHeads[LAYER_SILHOUETTE]; 
+++                while (currList != NULL) {
+++                    gDPSetRenderMode(gDisplayListHead++, modeList->modes[LAYER_OPAQUE], mode2List->modes[LAYER_OPAQUE]);
+++                    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transform),
+++                        G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
+++                    gSPDisplayList(gDisplayListHead++, currList->displayList);
+++                    currList = currList->next;
+++                }
+++            }
+++        }
+++        if (i < LAYER_SILHOUETTE && (currList = node->listHeads[i]) != NULL) {
++             while (currList != NULL) {
+++                gDPSetRenderMode(gDisplayListHead++, modeList->modes[i], mode2List->modes[i]);
++                 gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transform),
++                           G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
++                 gSPDisplayList(gDisplayListHead++, currList->displayList);
 diff --git a/src/engine/graph_node.h b/src/engine/graph_node.h
-index 3d630d1..dcd36fb 100644
+index 29f7904..9dc6faf 100644
 --- a/src/engine/graph_node.h
 +++ b/src/engine/graph_node.h
 @@ -47,7 +47,7 @@
@@ -36,10 +162,10 @@ index 3d630d1..dcd36fb 100644
  // Passed as first argument to a GraphNodeFunc to give information about in
  // which context it was called and what it is expected to do.
 diff --git a/src/game/rendering_graph_node.c b/src/game/rendering_graph_node.c
-index 63866d6..d959ba2 100644
+index 20d05ae..c41410a 100644
 --- a/src/game/rendering_graph_node.c
 +++ b/src/game/rendering_graph_node.c
-@@ -68,7 +68,7 @@ s16 *gCurAnimData;
+@@ -78,7 +78,7 @@ s16 *gCurrAnimData;
  struct AllocOnlyPool *gDisplayListHeap;
  
  struct RenderModeContainer {
@@ -48,7 +174,7 @@ index 63866d6..d959ba2 100644
  };
  
  /* Rendermode settings for cycle 1 for all 8 layers. */
-@@ -81,6 +81,7 @@ struct RenderModeContainer renderModeTable_1Cycle[2] = { { {
+@@ -91,6 +91,7 @@ struct RenderModeContainer renderModeTable_1Cycle[2] = { { {
      G_RM_AA_XLU_SURF,
      G_RM_AA_XLU_SURF,
      G_RM_AA_XLU_SURF,
@@ -56,7 +182,7 @@ index 63866d6..d959ba2 100644
      } },
      { {
      /* z-buffered */
-@@ -92,6 +93,7 @@ struct RenderModeContainer renderModeTable_1Cycle[2] = { { {
+@@ -102,6 +103,7 @@ struct RenderModeContainer renderModeTable_1Cycle[2] = { { {
      G_RM_AA_ZB_XLU_SURF,
      G_RM_AA_ZB_XLU_DECAL,
      G_RM_AA_ZB_XLU_INTER,
@@ -64,7 +190,7 @@ index 63866d6..d959ba2 100644
      } } };
  
  /* Rendermode settings for cycle 2 for all 8 layers. */
-@@ -104,6 +106,7 @@ struct RenderModeContainer renderModeTable_2Cycle[2] = { { {
+@@ -114,6 +116,7 @@ struct RenderModeContainer renderModeTable_2Cycle[2] = { { {
      G_RM_AA_XLU_SURF2,
      G_RM_AA_XLU_SURF2,
      G_RM_AA_XLU_SURF2,
@@ -72,7 +198,7 @@ index 63866d6..d959ba2 100644
      } },
      { {
      /* z-buffered */
-@@ -115,6 +118,7 @@ struct RenderModeContainer renderModeTable_2Cycle[2] = { { {
+@@ -125,6 +128,7 @@ struct RenderModeContainer renderModeTable_2Cycle[2] = { { {
      G_RM_AA_ZB_XLU_SURF2,
      G_RM_AA_ZB_XLU_DECAL2,
      G_RM_AA_ZB_XLU_INTER2,
@@ -80,7 +206,7 @@ index 63866d6..d959ba2 100644
      } } };
  
  struct GraphNodeRoot *gCurGraphNodeRoot = NULL;
-@@ -153,9 +157,35 @@ static void geo_process_master_list_sub(struct GraphNodeMasterList *node) {
+@@ -205,9 +209,57 @@ static void geo_process_master_list_sub(struct GraphNodeMasterList *node) {
      }
  
      for (i = 0; i < GFX_NUM_MASTER_LISTS; i++) {
@@ -95,9 +221,20 @@ index 63866d6..d959ba2 100644
 +                    gSPSetGeometryMode(gDisplayListHead++, G_FOG);
 +                    gDPSetEnvColor(gDisplayListHead++, 127, 127, 127, 160);
 +                    gDPSetAlphaCompare(gDisplayListHead++, G_AC_DITHER);
++#ifdef HIGH_FPS_PC
++                    if ((u32) gMtxTblSize < sizeof(gMtxTbl) / sizeof(gMtxTbl[0])) {
++                        gMtxTbl[gMtxTblSize].pos = gDisplayListHead;
++                        gMtxTbl[gMtxTblSize].mtx = currList->transform;
++                        gMtxTbl[gMtxTblSize++].displayList = currList->displayList;
++                    }
++                    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transformInterpolated),
++                            G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
++                    gSPDisplayList(gDisplayListHead++, currList->displayListInterpolated);
++#else
 +                    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transform), 
 +                        G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
 +                    gSPDisplayList(gDisplayListHead++, currList->displayList);
++#endif
 +                    currList = currList->next;
 +                }
 +                gSPClearGeometryMode(gDisplayListHead++, G_FOG);
@@ -105,9 +242,20 @@ index 63866d6..d959ba2 100644
 +                currList = node->listHeads[LAYER_SILHOUETTE]; 
 +                while (currList != NULL) {
 +                    gDPSetRenderMode(gDisplayListHead++, modeList->modes[LAYER_OPAQUE], mode2List->modes[LAYER_OPAQUE]);
++#ifdef HIGH_FPS_PC
++                    if ((u32) gMtxTblSize < sizeof(gMtxTbl) / sizeof(gMtxTbl[0])) {
++                        gMtxTbl[gMtxTblSize].pos = gDisplayListHead;
++                        gMtxTbl[gMtxTblSize].mtx = currList->transform;
++                        gMtxTbl[gMtxTblSize++].displayList = currList->displayList;
++                    }
++                    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transformInterpolated),
++                            G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
++                    gSPDisplayList(gDisplayListHead++, currList->displayListInterpolated);
++#else
 +                    gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transform),
 +                        G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
 +                    gSPDisplayList(gDisplayListHead++, currList->displayList);
++#endif
 +                    currList = currList->next;
 +                }
 +            }
@@ -115,6 +263,6 @@ index 63866d6..d959ba2 100644
 +        if (i < LAYER_SILHOUETTE && (currList = node->listHeads[i]) != NULL) {
              while (currList != NULL) {
 +                gDPSetRenderMode(gDisplayListHead++, modeList->modes[i], mode2List->modes[i]);
-                 gSPMatrix(gDisplayListHead++, VIRTUAL_TO_PHYSICAL(currList->transform),
-                           G_MTX_MODELVIEW | G_MTX_LOAD | G_MTX_NOPUSH);
-                 gSPDisplayList(gDisplayListHead++, currList->displayList);
+ #ifdef HIGH_FPS_PC
+                 if ((u32) gMtxTblSize < sizeof(gMtxTbl) / sizeof(gMtxTbl[0])) {
+                     gMtxTbl[gMtxTblSize].pos = gDisplayListHead;

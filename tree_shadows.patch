@@ -63,7 +63,7 @@ index c58ded6..4630171 100644
     GEO_END(),
  };
 diff --git a/bin/segment2.c b/bin/segment2.c
-index a762900..625cd0a 100644
+index fb6367d..928c567 100644
 --- a/bin/segment2.c
 +++ b/bin/segment2.c
 @@ -2452,6 +2452,10 @@ ALIGNED8 static const Texture texture_shadow_quarter_square[] = {
@@ -220,7 +220,7 @@ index 7eecce5..0129c80 100644
  extern Gfx dl_shadow_4_verts[];
  extern Gfx dl_shadow_end[];
 diff --git a/src/game/shadow.c b/src/game/shadow.c
-index c0b7b08..8eaa12e 100644
+index 77f0f5d..57076bc 100644
 --- a/src/game/shadow.c
 +++ b/src/game/shadow.c
 @@ -73,6 +73,8 @@ struct Shadow {
@@ -232,7 +232,7 @@ index c0b7b08..8eaa12e 100644
  /**
   * Constant to indicate a shadow consists of 9 vertices.
   */
-@@ -478,7 +480,11 @@ void add_shadow_to_display_list(Gfx *displayListHead, Vtx *verts, s8 shadowVerte
+@@ -475,7 +477,11 @@ void add_shadow_to_display_list(Gfx *displayListHead, Vtx *verts, s8 shadowVerte
              gSPDisplayList(displayListHead++, dl_shadow_circle);
              break;
          case SHADOW_SHAPE_SQUARE:
@@ -245,7 +245,7 @@ index c0b7b08..8eaa12e 100644
      }
      switch (shadowVertexType) {
          case SHADOW_WITH_9_VERTS:
-@@ -702,6 +708,33 @@ Gfx *create_shadow_circle_4_verts(f32 xPos, f32 yPos, f32 zPos, s16 shadowScale,
+@@ -699,6 +705,33 @@ Gfx *create_shadow_circle_4_verts(f32 xPos, f32 yPos, f32 zPos, s16 shadowScale,
      return displayList;
  }
  
@@ -279,7 +279,7 @@ index c0b7b08..8eaa12e 100644
  /**
   * Create a circular shadow composed of 4 vertices and assume that the ground
   * underneath it is totally flat.
-@@ -880,9 +913,8 @@ Gfx *create_shadow_below_xyz(f32 xPos, f32 yPos, f32 zPos, s16 shadowScale, u8 s
+@@ -877,9 +910,8 @@ Gfx *create_shadow_below_xyz(f32 xPos, f32 yPos, f32 zPos, s16 shadowScale, u8 s
          case SHADOW_CIRCLE_4_VERTS:
              displayList = create_shadow_circle_4_verts(xPos, yPos, zPos, shadowScale, shadowSolidity);
              break;
@@ -292,11 +292,11 @@ index c0b7b08..8eaa12e 100644
          case SHADOW_SQUARE_PERMANENT:
              displayList =
 diff --git a/src/game/shadow.h b/src/game/shadow.h
-index 36b3ef0..051a678 100644
+index d527260..4d944c6 100644
 --- a/src/game/shadow.h
 +++ b/src/game/shadow.h
-@@ -12,7 +12,7 @@ enum ShadowType
- {
+@@ -11,7 +11,7 @@
+ enum ShadowType {
      SHADOW_CIRCLE_9_VERTS = 0,
      SHADOW_CIRCLE_4_VERTS = 1,
 -    SHADOW_CIRCLE_4_VERTS_FLAT_UNUSED = 2,

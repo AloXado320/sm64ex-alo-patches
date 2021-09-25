@@ -1,5 +1,5 @@
 diff --git a/src/game/object_list_processor.c b/src/game/object_list_processor.c
-index 828e3b5..bec8720 100644
+index 87dd3d6..ccf0bc6 100644
 --- a/src/game/object_list_processor.c
 +++ b/src/game/object_list_processor.c
 @@ -9,6 +9,8 @@
@@ -19,7 +19,7 @@ index 828e3b5..bec8720 100644
  #include "profiler.h"
  #include "spawn_object.h"
  
-@@ -263,6 +266,21 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
+@@ -267,6 +270,21 @@ void spawn_particle(u32 activeParticleFlag, s16 model, const BehaviorScript *beh
      }
  }
  
@@ -41,7 +41,7 @@ index 828e3b5..bec8720 100644
  /**
   * Mario's primary behavior update function.
   */
-@@ -286,6 +304,8 @@ void bhv_mario_update(void) {
+@@ -290,6 +308,8 @@ void bhv_mario_update(void) {
  
          i++;
      }
